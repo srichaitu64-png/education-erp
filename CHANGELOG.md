@@ -31,3 +31,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added 8 automated tests with 100% pass rate covering RLS database isolation, API tenant boundaries, Argon2id security, feature gating, and override precedence.
 - **Infrastructure & Deployment:**
   - Created `docker-compose.yml`, `Dockerfile.api`, `Dockerfile.web`, Nginx SPA proxy config, and `Makefile`.
+

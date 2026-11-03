@@ -101,3 +101,4 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
     )
     assert resp_ok.status_code == 200
     assert isinstance(resp_ok.json(), list)
+

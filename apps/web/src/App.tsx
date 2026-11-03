@@ -8,6 +8,20 @@ import { SuperAdminDashboard } from './modules/dashboard/SuperAdminDashboard';
 import { EntitlementsManager } from './modules/entitlements/EntitlementsManager';
 import { useAuthStore } from './store/authStore';
 
+// Public Marketing & Demo Pages
+import { HomePage } from './pages/public/HomePage';
+import { FeaturesPage } from './pages/public/FeaturesPage';
+import { ModulesPage } from './pages/public/ModulesPage';
+import { PricingPage } from './pages/public/PricingPage';
+import { SubscriptionComparisonPage } from './pages/public/SubscriptionComparisonPage';
+import { TestimonialsPage } from './pages/public/TestimonialsPage';
+import { FaqPage } from './pages/public/FaqPage';
+import { BookDemoPage } from './pages/public/BookDemoPage';
+import { RegisterInstitutionPage } from './pages/public/RegisterInstitutionPage';
+import { AboutPage } from './pages/public/AboutPage';
+import { ContactPage } from './pages/public/ContactPage';
+import { InteractiveDemoPage } from './pages/demo/InteractiveDemoPage';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -39,9 +53,26 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          {/* Public Marketing Website */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/modules" element={<ModulesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/pricing/compare" element={<SubscriptionComparisonPage />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/book-demo" element={<BookDemoPage />} />
+          <Route path="/register" element={<RegisterInstitutionPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+
+          {/* Interactive In-Browser Demo Sandbox */}
+          <Route path="/demo" element={<InteractiveDemoPage />} />
+
+          {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Institution Dashboard Routes */}
+          {/* Authenticated Institution ERP Dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -59,7 +90,7 @@ export const App: React.FC = () => {
             }
           />
 
-          {/* Super Admin Routes */}
+          {/* Super Admin Control Center */}
           <Route
             path="/superadmin"
             element={
@@ -86,7 +117,7 @@ export const App: React.FC = () => {
           />
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

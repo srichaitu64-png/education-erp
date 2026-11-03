@@ -53,3 +53,4 @@ export class OfflineERPDatabase extends Dexie {
 }
 
 export const offlineDb = new OfflineERPDatabase();
+

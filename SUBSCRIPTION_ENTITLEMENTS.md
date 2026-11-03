@@ -53,3 +53,4 @@ Super Admin can apply time-bound overrides for any specific institution:
 - **`ALLOW` Override:** Unlocks higher-tier modules (e.g. 30-day evaluation of `analytics.ai_reports` on a Standard plan).
 - **`DENY` Override:** Restricts an institution from accessing a feature even if included in their plan (e.g. pending billing dispute or administrative review).
 - **Precedence Rule:** `DENY` takes absolute precedence over plan entitlements.
+

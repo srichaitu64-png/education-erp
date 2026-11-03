@@ -40,3 +40,4 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
         );
         """
         await conn.execute(text(policy_sql))
+

@@ -104,3 +104,4 @@ class UserRole(Base, TimestampMixin):
     __table_args__ = (
         Index("idx_user_tenant_role", "user_id", "tenant_id", "role_id", unique=True),
     )
+

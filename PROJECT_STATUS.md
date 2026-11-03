@@ -47,3 +47,4 @@ Key architectural boundaries are active:
 - **Backend API:** FastAPI on Python 3.12.3 with asyncpg and SQLAlchemy 2.0
 - **Frontend App:** React 18 / TypeScript / Vite / Tailwind CSS
 - **Test Database:** `education_erp_test` on port 5433
+

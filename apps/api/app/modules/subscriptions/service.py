@@ -341,3 +341,4 @@ class EntitlementService:
         current_val = usage.current_value if usage else 0
 
         return (current_val + requested_increment) <= max_allowed
+

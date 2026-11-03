@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.modules.tenants.models import Tenant, Campus
 from app.modules.identity.models import User, Role, Permission, UserRole, role_permissions
 from app.modules.subscriptions.models import (
     FeatureCatalog,
@@ -246,5 +247,80 @@ async def seed_initial_data(db: AsyncSession) -> None:
         if s_role:
             ur = UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None)
             db.add(ur)
+
+    # 6. Seed Default Pilot Institution (Akshara Global School & College)
+    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    res_tenant = await db.execute(stmt_tenant)
+    if not res_tenant.scalars().first():
+        pilot_tenant = Tenant(
+            name="Akshara Global School & College",
+            code="akshara",
+            institution_type="composite_group",
+            status="active",
+            email="info@akshara.edu.in",
+            phone="+91 98765 43210",
+            address="100 Feet Ring Road, JP Nagar",
+            city="Bengaluru",
+            state="Karnataka",
+            postal_code="560078",
+            country="India",
+            primary_color="#1E40AF",
+            secondary_color="#F59E0B",
+            subdomain="akshara"
+        )
+        db.add(pilot_tenant)
+        await db.flush()
+
+        # Add Main Campus
+        campus = Campus(
+            tenant_id=pilot_tenant.id,
+            name="Akshara Global Main Campus",
+            code="MAIN",
+            is_main=True,
+            address="100 Feet Ring Road, JP Nagar, Bengaluru",
+            contact_email="principal@akshara.edu.in",
+            contact_phone="+91 98765 43210"
+        )
+        db.add(campus)
+
+        # Assign Standard Plan (Tier 2) Subscription
+        from datetime import datetime, timedelta, timezone
+        from app.modules.subscriptions.models import Subscription
+        stmt_plan = select(SubscriptionPlan).where(SubscriptionPlan.code == "STANDARD")
+        res_plan = await db.execute(stmt_plan)
+        std_plan = res_plan.scalars().first()
+        if std_plan:
+            now = datetime.now(timezone.utc)
+            sub = Subscription(
+                tenant_id=pilot_tenant.id,
+                plan_id=std_plan.id,
+                status="active",
+                billing_cycle="annual",
+                starts_at=now,
+                ends_at=now + timedelta(days=365)
+            )
+            db.add(sub)
+
+        # Create Institution Principal User
+        principal_email = "principal@akshara.edu.in"
+        stmt_u = select(User).where(User.email == principal_email)
+        res_u = await db.execute(stmt_u)
+        if not res_u.scalars().first():
+            principal = User(
+                email=principal_email,
+                hashed_password=hash_password("PrincipalSecurePassword2026!"),
+                full_name="Dr. Ramesh Kumar (Principal)",
+                is_active=True,
+                is_superadmin=False
+            )
+            db.add(principal)
+            await db.flush()
+
+            stmt_r = select(Role).where(Role.code == "INSTITUTION_ADMIN", Role.tenant_id == None)
+            res_r = await db.execute(stmt_r)
+            inst_role = res_r.scalars().first()
+            if inst_role:
+                ur_inst = UserRole(user_id=principal.id, role_id=inst_role.id, tenant_id=pilot_tenant.id)
+                db.add(ur_inst)
 
     await db.commit()

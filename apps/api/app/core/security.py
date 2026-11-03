@@ -81,3 +81,4 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
         return decoded
     except jwt.PyJWTError:
         return None
+

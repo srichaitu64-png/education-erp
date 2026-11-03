@@ -67,3 +67,4 @@ class TenantOut(BaseModel):
 
     class Config:
         from_attributes = True
+

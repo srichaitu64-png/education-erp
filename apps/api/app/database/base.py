@@ -59,3 +59,4 @@ class TenantBaseModel(Base, TimestampMixin):
             nullable=False,
             index=True
         )
+

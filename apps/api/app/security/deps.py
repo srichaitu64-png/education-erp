@@ -163,3 +163,4 @@ def require_feature(feature_id: str) -> Callable:
         return access
 
     return feature_guard
+

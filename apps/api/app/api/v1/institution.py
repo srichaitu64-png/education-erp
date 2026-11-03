@@ -104,3 +104,4 @@ async def access_enterprise_ai_reports(current_user: User = Depends(get_current_
         "message": "Authorized access to Enterprise AI Performance Reports.",
         "feature_id": "analytics.ai_reports"
     }
+

@@ -88,3 +88,4 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     </div>
   );
 };
+

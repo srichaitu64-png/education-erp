@@ -51,3 +51,4 @@ class UserCreate(BaseModel):
     full_name: str
     phone: Optional[str] = None
     is_superadmin: bool = False
+

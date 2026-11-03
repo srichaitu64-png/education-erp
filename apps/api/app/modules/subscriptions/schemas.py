@@ -94,3 +94,4 @@ class TenantEntitlementsOut(BaseModel):
     current_tier: int
     subscription_status: str
     features: List[EntitlementItem]
+

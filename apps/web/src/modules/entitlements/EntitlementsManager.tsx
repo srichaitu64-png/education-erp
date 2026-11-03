@@ -315,3 +315,4 @@ export const EntitlementsManager: React.FC = () => {
     </div>
   );
 };
+

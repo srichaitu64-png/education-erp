@@ -96,3 +96,4 @@ Unauthenticated or mismatched tenant queries return 0 rows at the database engin
  ├── Plan Tier >= Feature Min Tier? ──────────> [UNLOCKED] (Authorized)
  └── Feature Not in Plan ─────────────────────> [LOCKED] (HTTP 403 FEATURE_LOCKED)
 ```
+

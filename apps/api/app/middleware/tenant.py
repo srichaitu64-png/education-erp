@@ -48,3 +48,4 @@ class TenantResolutionMiddleware(BaseHTTPMiddleware):
         finally:
             # Clean up context after request completion
             set_current_tenant_id(None)
+

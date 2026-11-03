@@ -174,3 +174,4 @@ async def refresh_token_endpoint(
         "token_type": "bearer",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
+

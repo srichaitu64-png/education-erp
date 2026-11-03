@@ -31,3 +31,4 @@ run-web:
 
 build:
 	cd apps/web && npm run build
+

@@ -93,3 +93,4 @@ class TenantDomain(Base, TimestampMixin):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="domains")
+

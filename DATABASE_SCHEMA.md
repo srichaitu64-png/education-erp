@@ -95,3 +95,4 @@
 | `starts_at` | TIMESTAMPTZ | NOT NULL | Validity start date |
 | `expires_at` | TIMESTAMPTZ | NULL | Validity end date (NULL = perpetual) |
 | `is_active` | BOOLEAN | NOT NULL | Active state flag |
+
