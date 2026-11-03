@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #1E40AF;
+  --brand-secondary: #F59E0B;
+}
+
+/* Custom utility for dynamic institution branding */
+.btn-primary {
+  background-color: var(--brand-primary);
+  color: white;
+}
+.btn-primary:hover {
+  filter: brightness(0.9);
+}
+.text-brand {
+  color: var(--brand-primary);
+}
+.border-brand {
+  border-color: var(--brand-primary);
+}
