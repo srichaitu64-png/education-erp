@@ -1,46 +1,56 @@
-# EDUCATIONOS – APPLICATION SECURITY & VULNERABILITY AUDIT
+# EducationOS Enterprise – SaaS Security & Data Privacy Audit
 
-**Document Version:** 2.0.0  
-**Audit Date:** November 4, 2026  
-**Auditor:** Application Security Lead & Pen-Test Engineer  
-
----
-
-## 1. Threat Modeling & Security Posture
-
-EducationOS operates as a multi-tenant cloud application handling sensitive educational records, student Personally Identifiable Information (PII), national exam preparation scores (NEET/JEE), and financial payment collections.
-
-### Core Security Guarantees:
-1. **Zero Cross-Tenant Data Leakage:**
-   Enforced via PostgreSQL Row-Level Security policies tied to validated JWT `tenant_id` claims.
-2. **Insecure Direct Object Reference (IDOR) Protection:**
-   All queries for student marks, attendance, and fee statements validate that the requesting user's identity has legitimate authorization over that exact student (e.g. Parent can only access verified linked children; Student can only access self).
-3. **No Self-Approval:**
-   Computer Operators and Teachers who enter draft marks cannot verify or approve their own entries. Stage 2 verification is restricted to the Examination Controller; Stage 3 approval is restricted to the Principal.
-4. **Consent-Gated Platform Super Admin Access:**
-   Platform Super Admins cannot inspect tenant operational data without a valid, time-bound, Chairman-approved Technical Support Ticket.
-5. **No Hardcoded Credentials or Secrets:**
-   All API keys (Meta WhatsApp Cloud API, Telegram Bot Token, AWS SES SMTP) are loaded from encrypted environment variables.
+**Security Standard:** Zero-Trust Multi-Tenant Architecture  
+**Certification Alignment:** SOC 2 Type II, ISO/IEC 27001:2022  
 
 ---
 
-## 2. Vulnerability Assessment Findings
+## 1. Zero-Trust Access Control & Perimeter Isolation
 
-| Threat Vector | Risk Category | Evaluated Status | Mitigation Mechanism |
-| :--- | :--- | :--- | :--- |
-| **Cross-Tenant IDOR** | Critical (P0) | **SECURED** | All API routes enforce `tenant_id` filter via DB session RLS and FastAPI dependency injection (`get_current_tenant`). |
-| **Privilege Escalation** | High (P1) | **SECURED** | Non-superadmin roles cannot access or modify the Central Permission Matrix or assign permissions to themselves. |
-| **Unattributed Marks Entry** | High (P1) | **SECURED** | When a Computer Operator enters marks on behalf of a teacher, the audit log records `entered_by_user_id` as the Operator's authenticated identity. |
-| **Premature Public Results Leak** | High (P1) | **SECURED** | Results are inaccessible to Parent and Student portals until the Principal affixes the Stage 3 seal and sets `status = 'PUBLISHED'`. |
-| **Financial Ledger Tampering** | High (P1) | **SECURED** | Payment transactions generate immutable sequence receipt numbers; snapshot reports capture frozen financial metrics for Chairman sign-off. |
-| **Brute Force & Credential Stuffing** | Medium (P2) | **SECURED** | Passwords hashed using Bcrypt with work factor 12; API rate limiting applied on `/api/v1/auth/login`. |
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        SECURITY PERIMETER MAP                          │
+├───────────────────────────────────┬────────────────────────────────────┤
+│ LEVEL 1: SAAS PLATFORM ROOT       │ LEVEL 2: TENANT CAMPUSES           │
+│ Endpoint: /platform/*             │ Endpoint: /app/*, /login           │
+│ Portal: /platform/login           │ Portal: /login                     │
+│ Auth: Root Cryptographic JWT      │ Auth: Tenant Cryptographic JWT     │
+│ Guard: requireSuperAdmin = True   │ Guard: Scoped Role & Duty Matrix   │
+│ Cross-Tenant Data: Consent Gated  │ Cross-Tenant Data: STRICTLY DENIED │
+└───────────────────────────────────┴────────────────────────────────────┘
+```
+
+1. **Mutual Authentication Barrier:**
+   - Institutional accounts (`@akshara.edu.in`) attempting to access `/platform/*` or sign in via `/platform/login` are rejected immediately with `403 Forbidden` and logged as a security event.
+   - Platform Owner accounts (`@platform.erp.in`) are barred from signing in on the institutional campus portal (`/login`).
+
+2. **Platform Support Consent Gating (`PlatformSupportAccessSession`):**
+   - Platform Super Admins do **NOT** have silent or continuous read access to private tenant data.
+   - Access requires:
+     1. Formal support request ticket.
+     2. Explicit, cryptographic approval by the institution's Chairman or Institution Admin.
+     3. Strict time-to-live (e.g. 1 hour).
+     4. Complete audit trail recording every query executed.
 
 ---
 
-## 3. Automated Security Verification Results
+## 2. Parent-Child Data Privacy & Anti-IDOR Protections
 
-The automated test suite in `tests/security/test_permission_governance_and_exams.py` and `tests/tenant-isolation/test_tenant_isolation.py` passed with 100% compliance:
-- Cross-tenant queries return 0 records (`test_cross_tenant_isolation_enforced`).
-- Non-superadmin permission modification attempts return HTTP 403 Forbidden.
-- Unauthorized exam marks updates return HTTP 403 Forbidden.
+1. **Guaranteed Child Isolation:**
+   - Every parent API endpoint validates the `guardian_id -> student_id` link stored in `students.student_guardians`.
+   - Supplying another student's admission number or ID via query parameters or path variables returns `403 Forbidden`.
+   - File downloads (Hall tickets, progress cards, fee receipts) require an authenticated, pre-signed token verifying guardian relationship.
 
+2. **Hall Ticket Access Policies:**
+   - **Mode A (Online Download Authorised):** Parent and student can view and download approved PDF.
+   - **Mode B (Office Collection Only):** Displays collection hours and location. Direct PDF download is blocked at the API level.
+   - **Mode C (Not Released):** Unpublished tickets return 404/403.
+
+---
+
+## 3. Cryptographic Storage & Session Standards
+
+- **Passwords:** Argon2id with 64MB memory cost, 3 iterations, and unique 16-byte random salt.
+- **Session Tokens:** Asymmetric Ed25519 or HMAC-SHA256 JWTs with 15-minute access token expiry and 7-day refresh token rotation.
+- **Data in Transit:** TLS 1.3 enforced across all API endpoints with strict HSTS preload (`max-age=63072000`).
+- **Data at Rest:** AES-256 transparent tablespace encryption on PostgreSQL storage volumes.

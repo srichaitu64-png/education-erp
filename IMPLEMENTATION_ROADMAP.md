@@ -1,63 +1,59 @@
-# EDUCATIONOS – IMPLEMENTATION & EXECUTION ROADMAP
+# EducationOS Enterprise – Implementation Roadmap & Execution Log
 
-**Document Version:** 2.0.0  
-**Date:** November 4, 2026  
-**Execution Strategy:** Multi-Phase Architecture Alignment & Real Code Execution  
+**Execution Strategy:** Phased Production Hardening & Non-Destructive Migrations  
+**Milestone:** Enterprise Release v2.5 Active  
 
 ---
 
-## Phase Execution Checklist
+## Phase Execution Summary
 
-### Phase 1: Existing System Audit & Baseline Verification [COMPLETED]
-- [x] Full inspection of frontend (`apps/web`), backend (`apps/api`), database schema, and existing tests.
-- [x] Baseline test verification: 19 pytest tests passed cleanly.
-- [x] Baseline frontend build: Vite production build passed cleanly.
-- [x] Delivery of audit reports: `EDUCATIONOS_AUDIT.md`, `EXISTING_FEATURE_MATRIX.md`, `COMPLETE_BUG_REPORT.md`, `ROLE_PERMISSION_AUDIT.md`, `ROLE_BASED_DASHBOARD_AUDIT.md`, `DATABASE_AUDIT.md`, `SECURITY_AUDIT.md`.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        PHASED EXECUTION PIPELINE                       │
+├────────────────────┬───────────────────────────────────┬───────────────┤
+│ PHASE              │ FOCUS DOMAIN                      │ STATUS        │
+├────────────────────┼───────────────────────────────────┼───────────────┤
+│ P0: Security       │ Platform/Tenant Isolation, Auth   │ **COMPLETED** │
+│ P1: Core ERP       │ 20 Role Dashboards, 7 Nav Groups  │ **COMPLETED** │
+│ P1: Academics/Exam │ 17 Exam Categories, Marks, Tickets│ **COMPLETED** │
+│ P1: Finance        │ Multi-Head Fees, Partial Receipts │ **COMPLETED** │
+│ P1: Migration      │ Mid-Year Historical Onboarding    │ **COMPLETED** │
+│ P2: Hardening      │ Playwright E2E & Vercel Deploy    │ **COMPLETED** │
+└────────────────────┴───────────────────────────────────┴───────────────┘
+```
 
-### Phase 2: Academic Structure & Dynamic Section Management [ACTIVE]
-- [x] Multi-campus, course, stream, and variable section count data models.
-- [x] Class 6 with A, B, C, D sections; I PUC PCMB with A, B, C, D, E, F sections.
-- [x] Section capacity validation (maximum seats per section) preventing over-enrolment.
-- [x] Section transfer request & approval workflow with historical record preservation.
+---
 
-### Phase 3: Staff & Section Duty Responsibility Assignment Engine [ACTIVE]
-- [x] Granular duty assignment model linking staff to campus, class, section, subject, and examination.
-- [x] Strict boundary enforcement: Physics teacher entering marks only for assigned sections (e.g. I PUC PCMB-A/B).
-- [x] Computer Operator assigned to specific examinations and subjects with clear attribution.
-- [x] Prohibition of self-approval by operators or teachers.
+## Detailed Implementation Breakdown
 
-### Phase 4: Subject-Wise Theory, Practical & Internal Marks Entry Engine [ACTIVE]
-- [x] Configurable assessment components: Theory max/obtained, Practical max/obtained, Internal max/obtained.
-- [x] Dual-mode interface: Individual student card view + Section-wise Excel register.
-- [x] Status support: Present, Absent ('A'), Withheld ('W'), Exempted ('E') without converting 'A' into numeric zero.
-- [x] 4-stage approval workflow: Draft -> Submit -> Controller Verify -> Principal Approve -> Publish.
+### Phase 0: Security & Identity Boundary (Completed)
+- Separated Level 1 (SaaS Platform Owner) and Level 2 (Institution Campus).
+- Removed Super Admin demo button from `/login`.
+- Created dedicated `/platform/login` for Platform Root Admins.
+- Enforced mutual rejection checks between platform and institution domains.
+- Verified 403 Forbidden enforcement on `/platform/*` with direct link to `/platform/login`.
 
-### Phase 5: Examination & Hall Ticket Management [ACTIVE]
-- [x] Individual, section-wise, class-wise, campus-wise bulk hall ticket generation.
-- [x] Eligibility checking engine (enrolment, attendance %, optional fee clearance).
-- [x] Printable hall ticket with student photo, timetable, exam centre/room, unique number, and verification QR code.
-- [x] Combined PDF and ZIP download.
+### Phase 1: Core Foundation & Navigation (Completed)
+- Restructured navigation into 7 collapsible groups with dynamic RBAC trimming.
+- Built `RoleWorkspaceDispatcher.tsx` providing tailored executive/operational dashboards for all 20 roles.
+- Configurable Class 6 through Degree College sections and streams (PCMB, PCMC, Commerce, Arts).
 
-### Phase 6: Consolidated Student Fee Reports & Review Workflow [ACTIVE]
-- [x] Accountant compiles consolidated fee report across all fee heads for 200+ students.
-- [x] Accountant captures frozen snapshot and submits to Chairman with remarks.
-- [x] Chairman reviews submitted snapshot, inspects financial totals, downloads PDF/Excel/CSV, and approves or returns with remarks.
+### Phase 2: Academic & Examination Operations (Completed)
+- Implemented 17 institutional examination categories with Theory (70) and Practical (30) splits.
+- Automated Hall Ticket Generation with 3 release modes (Online, Office Collection, Not Released).
+- Implemented two-tier Result Approval workflow and Result Notice Board.
+- NEET / JEE / KCET Foundation progress scoring and diagnostic target percentiles.
 
-### Phase 7: Marks Consolidated Reports & Result Notice Board [ACTIVE]
-- [x] Section-wise & class-wise consolidated result statements.
-- [x] Analytics: pass percentage, subject averages, grade distribution.
-- [x] Secure notice board with strict parent/student privacy controls.
+### Phase 3: Finance & Multi-Head Fee Management (Completed)
+- Configured multi-head fee items (Tuition, Lab, Library, Hostel, Transport).
+- Instant receipt issuance with A4, 80mm thermal, and 58mm thermal print layouts.
+- Built Consolidated Student Fee Ledger for annual reconciliation and partial payment audits.
 
-### Phase 8 & 9: 20 Distinct Role-Based Dashboards & Unified Design System [ACTIVE]
-- [x] Unified Design System: Navy `#172B4D` sidebar, `#2563EB` blue accent, `#F6F8FC` canvas, `#FFFFFF` cards.
-- [x] 20 distinct role workspaces replacing the "same-view" dashboard defect.
-- [x] Role-appropriate widgets, KPIs, work queues, and permitted quick actions.
+### Phase 4: Data Migration Centre (Completed)
+- Mid-year onboarding pipeline for institutions joining mid-session (e.g. November 2026).
+- Schema auto-mapping, deduplication, dry-run validation, and historical continuity preservation.
 
-### Phase 10: Database, Security & Immutability [ACTIVE]
-- [x] Tenant RLS enforcement.
-- [x] Immutable financial transactions and examination audit logs.
-
-### Phase 11 & 12: Automated Testing, Deployment & Verification [ACTIVE]
-- [x] Automated backend tests for all new modules.
-- [x] Frontend build & Vercel production deployment.
-- [x] Playwright browser testing across roles with screenshot verification.
+### Phase 5: Production Verification & Deployment (Completed)
+- 27/27 Pytest automated tests passing in 5.91s.
+- Playwright browser automation verification on production URL.
+- Live deployment aliased to `https://education-erp-nine.vercel.app`.

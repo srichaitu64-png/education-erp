@@ -194,3 +194,4 @@ async def test_platform_support_access_lifecycle_and_expiry(client, db_session: 
     resp_rev = await client.post(f"/api/v1/platform/support-sessions/{session_id}/revoke", headers=headers)
     assert resp_rev.status_code == 200
     assert "REVOKED" in resp_rev.json()["message"]
+

@@ -295,3 +295,4 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
     </>
   );
 };
+
