@@ -7,15 +7,25 @@ export type UserRoleType =
   | 'SUPER_ADMIN'
   | 'BACKUP_SUPER_ADMIN'
   | 'DEVELOPER'
+  | 'CHAIRMAN_DIRECTOR'
+  | 'DIRECTOR'
+  | 'MANAGING_DIRECTOR'
+  | 'TRUSTEE'
   | 'INSTITUTION_ADMIN'
   | 'PRINCIPAL'
   | 'VICE_PRINCIPAL'
   | 'ACCOUNTANT'
   | 'EXAM_CONTROLLER'
+  | 'ADMISSION_OFFICER'
+  | 'HR_MANAGER'
   | 'TEACHER'
+  | 'LECTURER'
+  | 'LIBRARIAN'
+  | 'HOSTEL_WARDEN'
+  | 'TRANSPORT_MANAGER'
+  | 'DRIVER'
   | 'PARENT'
-  | 'STUDENT'
-  | 'TRANSPORT_MANAGER';
+  | 'STUDENT';
 
 export type FineGrainedAction =
   | 'view'
@@ -120,15 +130,58 @@ export interface RolePrivilegeInfo {
 export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
   SUPER_ADMIN: {
     role: 'SUPER_ADMIN',
-    title: 'Platform Super Administrator',
-    badgeColor: 'bg-purple-100 text-purple-800 border-purple-300',
+    title: 'Platform Super Administrator (SaaS Root)',
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-400 font-extrabold',
     allowedTabs: [
       'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit'
     ],
-    canEdit: ['All platform privileges', 'Role matrix', 'Dashboard Designer layouts', 'Tenant plans', 'Scopes & Temporary permissions'],
-    canApprove: ['Institution tenant provisioning', 'Permission change requests', 'Emergency license overrides'],
-    restrictedActions: ['Protected by Lockout Guard: Cannot remove last Platform Super Admin access'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'ALL_TENANTS', description: 'Platform-wide authority' }]
+    canEdit: ['All platform-level policies', 'Multi-tenant database quotas', 'Global RBAC catalog', 'SaaS subscription billing'],
+    canApprove: ['Institution tenant onboarding', 'Platform break-glass override', 'Global license keys'],
+    restrictedActions: ['Protected by Platform Lockout Guard: Cannot remove last Platform Super Admin access'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'ALL_TENANTS', description: 'Platform Infrastructure Authority' }]
+  },
+  CHAIRMAN_DIRECTOR: {
+    role: 'CHAIRMAN_DIRECTOR',
+    title: 'Chairman / Director (Institution Super Admin)',
+    badgeColor: 'bg-purple-100 text-purple-950 border-purple-500 font-black',
+    allowedTabs: [
+      'dashboard', 'institution-control-centre', 'permissions-centre', 'dashboard-designer',
+      'examinations', 'progress-cards', 'fees', 'attendance', 'transport', 'students', 'staff', 'timetable', 'data-migration'
+    ],
+    canEdit: ['All campus policies & settings', 'Create institution users & assign custom roles', 'Central Permission Matrix for campus', 'Dashboard Designer layout & menu visibility', 'Configure custom fee heads', 'Strategic budget allocation'],
+    canApprove: ['Exceptional fee concessions & waivers', 'Staff recruitments & promotions', 'High-value refunds & write-offs', 'Annual academic results publication'],
+    restrictedActions: ['Isolated to institutional tenant; cannot alter SaaS platform tenancy licenses or cloud billing'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Global Educational Group' }]
+  },
+  DIRECTOR: {
+    role: 'DIRECTOR',
+    title: 'Executive Director (Institution Management)',
+    badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-400 font-bold',
+    allowedTabs: ['dashboard', 'institution-control-centre', 'permissions-centre', 'dashboard-designer', 'examinations', 'fees', 'staff'],
+    canEdit: ['Staff directory', 'Campus operations', 'Institution fee heads'],
+    canApprove: ['Budget disbursements', 'Policy implementations'],
+    restrictedActions: ['Cannot alter multi-tenant SaaS policies'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Campus Operational Management' }]
+  },
+  MANAGING_DIRECTOR: {
+    role: 'MANAGING_DIRECTOR',
+    title: 'Managing Director (Governance & Operations)',
+    badgeColor: 'bg-indigo-100 text-indigo-950 border-indigo-500 font-black',
+    allowedTabs: ['dashboard', 'institution-control-centre', 'permissions-centre', 'dashboard-designer', 'fees', 'staff'],
+    canEdit: ['Institution governance', 'Executive reporting'],
+    canApprove: ['Major capital contracts', 'Strategic fee frameworks'],
+    restrictedActions: ['Cannot modify platform database engine'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Executive Board Governance' }]
+  },
+  TRUSTEE: {
+    role: 'TRUSTEE',
+    title: 'Board of Trustees / Management Committee',
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-400 font-bold',
+    allowedTabs: ['dashboard', 'institution-control-centre', 'fees', 'staff'],
+    canEdit: ['Trust compliance declarations', 'Audit reviews'],
+    canApprove: ['Annual institutional balance sheet & trust reports'],
+    restrictedActions: ['Read-only operational access; cannot enter daily marks or attendance'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Board of Trustees Oversight' }]
   },
   BACKUP_SUPER_ADMIN: {
     role: 'BACKUP_SUPER_ADMIN',
@@ -169,16 +222,77 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
   },
   PRINCIPAL: {
     role: 'PRINCIPAL',
-    title: 'Principal / Director',
-    badgeColor: 'bg-blue-100 text-blue-800 border-blue-300',
+    title: 'Principal (Academic Operations & Approvals)',
+    badgeColor: 'bg-blue-100 text-blue-900 border-blue-400 font-bold',
     allowedTabs: [
-      'dashboard', 'students', 'attendance', 'examinations',
-      'fees', 'transport', 'staff', 'timetable', 'analytics'
+      'dashboard', 'examinations', 'progress-cards', 'attendance', 'students', 'staff', 'timetable', 'fees', 'transport'
     ],
-    canEdit: ['Academic calendar', 'Staff evaluations', 'Performance reviews'],
-    canApprove: ['Final exam results publication (Stage 3)', 'Fee concessions & refunds', 'Student transfer certificates'],
-    restrictedActions: ['Cannot silently overwrite marks entered by teachers without audit trail; cannot edit permissions'],
+    canEdit: ['Academic calendar & curriculum', 'Staff classroom evaluations', 'Invigilation duty roster', 'Official student conduct remarks'],
+    canApprove: ['Final exam results publication seal (Stage 3)', 'Student leave & transfer certificates', 'Class promotions'],
+    restrictedActions: [
+      'STRICTLY PROHIBITED from modifying role permissions, editing the Central Permission Matrix, altering dashboard layouts, or modifying fee heads (Reserved for Chairman / Director & Super Admin)'
+    ],
     scopes: [{ scopeType: 'campus', scopeValue: 'MAIN_CAMPUS', description: 'Main Campus & All Academic Streams' }]
+  },
+  ADMISSION_OFFICER: {
+    role: 'ADMISSION_OFFICER',
+    title: 'Chief Admissions Officer',
+    badgeColor: 'bg-teal-100 text-teal-900 border-teal-400 font-bold',
+    allowedTabs: ['dashboard', 'admissions', 'students'],
+    canEdit: ['Prospective student enquiries', 'Entrance test verification', 'Application dossiers'],
+    canApprove: ['Provisional admission clearance (Stage 1)'],
+    restrictedActions: ['LOCKED from financial ledger modification and examination marks entry'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Campus Admissions Department' }]
+  },
+  HR_MANAGER: {
+    role: 'HR_MANAGER',
+    title: 'Human Resources & Staff Officer',
+    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-400 font-bold',
+    allowedTabs: ['dashboard', 'staff'],
+    canEdit: ['Faculty biodata, qualifications, biometric leaves, service registers', 'Payroll roster'],
+    canApprove: ['Staff leave applications'],
+    restrictedActions: ['LOCKED from student grades, fee transactions, and platform permissions'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Faculty & Non-Teaching Staff Cadre' }]
+  },
+  LECTURER: {
+    role: 'LECTURER',
+    title: 'Senior Lecturer (PU College - Science / Commerce)',
+    badgeColor: 'bg-cyan-100 text-cyan-900 border-cyan-400 font-bold',
+    allowedTabs: ['dashboard', 'attendance', 'examinations', 'timetable', 'progress-cards'],
+    canEdit: ['Lecture period attendance', 'Draft theory & practical marks entry for assigned PU batches'],
+    canApprove: ['Submit internal marks to Exam Controller (Stage 1)'],
+    restrictedActions: ["LOCKED from fee collections, financial ledgers, and other lecturers' batches"],
+    scopes: [{ scopeType: 'programme', scopeValue: 'PU_SCIENCE', description: 'I & II PUC Science Batches' }]
+  },
+  LIBRARIAN: {
+    role: 'LIBRARIAN',
+    title: 'Chief Librarian & Information Officer',
+    badgeColor: 'bg-yellow-100 text-yellow-900 border-yellow-400 font-bold',
+    allowedTabs: ['dashboard', 'students'],
+    canEdit: ['Book accession catalog, issue/return registry, fine collection'],
+    canApprove: ['Library No-Dues clearance for TC & hall tickets'],
+    restrictedActions: ['LOCKED from exam marks, core fee structures, and staff records'],
+    scopes: [{ scopeType: 'department', scopeValue: 'LIBRARY', description: 'Campus Central Library' }]
+  },
+  HOSTEL_WARDEN: {
+    role: 'HOSTEL_WARDEN',
+    title: 'Chief Hostel Warden & Residential Superintendent',
+    badgeColor: 'bg-violet-100 text-violet-900 border-violet-400 font-bold',
+    allowedTabs: ['dashboard', 'students', 'attendance'],
+    canEdit: ['Hostel room allocations, night roll-call attendance, gate passes, dining feedback'],
+    canApprove: ['Hostel night-out leaves & visitor clearances'],
+    restrictedActions: ['LOCKED from academic marks entry and fee rate configurations'],
+    scopes: [{ scopeType: 'department', scopeValue: 'HOSTEL', description: 'Boys & Girls Residential Hostels' }]
+  },
+  DRIVER: {
+    role: 'DRIVER',
+    title: 'Campus Transport Driver (Route Fleet)',
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-400 font-bold',
+    allowedTabs: ['dashboard', 'transport'],
+    canEdit: ['Trip start/stop status, passenger boarding check'],
+    canApprove: ['None'],
+    restrictedActions: ['LOCKED from all academic, administrative, and financial modules'],
+    scopes: [{ scopeType: 'assigned_route', scopeValue: 'ROUTE_104', description: 'Assigned Bus Route 104' }]
   },
   VICE_PRINCIPAL: {
     role: 'VICE_PRINCIPAL',
@@ -204,7 +318,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'EXAM_CONTROLLER',
     title: 'Controller of Examinations',
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
-    allowedTabs: ['dashboard', 'examinations'],
+    allowedTabs: ['dashboard', 'examinations', 'progress-cards'],
     canEdit: ['Exam timetable schedules', 'Room allocations', 'Invigilator duties', 'Passing criteria'],
     canApprove: ['Audit & verify marks for missing entries/errors (Stage 2)'],
     restrictedActions: ['LOCKED from fee collections, HR, and platform permissions; cannot publish results without Principal seal'],
@@ -214,7 +328,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'TEACHER',
     title: 'Faculty / Subject Teacher (Physics - I PUC)',
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    allowedTabs: ['dashboard', 'attendance', 'examinations', 'timetable'],
+    allowedTabs: ['dashboard', 'attendance', 'examinations', 'progress-cards', 'timetable'],
     canEdit: ['Class attendance for assigned periods', 'Draft marks entry for assigned subjects only'],
     canApprove: ['Submit subject marks batch to Examination Controller (Stage 1)'],
     restrictedActions: ['LOCKED from other teachers\' subjects, fee collections, and student financial records'],
@@ -224,7 +338,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'PARENT',
     title: 'Parent / Guardian (Aarav Sharma - Class 10)',
     badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    allowedTabs: ['dashboard', 'students', 'fees', 'attendance', 'examinations', 'transport', 'timetable'],
+    allowedTabs: ['dashboard', 'students', 'fees', 'attendance', 'examinations', 'progress-cards', 'transport', 'timetable'],
     canEdit: ['Own emergency contact information'],
     canApprove: ['Online fee payment authorization'],
     restrictedActions: ['STRICTLY ISOLATED to only linked child\'s records; cannot view any other student'],
@@ -234,7 +348,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'STUDENT',
     title: 'Student Portal (Ananya Hegde - I PUC PCMB)',
     badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
-    allowedTabs: ['dashboard', 'examinations', 'attendance', 'timetable'],
+    allowedTabs: ['dashboard', 'examinations', 'progress-cards', 'attendance', 'timetable'],
     canEdit: ['Attempt CBT practice tests & view study materials'],
     canApprove: ['None (Read-only access)'],
     restrictedActions: ['LOCKED from entering marks, attendance, fee collections, or staff records'],
@@ -403,6 +517,215 @@ export interface DemoFeeInvoice {
   breakdown?: { head_code: FeeHeadType; title: string; amount: number }[];
 }
 
+
+// ---------------------------------------------------------------------------
+// Currency to Words Conversion (Indian Convention)
+// ---------------------------------------------------------------------------
+export function numberToWords(amount: number): string {
+  if (amount === 0) return 'Zero Rupees Only';
+  const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function convertTwoDigits(n: number): string {
+    if (n < 20) return units[n];
+    const t = tens[Math.floor(n / 10)];
+    const u = units[n % 10];
+    return u ? `${t} ${u}` : t;
+  }
+
+  function convertThreeDigits(n: number): string {
+    const hundred = Math.floor(n / 100);
+    const rem = n % 100;
+    let res = '';
+    if (hundred > 0) {
+      res += `${units[hundred]} Hundred`;
+      if (rem > 0) res += ` and ${convertTwoDigits(rem)}`;
+    } else {
+      res += convertTwoDigits(rem);
+    }
+    return res;
+  }
+
+  const crores = Math.floor(amount / 10000000);
+  let rem = amount % 10000000;
+  const lakhs = Math.floor(rem / 100000);
+  rem = rem % 100000;
+  const thousands = Math.floor(rem / 1000);
+  rem = rem % 1000;
+  const hundreds = rem;
+
+  const parts: string[] = [];
+  if (crores > 0) parts.push(`${convertThreeDigits(crores)} Crore`);
+  if (lakhs > 0) parts.push(`${convertThreeDigits(lakhs)} Lakh`);
+  if (thousands > 0) parts.push(`${convertThreeDigits(thousands)} Thousand`);
+  if (hundreds > 0) parts.push(convertThreeDigits(hundreds));
+
+  return `${parts.join(' ')} Rupees Only`.replace(/\s+/g, ' ').trim();
+}
+
+export interface FeeHeadAllocationRecord {
+  feeHeadId: string;
+  feeHeadName: string;
+  category: string;
+  annualFee: number;
+  term1Due: number;
+  term2Due: number;
+  paidAmount: number;
+  balanceDue: number;
+  status: 'PAID' | 'PARTIAL' | 'UNPAID';
+}
+
+export interface StudentConsolidatedFeeStatement {
+  studentId: string;
+  admissionNumber: string;
+  studentName: string;
+  parentName: string;
+  courseClass: string;
+  sectionOrStream: string;
+  academicYear: string;
+  isHostelResident: boolean;
+  totalAnnualFee: number;
+  totalPaid: number;
+  totalBalanceDue: number;
+  paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
+  feeHeads: FeeHeadAllocationRecord[];
+  receiptHistory: DemoFeeReceipt[];
+}
+
+export interface AcceptanceTestState {
+  stage: 'INITIAL' | 'STAGE_1_PAID_50K' | 'STAGE_2_PAID_30K';
+  studentId: string;
+  admissionNumber: string;
+  studentName: string;
+  parentName: string;
+  courseClass: string;
+  section: string;
+  academicYear: string;
+  isHostelResident: boolean;
+  totalAnnualFee: number;
+  totalPaid: number;
+  totalBalanceDue: number;
+  allocations: FeeHeadAllocationRecord[];
+  generatedReceipts: DemoFeeReceipt[];
+}
+
+export interface IndividualProgressCard {
+  id: string;
+  studentId: string;
+  studentName: string;
+  admissionNumber: string;
+  className: string;
+  examName: string;
+  examCategory: string;
+  academicYear: string;
+  attendancePct: number;
+  subjects: {
+    subjectName: string;
+    theoryMax: number;
+    theoryObtained: number;
+    practicalMax: number;
+    practicalObtained: number;
+    totalMax: number;
+    totalObtained: number;
+    grade: string;
+    remarks: string;
+  }[];
+  totalMax: number;
+  totalObtained: number;
+  overallPercentage: number;
+  overallGrade: string;
+  teacherRemarks: string;
+  approvalStatus: 'VERIFIED_AND_SEALED';
+  controllerVerifiedBy: string;
+  principalApprovedBy: string;
+  publishedAt: string;
+  qrPayload: string;
+}
+
+export interface ConsolidatedAcademicProgressCard {
+  id: string;
+  studentId: string;
+  studentName: string;
+  admissionNumber: string;
+  className: string;
+  academicYear: string;
+  overallGpa: string;
+  yearlyPercentage: number;
+  overallAttendancePct: number;
+  practicalProficiencyPct: number;
+  assignmentsScore: string;
+  trajectoryTrend: {
+    examName: string;
+    percentage: number;
+    date: string;
+  }[];
+  netGainPercentagePoints: number;
+  subjectSummary: {
+    subject: string;
+    annualAvg: number;
+    grade: string;
+    trend: 'RISING' | 'CONSISTENT';
+  }[];
+}
+
+export interface CompetitiveFoundationReport {
+  id: string;
+  studentId: string;
+  studentName: string;
+  admissionNumber: string;
+  programme: 'NEET Foundation (PCMB)' | 'JEE Main Foundation (PCM)' | 'KCET Foundation';
+  testName: string;
+  totalQuestions: number;
+  totalMarks: number;
+  correctAnswers: number;
+  correctMarks: number;
+  incorrectAnswers: number;
+  negativeMarks: number;
+  unattemptedQuestions: number;
+  netScore: number;
+  accuracyPct: number;
+  percentileEstimate: number;
+  subjectBreakdown: {
+    subject: string;
+    questions: number;
+    correct: number;
+    incorrect: number;
+    netMarks: number;
+    accuracyPct: number;
+  }[];
+}
+
+export interface MigrationBatch {
+  id: string;
+  fileName: string;
+  fileFormat: 'XLSX' | 'CSV' | 'PDF_OCR';
+  uploadedAt: string;
+  totalRecords: number;
+  exactMatchesCount: number;
+  probableMatchesCount: number;
+  cleanNewRecordsCount: number;
+  status: 'ANALYZED' | 'VALIDATED' | 'MIGRATED';
+  columnMappings: {
+    sourceHeader: string;
+    targetField: string;
+    confidence: number;
+    sampleValue: string;
+  }[];
+  duplicateCandidates: {
+    id: string;
+    sourceRow: number;
+    sourceAdmissionNo: string;
+    sourceName: string;
+    sourcePhone: string;
+    matchType: 'EXACT_DUPLICATE' | 'PROBABLE_MATCH';
+    existingRecordName: string;
+    existingAdmissionNo: string;
+    recommendedAction: 'SKIP' | 'MERGE' | 'MANUAL_REVIEW';
+    resolvedAction?: 'SKIP' | 'MERGE' | 'OVERWRITE';
+  }[];
+}
+
 export interface DemoFeeReceipt {
   id: string;
   receipt_number: string;
@@ -410,6 +733,8 @@ export interface DemoFeeReceipt {
   invoice_number: string;
   student_id: string;
   student_name: string;
+  parent_name?: string;
+  amount_in_words?: string;
   admission_number: string;
   class_name: string;
   academic_year: string;
@@ -673,6 +998,23 @@ interface DemoState {
   publishDashboardDesignerConfig: (reason: string) => void;
   rollbackDashboardDesignerConfig: () => void;
 
+  // Consolidated Student Fee Statement & Acceptance Test State
+  acceptanceTestState: AcceptanceTestState;
+  runAcceptanceTestPayment1: () => DemoFeeReceipt;
+  runAcceptanceTestPayment2: () => DemoFeeReceipt;
+  resetAcceptanceTest: () => void;
+  getStudentConsolidatedStatement: (studentId: string) => StudentConsolidatedFeeStatement;
+
+  // Progress Cards & Academic Analytics
+  individualProgressCards: IndividualProgressCard[];
+  consolidatedProgressCards: ConsolidatedAcademicProgressCard[];
+  competitiveReports: CompetitiveFoundationReport[];
+
+  // Data Migration Centre
+  migrationBatches: MigrationBatch[];
+  resolveMigrationCandidate: (batchId: string, candidateId: string, resolution: 'SKIP' | 'MERGE' | 'OVERWRITE') => void;
+  executeMigrationBatch: (batchId: string) => { success: boolean; message: string; importedCount: number };
+
   resetDemoData: () => void;
 }
 
@@ -680,6 +1022,7 @@ interface DemoState {
 // Initial Seed Data
 // ---------------------------------------------------------------------------
 const initialStudents: DemoStudent[] = [
+  { id: 'st-rahul', admission_number: 'AKG-2026-0152', roll_number: '152', first_name: 'Rahul', last_name: 'Kumar', institution_level: 'PU College', class_name: 'I PUC', section_or_stream: 'PCMB (Science)', guardian_name: 'Ramesh Kumar', guardian_phone: '+91 98450 99887', fee_balance: 70000, attendance_pct: 94.2, status: 'ACTIVE' },
   { id: 'st-1', admission_number: 'ADM-2026-001', roll_number: '101', first_name: 'Aarav', last_name: 'Sharma', institution_level: 'School', class_name: 'Class 10', section_or_stream: 'Section A', guardian_name: 'Rajesh Sharma', guardian_phone: '+91 98450 12345', fee_balance: 0, attendance_pct: 96.5, status: 'ACTIVE' },
   { id: 'st-2', admission_number: 'ADM-2026-002', roll_number: '102', first_name: 'Ananya', last_name: 'Hegde', institution_level: 'PU College', class_name: 'I PUC', section_or_stream: 'PCMB (Science)', guardian_name: 'Venkatesh Hegde', guardian_phone: '+91 98450 23456', fee_balance: 12500, attendance_pct: 92.0, status: 'ACTIVE' },
   { id: 'st-3', admission_number: 'ADM-2026-003', roll_number: '103', first_name: 'Rohan', last_name: 'Verma', institution_level: 'Degree College', class_name: 'B.Sc Computer Science', section_or_stream: 'Semester 3 (Credits: 24)', guardian_name: 'Sunil Verma', guardian_phone: '+91 98450 34567', fee_balance: 24000, attendance_pct: 88.2, status: 'ACTIVE' },
@@ -1127,6 +1470,30 @@ const initialRolePermissions: Record<UserRoleType, Record<FineGrainedAction, boo
     assign: true, collect: true, refund: true, reconcile: true, configure: true,
     manage_users: true, manage_permissions: true
   },
+  CHAIRMAN_DIRECTOR: {
+    view: true, create: true, edit: true, delete: true, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: true, collect: true, refund: true, reconcile: true, configure: true,
+    manage_users: true, manage_permissions: true
+  },
+  DIRECTOR: {
+    view: true, create: true, edit: true, delete: false, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: true, collect: true, refund: true, reconcile: true, configure: true,
+    manage_users: true, manage_permissions: true
+  },
+  MANAGING_DIRECTOR: {
+    view: true, create: true, edit: true, delete: false, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: true, collect: true, refund: true, reconcile: true, configure: true,
+    manage_users: true, manage_permissions: true
+  },
+  TRUSTEE: {
+    view: true, create: false, edit: false, delete: false, archive: false, submit: false,
+    verify: true, approve: true, reject: false, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: true, configure: false,
+    manage_users: false, manage_permissions: false
+  },
   BACKUP_SUPER_ADMIN: {
     view: true, create: true, edit: true, delete: true, archive: true, submit: true,
     verify: true, approve: true, reject: true, publish: true, export: true, print: true,
@@ -1193,6 +1560,42 @@ const initialRolePermissions: Record<UserRoleType, Record<FineGrainedAction, boo
     assign: true, collect: false, refund: false, reconcile: false, configure: true,
     manage_users: false, manage_permissions: false
   },
+  ADMISSION_OFFICER: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: true, reject: true, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  HR_MANAGER: {
+    view: true, create: true, edit: true, delete: false, archive: true, submit: true,
+    verify: true, approve: true, reject: false, publish: false, export: true, print: true,
+    assign: true, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: true, manage_permissions: false
+  },
+  LECTURER: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: false, approve: false, reject: false, publish: false, export: false, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  LIBRARIAN: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: false, reject: false, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  HOSTEL_WARDEN: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: true, reject: true, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  DRIVER: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: false, approve: false, reject: false, publish: false, export: false, print: false,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
 };
 
 const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
@@ -1203,6 +1606,36 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
     { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve', 'publish'] },
     { id: 'fees', label: 'Multi-Category Fee Engine', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'reconcile'] },
     { id: 'transport', label: 'Transport & Fleet GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'configure'] },
+  ],
+  CHAIRMAN_DIRECTOR: [
+    { id: 'dashboard', label: 'Chairman Overview', iconName: 'Building2', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
+    { id: 'institution-control-centre', label: 'Institution Control Centre', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'manage_users', 'configure'] },
+    { id: 'permissions-centre', label: 'Central Permission Matrix', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'assign', 'manage_permissions'] },
+    { id: 'dashboard-designer', label: 'Dashboard & Access Designer', iconName: 'Layout', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'configure'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve', 'publish'] },
+    { id: 'fees', label: 'Fee Management & Collections', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'collect', 'reconcile', 'refund'] },
+    { id: 'progress-cards', label: 'Student Progress Cards', iconName: 'FileCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export', 'print'] },
+    { id: 'data-migration', label: 'Data Migration Centre', iconName: 'Upload', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'configure'] },
+    { id: 'attendance', label: 'Campus Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'transport', label: 'Transport Fleet & GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'students', label: 'Students (SIS)', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit'] },
+    { id: 'staff', label: 'Faculty & HR', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit'] },
+    { id: 'timetable', label: 'Weekly Timetable', iconName: 'Clock', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  DIRECTOR: [
+    { id: 'dashboard', label: 'Director Overview', iconName: 'Building2', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
+    { id: 'institution-control-centre', label: 'Institution Control Centre', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'manage_users'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
+    { id: 'fees', label: 'Fee Management', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  MANAGING_DIRECTOR: [
+    { id: 'dashboard', label: 'MD Overview', iconName: 'Building2', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'institution-control-centre', label: 'Institution Control Centre', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'fees', label: 'Fee Management', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  TRUSTEE: [
+    { id: 'dashboard', label: 'Trustee Overview', iconName: 'Building2', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'fees', label: 'Trust Financial Reports', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
   ],
   BACKUP_SUPER_ADMIN: [
     { id: 'dashboard', label: 'Platform Overview', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
@@ -1228,8 +1661,12 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
   PRINCIPAL: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify', 'approve', 'publish'] },
+    { id: 'progress-cards', label: 'Student Progress Cards', iconName: 'FileCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export', 'print'] },
     { id: 'fees', label: 'Fee Overview & Refunds', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
     { id: 'attendance', label: 'Daily Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify'] },
+    { id: 'students', label: 'Students (SIS)', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'staff', label: 'Faculty & HR', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'timetable', label: 'Weekly Timetable', iconName: 'Clock', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
   ],
   VICE_PRINCIPAL: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
@@ -1267,6 +1704,34 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
   TRANSPORT_MANAGER: [
     { id: 'dashboard', label: 'Fleet Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'transport', label: 'Transport Routes & GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'assign'] },
+  ],
+  ADMISSION_OFFICER: [
+    { id: 'dashboard', label: 'Admissions Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'admissions', label: 'Admissions Pipeline', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'approve'] },
+    { id: 'students', label: 'Registered Students', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  HR_MANAGER: [
+    { id: 'dashboard', label: 'HR Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'staff', label: 'Staff Directory & Leaves', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'approve'] },
+  ],
+  LECTURER: [
+    { id: 'dashboard', label: 'Faculty Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Marks Entry & Lab Practicals', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'submit'] },
+    { id: 'attendance', label: 'Class Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
+    { id: 'timetable', label: 'Lecture Timetable', iconName: 'Clock', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  LIBRARIAN: [
+    { id: 'dashboard', label: 'Library Overview', iconName: 'BookOpen', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'students', label: 'Student Book Circulation', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  HOSTEL_WARDEN: [
+    { id: 'dashboard', label: 'Hostel Overview', iconName: 'Building2', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'students', label: 'Boarder Directory', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'attendance', label: 'Night Roll-Call', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
+  ],
+  DRIVER: [
+    { id: 'dashboard', label: 'Trip Console', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'transport', label: 'Live Bus Route 104', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
   ],
 };
 
@@ -1336,6 +1801,286 @@ const calcGrade = (m: number): string => {
 // ---------------------------------------------------------------------------
 // Store Creation
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Seed Data: Acceptance Test (Rahul Kumar ₹50k + ₹30k Workflow)
+// ---------------------------------------------------------------------------
+const initialAcceptanceTestState: AcceptanceTestState = {
+  stage: 'STAGE_2_PAID_30K',
+  studentId: 'st-rahul',
+  admissionNumber: 'AKG-2026-0152',
+  studentName: 'Rahul Kumar',
+  parentName: 'Ramesh Kumar',
+  courseClass: 'I PUC',
+  section: 'PCMB (Science)',
+  academicYear: '2026-2027',
+  isHostelResident: true,
+  totalAnnualFee: 150000,
+  totalPaid: 80000,
+  totalBalanceDue: 70000,
+  allocations: [
+    {
+      feeHeadId: 'fh-tuition-60',
+      feeHeadName: 'Tuition Fee (I PUC PCMB)',
+      category: 'Tuition',
+      annualFee: 60000,
+      term1Due: 35000,
+      term2Due: 25000,
+      paidAmount: 35000,
+      balanceDue: 25000,
+      status: 'PARTIAL'
+    },
+    {
+      feeHeadId: 'fh-hostel-60',
+      feeHeadName: 'Hostel & Residential Dining',
+      category: 'Hostel',
+      annualFee: 60000,
+      term1Due: 30000,
+      term2Due: 30000,
+      paidAmount: 30000,
+      balanceDue: 30000,
+      status: 'PARTIAL'
+    },
+    {
+      feeHeadId: 'fh-books-20',
+      feeHeadName: 'Books & NEET Study Materials',
+      category: 'Books',
+      annualFee: 20000,
+      term1Due: 20000,
+      term2Due: 0,
+      paidAmount: 15000,
+      balanceDue: 5000,
+      status: 'PARTIAL'
+    },
+    {
+      feeHeadId: 'fh-transport-10',
+      feeHeadName: 'Campus Transport Route 104',
+      category: 'Transport',
+      annualFee: 10000,
+      term1Due: 5000,
+      term2Due: 5000,
+      paidAmount: 0,
+      balanceDue: 10000,
+      status: 'UNPAID'
+    }
+  ],
+  generatedReceipts: [
+    {
+      id: 'rcp-rahul-1',
+      receipt_number: 'REC-2026-00125',
+      invoice_id: 'inv-rahul-annual',
+      invoice_number: 'INV-2026-0152',
+      student_id: 'st-rahul',
+      student_name: 'Rahul Kumar',
+      parent_name: 'Ramesh Kumar',
+      admission_number: 'AKG-2026-0152',
+      class_name: 'I PUC - PCMB',
+      academic_year: '2026-2027',
+      term_code: 'TERM_1',
+      term_name: 'Term 1 / Instalment 1',
+      amount_paid: 50000,
+      previous_balance: 150000,
+      current_balance: 100000,
+      payment_method: 'NEFT / RTGS' as any,
+      transaction_reference: 'TXN-HDFC-9823410',
+      payment_date: '2026-07-10 10:15 AM',
+      collected_by: 'K. S. Narayana (Accountant)',
+      amount_in_words: 'Fifty Thousand Rupees Only',
+      allocations: [
+        { head: 'TUITION', title: 'Tuition Fee (I PUC PCMB)', allocated: 20000, remaining: 40000 },
+        { head: 'HOSTEL', title: 'Hostel & Residential Dining', allocated: 20000, remaining: 40000 },
+        { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 10000, remaining: 10000 }
+      ],
+      institution_branding: {
+        institution_name: 'Akshara Global Educational Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        phone: '+91 80 2345 6789',
+        email: 'accounts@akshara.erp.in',
+        receipt_header_note: 'Official First Instalment Fee Receipt - Verified Bank Transfer'
+      },
+      qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00125:AKG-2026-0152:50000',
+      reprint_count: 0,
+      is_duplicate: false,
+      status: 'CONFIRMED',
+      notes: 'First Instalment: Tuition ₹20k, Hostel ₹20k, Books ₹10k'
+    },
+    {
+      id: 'rcp-rahul-2',
+      receipt_number: 'REC-2026-00126',
+      invoice_id: 'inv-rahul-annual',
+      invoice_number: 'INV-2026-0152',
+      student_id: 'st-rahul',
+      student_name: 'Rahul Kumar',
+      parent_name: 'Ramesh Kumar',
+      admission_number: 'AKG-2026-0152',
+      class_name: 'I PUC - PCMB',
+      academic_year: '2026-2027',
+      term_code: 'TERM_2',
+      term_name: 'Term 2 / Instalment 2',
+      amount_paid: 30000,
+      previous_balance: 100000,
+      current_balance: 70000,
+      payment_method: 'UPI' as any,
+      transaction_reference: 'TXN-UPI-771829',
+      payment_date: '2026-10-18 11:45 AM',
+      collected_by: 'K. S. Narayana (Accountant)',
+      amount_in_words: 'Thirty Thousand Rupees Only',
+      allocations: [
+        { head: 'TUITION', title: 'Tuition Fee (I PUC PCMB)', allocated: 15000, remaining: 25000 },
+        { head: 'HOSTEL', title: 'Hostel & Residential Dining', allocated: 10000, remaining: 30000 },
+        { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 5000, remaining: 5000 }
+      ],
+      institution_branding: {
+        institution_name: 'Akshara Global Educational Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        phone: '+91 80 2345 6789',
+        email: 'accounts@akshara.erp.in',
+        receipt_header_note: 'Official Second Instalment Fee Receipt - Verified Digital Payment'
+      },
+      qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00126:AKG-2026-0152:30000',
+      reprint_count: 0,
+      is_duplicate: false,
+      status: 'CONFIRMED',
+      notes: 'Second Instalment: Tuition ₹15k, Hostel ₹10k, Books ₹5k'
+    }
+  ]
+};
+
+const initialIndividualProgressCards: IndividualProgressCard[] = [
+  {
+    id: 'pc-rahul-ut1',
+    studentId: 'st-rahul',
+    studentName: 'Rahul Kumar',
+    admissionNumber: 'AKG-2026-0152',
+    className: 'I PUC (PCMB Science)',
+    examName: 'Unit Test 1 (Formative Assessment)',
+    examCategory: 'Unit Test',
+    academicYear: '2026-2027',
+    attendancePct: 94.2,
+    subjects: [
+      { subjectName: 'Physics (Theory + Practical)', theoryMax: 70, theoryObtained: 68, practicalMax: 30, practicalObtained: 28, totalMax: 100, totalObtained: 96, grade: 'A+', remarks: 'Exceptional conceptual clarity in Mechanics' },
+      { subjectName: 'Chemistry (Theory + Practical)', theoryMax: 70, theoryObtained: 65, practicalMax: 30, practicalObtained: 29, totalMax: 100, totalObtained: 94, grade: 'A+', remarks: 'Excellent laboratory titration technique' },
+      { subjectName: 'Mathematics', theoryMax: 100, theoryObtained: 92, practicalMax: 0, practicalObtained: 0, totalMax: 100, totalObtained: 92, grade: 'A+', remarks: 'Rapid problem solving in Calculus' },
+      { subjectName: 'Biology (Botany + Zoology)', theoryMax: 70, theoryObtained: 63, practicalMax: 30, practicalObtained: 28, totalMax: 100, totalObtained: 91, grade: 'A+', remarks: 'Precise anatomical diagram labeling' },
+    ],
+    totalMax: 400,
+    totalObtained: 373,
+    overallPercentage: 93.25,
+    overallGrade: 'A+ (Distinction)',
+    teacherRemarks: 'Rahul displays top-tier academic aptitude and disciplined laboratory technique. Highly recommended for Advanced NEET Foundation coaching.',
+    approvalStatus: 'VERIFIED_AND_SEALED',
+    controllerVerifiedBy: 'Prof. S. Joshi (Controller of Examinations)',
+    principalApprovedBy: 'Dr. Ramesh Kumar (Principal)',
+    publishedAt: '2026-11-02 14:30 IST',
+    qrPayload: 'VERIFY:PROGRESS_CARD:AKG-2026-0152:UT1:373:400:DISTINCTION'
+  }
+];
+
+const initialConsolidatedCards: ConsolidatedAcademicProgressCard[] = [
+  {
+    id: 'cpc-rahul',
+    studentId: 'st-rahul',
+    studentName: 'Rahul Kumar',
+    admissionNumber: 'AKG-2026-0152',
+    className: 'I PUC (PCMB Science)',
+    academicYear: '2026-2027',
+    overallGpa: '9.4 / 10.0',
+    yearlyPercentage: 85.0,
+    overallAttendancePct: 94.2,
+    practicalProficiencyPct: 95.0,
+    assignmentsScore: '19 / 20',
+    trajectoryTrend: [
+      { examName: 'Weekly Test 1', percentage: 72.0, date: '2026-07-20' },
+      { examName: 'Unit Test 1', percentage: 78.5, date: '2026-08-25' },
+      { examName: 'Quarterly Exam', percentage: 81.0, date: '2026-09-30' },
+      { examName: 'Half-Yearly Exam', percentage: 85.0, date: '2026-10-28' },
+    ],
+    netGainPercentagePoints: 13.0,
+    subjectSummary: [
+      { subject: 'Physics', annualAvg: 88.5, grade: 'A', trend: 'RISING' },
+      { subject: 'Chemistry', annualAvg: 86.0, grade: 'A', trend: 'RISING' },
+      { subject: 'Mathematics', annualAvg: 82.5, grade: 'A', trend: 'RISING' },
+      { subject: 'Biology', annualAvg: 84.0, grade: 'A', trend: 'CONSISTENT' },
+    ]
+  }
+];
+
+const initialCompetitiveReports: CompetitiveFoundationReport[] = [
+  {
+    id: 'comp-rahul-1',
+    studentId: 'st-rahul',
+    studentName: 'Rahul Kumar',
+    admissionNumber: 'AKG-2026-0152',
+    programme: 'NEET Foundation (PCMB)',
+    testName: 'All-Karnataka Pre-NEET Foundation Mock Test 3',
+    totalQuestions: 180,
+    totalMarks: 720,
+    correctAnswers: 152,
+    correctMarks: 608,
+    incorrectAnswers: 18,
+    negativeMarks: -18,
+    unattemptedQuestions: 10,
+    netScore: 590,
+    accuracyPct: 89.4,
+    percentileEstimate: 98.6,
+    subjectBreakdown: [
+      { subject: 'Physics', questions: 45, correct: 38, incorrect: 5, netMarks: 147, accuracyPct: 88.4 },
+      { subject: 'Chemistry', questions: 45, correct: 40, incorrect: 3, netMarks: 157, accuracyPct: 93.0 },
+      { subject: 'Botany', questions: 45, correct: 37, incorrect: 5, netMarks: 143, accuracyPct: 88.1 },
+      { subject: 'Zoology', questions: 45, correct: 37, incorrect: 5, netMarks: 143, accuracyPct: 88.1 },
+    ]
+  }
+];
+
+const initialMigrationBatches: MigrationBatch[] = [
+  {
+    id: 'mb-2026-01',
+    fileName: 'Legacy_School_Master_Roll_2026.xlsx',
+    fileFormat: 'XLSX',
+    uploadedAt: '2026-11-04 08:30 IST',
+    totalRecords: 1240,
+    exactMatchesCount: 12,
+    probableMatchesCount: 8,
+    cleanNewRecordsCount: 1220,
+    status: 'ANALYZED',
+    columnMappings: [
+      { sourceHeader: 'Adm No', targetField: 'admission_number', confidence: 0.99, sampleValue: 'AKG-2026-0981' },
+      { sourceHeader: 'Pupil Name', targetField: 'student_name', confidence: 0.98, sampleValue: 'Deepak Rao' },
+      { sourceHeader: 'Std / Div', targetField: 'class_section', confidence: 0.96, sampleValue: 'I PUC - PCMC' },
+      { sourceHeader: 'Father Mobile', targetField: 'guardian_phone', confidence: 0.97, sampleValue: '+91 98451 22334' },
+      { sourceHeader: 'Fee Opening Balance', targetField: 'opening_balance', confidence: 0.95, sampleValue: '₹14,500' },
+    ],
+    duplicateCandidates: [
+      {
+        id: 'dup-1',
+        sourceRow: 14,
+        sourceAdmissionNo: 'ADM-2026-001',
+        sourceName: 'Aarav Sharma',
+        sourcePhone: '+91 98450 12345',
+        matchType: 'EXACT_DUPLICATE',
+        existingRecordName: 'Aarav Sharma (Class 10-A)',
+        existingAdmissionNo: 'ADM-2026-001',
+        recommendedAction: 'SKIP',
+        resolvedAction: 'SKIP'
+      },
+      {
+        id: 'dup-2',
+        sourceRow: 28,
+        sourceAdmissionNo: 'ADM-2026-002',
+        sourceName: 'Ananya V. Hegde',
+        sourcePhone: '+91 98450 23456',
+        matchType: 'PROBABLE_MATCH',
+        existingRecordName: 'Ananya Hegde (I PUC)',
+        existingAdmissionNo: 'ADM-2026-002',
+        recommendedAction: 'MERGE',
+        resolvedAction: 'MERGE'
+      }
+    ]
+  }
+];
+
 export const useDemoStore = create<DemoState>((set, get) => ({
   currentRole: 'PRINCIPAL',
   switchRole: (role) => set({ currentRole: role }),
@@ -1354,6 +2099,13 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   subjects: initialSubjects,
   transportRoutes: initialTransportRoutes,
   externalProviders: initialExternalProviders,
+
+  // Acceptance test and enhanced suites
+  acceptanceTestState: initialAcceptanceTestState,
+  individualProgressCards: initialIndividualProgressCards,
+  consolidatedProgressCards: initialConsolidatedCards,
+  competitiveReports: initialCompetitiveReports,
+  migrationBatches: initialMigrationBatches,
 
   rolePermissions: initialRolePermissions,
   temporaryPermissions: [
@@ -2083,6 +2835,234 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       designerNavConfigs: initialNavConfigs,
       designerStatus: 'PUBLISHED'
     }));
+  },
+
+  // Acceptance Test Actions for Rahul Kumar
+  runAcceptanceTestPayment1: () => {
+    const r1: DemoFeeReceipt = {
+      id: `rcp-rahul-${Date.now()}-1`,
+      receipt_number: 'REC-2026-00125',
+      invoice_id: 'inv-rahul-annual',
+      invoice_number: 'INV-2026-0152',
+      student_id: 'st-rahul',
+      student_name: 'Rahul Kumar',
+      parent_name: 'Ramesh Kumar',
+      admission_number: 'AKG-2026-0152',
+      class_name: 'I PUC - PCMB',
+      academic_year: '2026-2027',
+      term_code: 'TERM_1',
+      term_name: 'Term 1 / Instalment 1',
+      amount_paid: 50000,
+      previous_balance: 150000,
+      current_balance: 100000,
+      payment_method: 'NEFT / RTGS' as any,
+      transaction_reference: 'TXN-HDFC-9823410',
+      payment_date: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+      collected_by: 'K. S. Narayana (Accountant)',
+      amount_in_words: 'Fifty Thousand Rupees Only',
+      allocations: [
+        { head: 'TUITION', title: 'Tuition Fee (I PUC PCMB)', allocated: 20000, remaining: 40000 },
+        { head: 'HOSTEL', title: 'Hostel & Residential Dining', allocated: 20000, remaining: 40000 },
+        { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 10000, remaining: 10000 }
+      ],
+      institution_branding: {
+        institution_name: 'Akshara Global Educational Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        phone: '+91 80 2345 6789',
+        email: 'accounts@akshara.erp.in',
+        receipt_header_note: 'Official First Instalment Fee Receipt - Verified Bank Transfer'
+      },
+      qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00125:AKG-2026-0152:50000',
+      reprint_count: 0,
+      is_duplicate: false,
+      status: 'CONFIRMED',
+      notes: 'First Instalment: Tuition ₹20k, Hostel ₹20k, Books ₹10k'
+    };
+
+    set((state) => ({
+      acceptanceTestState: {
+        ...state.acceptanceTestState,
+        stage: 'STAGE_1_PAID_50K',
+        totalPaid: 50000,
+        totalBalanceDue: 100000,
+        allocations: [
+          { feeHeadId: 'fh-tuition-60', feeHeadName: 'Tuition Fee (I PUC PCMB)', category: 'Tuition', annualFee: 60000, term1Due: 35000, term2Due: 25000, paidAmount: 20000, balanceDue: 40000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-hostel-60', feeHeadName: 'Hostel & Residential Dining', category: 'Hostel', annualFee: 60000, term1Due: 30000, term2Due: 30000, paidAmount: 20000, balanceDue: 40000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-books-20', feeHeadName: 'Books & NEET Study Materials', category: 'Books', annualFee: 20000, term1Due: 20000, term2Due: 0, paidAmount: 10000, balanceDue: 10000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-transport-10', feeHeadName: 'Campus Transport Route 104', category: 'Transport', annualFee: 10000, term1Due: 5000, term2Due: 5000, paidAmount: 0, balanceDue: 10000, status: 'UNPAID' }
+        ],
+        generatedReceipts: [r1]
+      },
+      receipts: [r1, ...state.receipts]
+    }));
+    return r1;
+  },
+
+  runAcceptanceTestPayment2: () => {
+    const existingR1 = get().acceptanceTestState.generatedReceipts.find(r => r.receipt_number === 'REC-2026-00125') || get().acceptanceTestState.generatedReceipts[0];
+    const r2: DemoFeeReceipt = {
+      id: `rcp-rahul-${Date.now()}-2`,
+      receipt_number: 'REC-2026-00126',
+      invoice_id: 'inv-rahul-annual',
+      invoice_number: 'INV-2026-0152',
+      student_id: 'st-rahul',
+      student_name: 'Rahul Kumar',
+      parent_name: 'Ramesh Kumar',
+      admission_number: 'AKG-2026-0152',
+      class_name: 'I PUC - PCMB',
+      academic_year: '2026-2027',
+      term_code: 'TERM_2',
+      term_name: 'Term 2 / Instalment 2',
+      amount_paid: 30000,
+      previous_balance: 100000,
+      current_balance: 70000,
+      payment_method: 'UPI' as any,
+      transaction_reference: 'TXN-UPI-771829',
+      payment_date: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+      collected_by: 'K. S. Narayana (Accountant)',
+      amount_in_words: 'Thirty Thousand Rupees Only',
+      allocations: [
+        { head: 'TUITION', title: 'Tuition Fee (I PUC PCMB)', allocated: 15000, remaining: 25000 },
+        { head: 'HOSTEL', title: 'Hostel & Residential Dining', allocated: 10000, remaining: 30000 },
+        { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 5000, remaining: 5000 }
+      ],
+      institution_branding: {
+        institution_name: 'Akshara Global Educational Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        phone: '+91 80 2345 6789',
+        email: 'accounts@akshara.erp.in',
+        receipt_header_note: 'Official Second Instalment Fee Receipt - Verified Digital Payment'
+      },
+      qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00126:AKG-2026-0152:30000',
+      reprint_count: 0,
+      is_duplicate: false,
+      status: 'CONFIRMED',
+      notes: 'Second Instalment: Tuition ₹15k, Hostel ₹10k, Books ₹5k'
+    };
+
+    set((state) => ({
+      acceptanceTestState: {
+        ...state.acceptanceTestState,
+        stage: 'STAGE_2_PAID_30K',
+        totalPaid: 80000,
+        totalBalanceDue: 70000,
+        allocations: [
+          { feeHeadId: 'fh-tuition-60', feeHeadName: 'Tuition Fee (I PUC PCMB)', category: 'Tuition', annualFee: 60000, term1Due: 35000, term2Due: 25000, paidAmount: 35000, balanceDue: 25000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-hostel-60', feeHeadName: 'Hostel & Residential Dining', category: 'Hostel', annualFee: 60000, term1Due: 30000, term2Due: 30000, paidAmount: 30000, balanceDue: 30000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-books-20', feeHeadName: 'Books & NEET Study Materials', category: 'Books', annualFee: 20000, term1Due: 20000, term2Due: 0, paidAmount: 15000, balanceDue: 5000, status: 'PARTIAL' },
+          { feeHeadId: 'fh-transport-10', feeHeadName: 'Campus Transport Route 104', category: 'Transport', annualFee: 10000, term1Due: 5000, term2Due: 5000, paidAmount: 0, balanceDue: 10000, status: 'UNPAID' }
+        ],
+        generatedReceipts: existingR1 ? [existingR1, r2] : [r2]
+      },
+      receipts: [r2, ...state.receipts]
+    }));
+    return r2;
+  },
+
+  resetAcceptanceTest: () => {
+    set((state) => ({
+      acceptanceTestState: {
+        stage: 'INITIAL',
+        studentId: 'st-rahul',
+        admissionNumber: 'AKG-2026-0152',
+        studentName: 'Rahul Kumar',
+        parentName: 'Ramesh Kumar',
+        courseClass: 'I PUC',
+        section: 'PCMB (Science)',
+        academicYear: '2026-2027',
+        isHostelResident: true,
+        totalAnnualFee: 150000,
+        totalPaid: 0,
+        totalBalanceDue: 150000,
+        allocations: [
+          { feeHeadId: 'fh-tuition-60', feeHeadName: 'Tuition Fee (I PUC PCMB)', category: 'Tuition', annualFee: 60000, term1Due: 35000, term2Due: 25000, paidAmount: 0, balanceDue: 60000, status: 'UNPAID' },
+          { feeHeadId: 'fh-hostel-60', feeHeadName: 'Hostel & Residential Dining', category: 'Hostel', annualFee: 60000, term1Due: 30000, term2Due: 30000, paidAmount: 0, balanceDue: 60000, status: 'UNPAID' },
+          { feeHeadId: 'fh-books-20', feeHeadName: 'Books & NEET Study Materials', category: 'Books', annualFee: 20000, term1Due: 20000, term2Due: 0, paidAmount: 0, balanceDue: 20000, status: 'UNPAID' },
+          { feeHeadId: 'fh-transport-10', feeHeadName: 'Campus Transport Route 104', category: 'Transport', annualFee: 10000, term1Due: 5000, term2Due: 5000, paidAmount: 0, balanceDue: 10000, status: 'UNPAID' }
+        ],
+        generatedReceipts: []
+      }
+    }));
+  },
+
+  getStudentConsolidatedStatement: (studentId) => {
+    const { acceptanceTestState, students, invoices, receipts } = get();
+    if (studentId === 'st-rahul') {
+      return {
+        studentId: acceptanceTestState.studentId,
+        admissionNumber: acceptanceTestState.admissionNumber,
+        studentName: acceptanceTestState.studentName,
+        parentName: acceptanceTestState.parentName,
+        courseClass: acceptanceTestState.courseClass,
+        sectionOrStream: acceptanceTestState.section,
+        academicYear: acceptanceTestState.academicYear,
+        isHostelResident: acceptanceTestState.isHostelResident,
+        totalAnnualFee: acceptanceTestState.totalAnnualFee,
+        totalPaid: acceptanceTestState.totalPaid,
+        totalBalanceDue: acceptanceTestState.totalBalanceDue,
+        paymentStatus: acceptanceTestState.totalBalanceDue === 0 ? 'PAID' : acceptanceTestState.totalPaid > 0 ? 'PARTIAL' : 'UNPAID',
+        feeHeads: acceptanceTestState.allocations,
+        receiptHistory: acceptanceTestState.generatedReceipts
+      };
+    }
+
+    const st = students.find(s => s.id === studentId) || students[0];
+    const stInvoices = invoices.filter(inv => inv.student_name.includes(st.first_name));
+    const stReceipts = receipts.filter(r => r.student_name.includes(st.first_name));
+    const totalExp = stInvoices.reduce((sum, i) => sum + i.total_amount, 0) || 50000;
+    const totalPd = stInvoices.reduce((sum, i) => sum + i.paid_amount, 0) || 35000;
+    const totalBal = totalExp - totalPd;
+
+    return {
+      studentId: st.id,
+      admissionNumber: st.admission_number,
+      studentName: `${st.first_name} ${st.last_name}`,
+      parentName: st.guardian_name,
+      courseClass: st.class_name,
+      sectionOrStream: st.section_or_stream,
+      academicYear: '2026-2027',
+      isHostelResident: false,
+      totalAnnualFee: totalExp,
+      totalPaid: totalPd,
+      totalBalanceDue: totalBal,
+      paymentStatus: totalBal <= 0 ? 'PAID' : totalPd > 0 ? 'PARTIAL' : 'UNPAID',
+      feeHeads: [
+        { feeHeadId: 'fh-1', feeHeadName: 'Tuition Fee', category: 'Tuition', annualFee: totalExp * 0.7, term1Due: totalExp * 0.35, term2Due: totalExp * 0.35, paidAmount: totalPd * 0.7, balanceDue: (totalExp - totalPd) * 0.7, status: 'PARTIAL' },
+        { feeHeadId: 'fh-2', feeHeadName: 'Laboratory & Library', category: 'Laboratory', annualFee: totalExp * 0.3, term1Due: totalExp * 0.15, term2Due: totalExp * 0.15, paidAmount: totalPd * 0.3, balanceDue: (totalExp - totalPd) * 0.3, status: 'PARTIAL' },
+      ],
+      receiptHistory: stReceipts
+    };
+  },
+
+  resolveMigrationCandidate: (batchId, candidateId, resolution) => {
+    set((state) => ({
+      migrationBatches: state.migrationBatches.map(b => {
+        if (b.id !== batchId) return b;
+        return {
+          ...b,
+          duplicateCandidates: b.duplicateCandidates.map(c => 
+            c.id === candidateId ? { ...c, resolvedAction: resolution } : c
+          )
+        };
+      })
+    }));
+  },
+
+  executeMigrationBatch: (batchId) => {
+    const batch = get().migrationBatches.find(b => b.id === batchId);
+    if (!batch) return { success: false, message: 'Batch not found', importedCount: 0 };
+    set((state) => ({
+      migrationBatches: state.migrationBatches.map(b => 
+        b.id === batchId ? { ...b, status: 'MIGRATED' } : b
+      )
+    }));
+    return {
+      success: true,
+      message: `Successfully migrated ${batch.cleanNewRecordsCount} clean records into student SIS master. ${batch.exactMatchesCount} duplicates resolved.`,
+      importedCount: batch.cleanNewRecordsCount
+    };
   },
 
   resetDemoData: () => {

@@ -25,15 +25,26 @@ interface RoleOption {
 }
 
 const INSTITUTION_ROLES: RoleOption[] = [
-  { code: 'PRINCIPAL', label: 'Principal / Director', icon: '👑', badge: 'Leadership' },
-  { code: 'INSTITUTION_ADMIN', label: 'Institution Admin', icon: '🏛️', badge: 'Operations' },
-  { code: 'ACCOUNTANT', label: 'Accountant / Finance', icon: '💰', badge: 'Finance' },
-  { code: 'EXAM_CONTROLLER', label: 'Exam Controller', icon: '📝', badge: 'Academics' },
-  { code: 'TEACHER', label: 'Faculty / Lecturer', icon: '👩‍🏫', badge: 'Academics' },
-  { code: 'PARENT', label: 'Parent / Guardian', icon: '👨‍👩‍👧', badge: 'Portal' },
-  { code: 'STUDENT', label: 'Enrolled Student', icon: '🎒', badge: 'Portal' },
-  { code: 'TRANSPORT_MANAGER', label: 'Transport Manager', icon: '🚌', badge: 'Logistics' },
-  { code: 'SUPER_ADMIN', label: 'Platform Super Admin', icon: '🌐', badge: 'Platform' },
+  { code: 'CHAIRMAN_DIRECTOR', label: 'Chairman / Director (Institution Super Admin)', icon: '🏛️', badge: 'Management' },
+  { code: 'DIRECTOR', label: 'Executive Director', icon: '👔', badge: 'Management' },
+  { code: 'MANAGING_DIRECTOR', label: 'Managing Director', icon: '🏢', badge: 'Governance' },
+  { code: 'TRUSTEE', label: 'Trustee / Board Member', icon: '📜', badge: 'Trust' },
+  { code: 'INSTITUTION_ADMIN', label: 'Institution Admin', icon: '⚙️', badge: 'Operations' },
+  { code: 'PRINCIPAL', label: 'Principal (Academics & Approvals)', icon: '👑', badge: 'Academics' },
+  { code: 'VICE_PRINCIPAL', label: 'Vice Principal', icon: '🎓', badge: 'Academics' },
+  { code: 'ACCOUNTANT', label: 'Accountant / Finance Officer', icon: '💰', badge: 'Finance' },
+  { code: 'EXAM_CONTROLLER', label: 'Exam Controller', icon: '📝', badge: 'Exams' },
+  { code: 'ADMISSION_OFFICER', label: 'Admission Officer', icon: '📋', badge: 'Admissions' },
+  { code: 'HR_MANAGER', label: 'HR & Staff Manager', icon: '👥', badge: 'HR' },
+  { code: 'TEACHER', label: 'Teacher / Faculty', icon: '👩‍🏫', badge: 'Academics' },
+  { code: 'LECTURER', label: 'Senior PU Lecturer', icon: '🔬', badge: 'Academics' },
+  { code: 'LIBRARIAN', label: 'Librarian', icon: '📚', badge: 'Library' },
+  { code: 'HOSTEL_WARDEN', label: 'Hostel Warden', icon: '🏠', badge: 'Hostel' },
+  { code: 'TRANSPORT_MANAGER', label: 'Transport Manager', icon: '🚌', badge: 'Fleet' },
+  { code: 'DRIVER', label: 'Bus Driver', icon: '🚍', badge: 'Transport' },
+  { code: 'PARENT', label: 'Parent / Guardian', icon: '👨‍👩‍👧', badge: 'Parent' },
+  { code: 'STUDENT', label: 'Enrolled Student', icon: '🎒', badge: 'Student' },
+  { code: 'SUPER_ADMIN', label: 'Platform Super Admin (SaaS Root)', icon: '🌐', badge: 'Platform' },
   { code: 'BACKUP_SUPER_ADMIN', label: 'Backup Super Admin', icon: '🛡️', badge: 'Security' },
   { code: 'DEVELOPER', label: 'Developer / Technical Support', icon: '💻', badge: 'DevOps' },
 ];
@@ -47,8 +58,23 @@ interface UserSuggestion {
 }
 
 const PRESET_ACCOUNTS: Record<string, UserSuggestion[]> = {
+  CHAIRMAN_DIRECTOR: [
+    { id: 'u-chair-1', displayName: 'Sri. K. Vishwanath (Chairman)', identifier: 'MGMT-CHAIR-01', email: 'chairman@akshara.edu.in', roleCode: 'CHAIRMAN_DIRECTOR' }
+  ],
+  DIRECTOR: [
+    { id: 'u-dir-1', displayName: 'Dr. Anita Rao (Executive Director)', identifier: 'MGMT-DIR-02', email: 'director@akshara.edu.in', roleCode: 'DIRECTOR' }
+  ],
+  MANAGING_DIRECTOR: [
+    { id: 'u-md-1', displayName: 'Shri B. M. Hegde (MD)', identifier: 'MGMT-MD-01', email: 'md@akshara.edu.in', roleCode: 'MANAGING_DIRECTOR' }
+  ],
+  TRUSTEE: [
+    { id: 'u-tr-1', displayName: 'Prof. R. C. Sharma (Trustee)', identifier: 'TR-004', email: 'trustee@akshara.edu.in', roleCode: 'TRUSTEE' }
+  ],
   PRINCIPAL: [
     { id: 'u-prin-1', displayName: 'Dr. Ramesh Kumar', identifier: 'EMP-PRIN-01', email: 'principal@akshara.edu.in', roleCode: 'PRINCIPAL' }
+  ],
+  VICE_PRINCIPAL: [
+    { id: 'u-vp-1', displayName: 'Mrs. Shobha Murthy (Vice Principal)', identifier: 'EMP-VP-02', email: 'vp@akshara.edu.in', roleCode: 'VICE_PRINCIPAL' }
   ],
   INSTITUTION_ADMIN: [
     { id: 'u-adm-1', displayName: 'Smt. Gayatri Devi', identifier: 'EMP-ADM-04', email: 'admin@akshara.edu.in', roleCode: 'INSTITUTION_ADMIN' }
@@ -59,18 +85,38 @@ const PRESET_ACCOUNTS: Record<string, UserSuggestion[]> = {
   EXAM_CONTROLLER: [
     { id: 'u-ec-1', displayName: 'Prof. S. Joshi', identifier: 'EMP-EC-02', email: 'exam.controller@akshara.edu.in', roleCode: 'EXAM_CONTROLLER' }
   ],
+  ADMISSION_OFFICER: [
+    { id: 'u-adm-off-1', displayName: 'Mr. Arvind Swamy (Admissions)', identifier: 'EMP-ADM-08', email: 'admissions@akshara.edu.in', roleCode: 'ADMISSION_OFFICER' }
+  ],
+  HR_MANAGER: [
+    { id: 'u-hr-1', displayName: 'Mrs. Nalini Rao (HR Head)', identifier: 'EMP-HR-03', email: 'hr@akshara.edu.in', roleCode: 'HR_MANAGER' }
+  ],
   TEACHER: [
     { id: 'u-tea-1', displayName: 'Dr. V. Murthy (Physics - I PUC)', identifier: 'EMP-PHY-102', email: 'v.murthy@akshara.edu.in', roleCode: 'TEACHER' },
     { id: 'u-tea-2', displayName: 'Mrs. K. Swamy (Mathematics)', identifier: 'EMP-MTH-105', email: 'k.swamy@akshara.edu.in', roleCode: 'TEACHER' }
   ],
+  LECTURER: [
+    { id: 'u-lec-1', displayName: 'Dr. V. Murthy (PU Physics)', identifier: 'EMP-PHY-102', email: 'v.murthy@akshara.edu.in', roleCode: 'LECTURER' }
+  ],
+  LIBRARIAN: [
+    { id: 'u-lib-1', displayName: 'Mr. C. Raghavan (Chief Librarian)', identifier: 'EMP-LIB-01', email: 'library@akshara.edu.in', roleCode: 'LIBRARIAN' }
+  ],
+  HOSTEL_WARDEN: [
+    { id: 'u-ward-1', displayName: 'Capt. M. Somanna (Hostel Warden)', identifier: 'EMP-WRD-05', email: 'hostel@akshara.edu.in', roleCode: 'HOSTEL_WARDEN' }
+  ],
   PARENT: [
-    { id: 'u-par-1', displayName: 'Rajesh Sharma (Father of Aarav - Class 10)', identifier: 'GRD-90421', email: 'parent.aarav@akshara.edu.in', roleCode: 'PARENT' }
+    { id: 'u-par-1', displayName: 'Rajesh Sharma (Father of Aarav - Class 10)', identifier: 'GRD-90421', email: 'parent.aarav@akshara.edu.in', roleCode: 'PARENT' },
+    { id: 'u-par-2', displayName: 'Ramesh Kumar (Father of Rahul - I PUC)', identifier: 'GRD-90488', email: 'ramesh.kumar@parent.edu.in', roleCode: 'PARENT' }
   ],
   STUDENT: [
-    { id: 'u-stu-1', displayName: 'Ananya Hegde (I PUC - PCMB)', identifier: 'ADM-2026-092', email: 'ananya.puc@akshara.edu.in', roleCode: 'STUDENT' }
+    { id: 'u-stu-1', displayName: 'Ananya Hegde (I PUC - PCMB)', identifier: 'ADM-2026-092', email: 'ananya.puc@akshara.edu.in', roleCode: 'STUDENT' },
+    { id: 'u-stu-2', displayName: 'Rahul Kumar (I PUC - PCMB)', identifier: 'AKG-2026-0152', email: 'rahul.kumar@puc.edu.in', roleCode: 'STUDENT' }
   ],
   TRANSPORT_MANAGER: [
     { id: 'u-trp-1', displayName: 'Suresh Gowda (Route 104 Fleet)', identifier: 'EMP-TRP-07', email: 'transport@akshara.edu.in', roleCode: 'TRANSPORT_MANAGER' }
+  ],
+  DRIVER: [
+    { id: 'u-drv-1', displayName: 'Mr. Raju Patil (Bus Driver Route 104)', identifier: 'EMP-DRV-12', email: 'raju.driver@akshara.edu.in', roleCode: 'DRIVER' }
   ],
   SUPER_ADMIN: [
     { id: 'u-sa-1', displayName: 'Platform Super Administrator', identifier: 'PLATFORM-ROOT', email: 'admin@platform.erp.in', roleCode: 'SUPER_ADMIN' }
