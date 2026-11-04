@@ -58,3 +58,4 @@ In EducationOS, a role title alone does not grant operational access. A user mus
 
 - **Lockout Rule:** A user cannot approve their own submitted work. If a Teacher submits marks, they cannot self-approve.
 - **Audit Record:** Every stage stamps `user_id`, `role`, `timestamp`, and `ip_address` into an immutable audit trail.
+

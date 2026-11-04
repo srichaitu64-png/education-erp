@@ -18,6 +18,7 @@ import {
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useDemoStore } from '../../store/demoStore';
+import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 
 export interface PlatformDemoAccount {
   role: 'SUPER_ADMIN' | 'BACKUP_SUPER_ADMIN' | 'DEVELOPER';
@@ -80,6 +81,7 @@ export const PlatformLoginPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
     setter(value);
@@ -318,6 +320,15 @@ export const PlatformLoginPage: React.FC = () => {
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
               />
             </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-[11px] text-slate-400 hover:text-purple-400 transition-colors font-medium cursor-pointer"
+              >
+                Forgot root credentials? Emergency recovery →
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}
@@ -360,6 +371,14 @@ export const PlatformLoginPage: React.FC = () => {
       <p className="text-[11px] text-slate-500 mt-6 text-center font-medium">
         EducationOS™ SaaS Platform Infrastructure • SOC2 & ISO 27001 Certified Multi-Tenant Isolation
       </p>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        portalType="PLATFORM"
+      />
     </div>
   );
 };
+

@@ -72,3 +72,4 @@ with open('apps/web/src/pages/demo/InteractiveDemoPage.tsx', 'w', encoding='utf-
     f.write(text)
 
 print("Integration complete.")
+

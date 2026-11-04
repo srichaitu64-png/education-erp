@@ -31,6 +31,10 @@ class User(Base, TimestampMixin):
     phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False)
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    password_changed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     roles: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
 
@@ -263,6 +267,81 @@ class PlatformAuditAction(Base, TimestampMixin):
     )
     details: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+
+
+class PasswordResetToken(Base, TimestampMixin):
+    """
+    Secure one-time password reset tokens and temporary activation tokens.
+    Token values are stored ONLY as cryptographic SHA-256 hashes.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    token_type: Mapped[str] = mapped_column(String(32), default="RESET", nullable=False) # RESET, FIRST_LOGIN, OTP
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+    user: Mapped["User"] = relationship("User")
+
+
+class UserSession(Base, TimestampMixin):
+    """
+    Tracks active user devices and sessions for account security auditing and revocation.
+    """
+    __tablename__ = "user_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    session_token_hash: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    device_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    user: Mapped["User"] = relationship("User")
+
+
+class AccountSecurityEvent(Base, TimestampMixin):
+    """
+    Immutable security audit trail for authentication, password changes,
+    administrative resets, account lockouts, and session revocations.
+    """
+    __tablename__ = "account_security_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    event_type: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True
+        # PASSWORD_CHANGE, FIRST_LOGIN_SETUP, ADMIN_RESET, FORGOT_REQUEST, RESET_CONFIRM,
+        # LOGIN_SUCCESS, LOGIN_FAILED, ACCOUNT_LOCKED, SESSIONS_REVOKED
+    )
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    actor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    actor_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    details: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+
+    user: Mapped["User"] = relationship("User")
+
 
 
 

@@ -38,3 +38,4 @@
 | `DRIVER` | Bus Driver (Route 104) | `/login` | Pickup stop roster, one-tap trip status toggle (Start/Complete Trip), live telemetry broadcast. | Cannot view academic or financial records. |
 | `PARENT` | Parent / Guardian (Ramesh Kumar) | `/login` | View linked child (Rahul Kumar), download official fee receipts, view report cards, track bus GPS. | **Strictly isolated**: Cannot see any other child's marks, receipts, or attendance records. |
 | `STUDENT` | Student (Rahul Kumar - I PUC) | `/login` | Self-service timetable, download hall ticket, view progress report, NEET mock diagnostic analytics. | Read-only portal; cannot edit any administrative records or marks. |
+

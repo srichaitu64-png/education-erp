@@ -7,6 +7,7 @@ import { MarksEntryRegisterView } from './views/MarksEntryRegisterView';
 import { HallTicketManagementView } from './views/HallTicketManagementView';
 import { ConsolidatedFeeReportReviewView } from './views/ConsolidatedFeeReportReviewView';
 import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
+import { SecurityAndPasswordView } from './views/SecurityAndPasswordView';
 import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
 import React, { useState, useEffect } from 'react';
@@ -4390,6 +4391,13 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'notice-board' && (
             <ResultNoticeBoardView currentRole={currentRole} />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 18: PROFILE SECURITY & PASSWORD MANAGEMENT */}
+          {/* ================================================================= */}
+          {activeTab === 'security-password' && (
+            <SecurityAndPasswordView currentRole={currentRole} />
           )}
 
         </main>

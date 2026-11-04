@@ -16,6 +16,8 @@ export interface User {
   phone: string | null;
   is_active: boolean;
   is_superadmin: boolean;
+  must_change_password?: boolean;
+  password_changed_at?: string | null;
   roles: UserRole[];
 }
 

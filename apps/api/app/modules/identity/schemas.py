@@ -1,5 +1,6 @@
 import uuid
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, EmailStr
 
 
@@ -27,6 +28,8 @@ class UserOut(BaseModel):
     phone: Optional[str] = None
     is_active: bool
     is_superadmin: bool
+    must_change_password: bool = False
+    password_changed_at: Optional[datetime] = None
     roles: List[RoleOut] = []
 
     class Config:
@@ -64,5 +67,68 @@ class UserAutocompleteResult(BaseModel):
     display_name: str
     identifier: str
     role_code: str
+
+
+# ==============================================================================
+# Password & Account Security Management Schemas
+# ==============================================================================
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
+class FirstLoginSetupRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+    portal_type: str = "INSTITUTION"  # "INSTITUTION" or "PLATFORM"
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str
+    new_password: str
+    confirm_password: str
+
+
+class AdminPasswordResetRequest(BaseModel):
+    target_user_id: uuid.UUID
+    reason: str
+    force_change_on_login: bool = True
+
+
+class SessionOut(BaseModel):
+    id: uuid.UUID
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    device_name: Optional[str] = None
+    is_revoked: bool
+    last_active_at: datetime
+    is_current: bool = False
+
+
+class AccountSecurityEventOut(BaseModel):
+    id: uuid.UUID
+    event_type: str
+    actor_name: Optional[str] = None
+    created_at: datetime
+    details: Dict[str, Any] = {}
+
+
+class AccountSecurityOverviewOut(BaseModel):
+    email: str
+    must_change_password: bool
+    password_changed_at: Optional[datetime] = None
+    failed_login_attempts: int
+    is_locked: bool
+    locked_until: Optional[datetime] = None
+    active_sessions: List[SessionOut] = []
+    recent_events: List[AccountSecurityEventOut] = []
+
 
 

@@ -3,7 +3,7 @@ import {
   Layers, BookOpen, GraduationCap, Users, CalendarCheck, Clock,
   Award, FileSpreadsheet, QrCode, FileCheck, CreditCard, DollarSign,
   UserCheck, Key, Layout, Building2, FlaskConical, Bus, MessageSquare,
-  Upload, ShieldAlert, Lock, ChevronDown, ChevronRight, Menu, X, Shield
+  Upload, ShieldAlert, Lock, ChevronDown, ChevronRight, Menu, X, Shield, ShieldCheck
 } from 'lucide-react';
 import { UserRoleType } from '../../../store/demoStore';
 
@@ -110,6 +110,7 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
       id: 'people',
       title: 'People & Administration',
       items: [
+        { id: 'security-password', label: 'Security & Password', icon: ShieldCheck, badge: 'Protected' },
         { id: 'staff', label: 'Faculty & HR', icon: Users },
         { id: 'staff-duties', label: 'Staff Duty Assignments', icon: UserCheck },
         { id: 'institution-login', label: 'User Directory & Login', icon: UserCheck },

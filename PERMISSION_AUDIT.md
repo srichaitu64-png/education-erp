@@ -56,3 +56,4 @@ Every permission check evaluates all 12 dimensions before granting access:
 - An Accountant cannot approve their own refund requests (`maker != checker`).
 - A Computer Operator cannot publish marks or issue hall tickets.
 - A Parent cannot read or download records of any child not linked by a verified guardian relationship.
+

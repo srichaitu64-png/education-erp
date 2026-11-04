@@ -62,3 +62,4 @@ Every system module has been evaluated against the 5-point classification standa
 - **Frontend Architecture:** React 19, TypeScript, Vite, Tailwind CSS, Zustand, TanStack Query v5, Lucide Icons.
 - **Production Hosting:** Vercel Global Edge CDN (`education-erp-nine.vercel.app`).
 - **Test Automation:** Pytest, pytest-asyncio, HTTPX AsyncClient, Playwright MCP browser automation.
+

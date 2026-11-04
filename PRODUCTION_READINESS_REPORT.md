@@ -36,3 +36,4 @@
 - **Database Engine:** PostgreSQL 16.15 with Row-Level Security and connection pooling.
 - **Application Security:** Zero-Trust boundary, Argon2id password hashing, Ed25519/HMAC-SHA256 JWTs, HSTS Preload.
 - **Audit Logging:** Immutable platform activity logs recording every authentication, support access, and financial mutation.
+

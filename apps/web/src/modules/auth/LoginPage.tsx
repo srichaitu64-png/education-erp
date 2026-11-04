@@ -16,6 +16,7 @@ import {
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useDemoStore, UserRoleType } from '../../store/demoStore';
+import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 
 interface RoleOption {
   code: string;
@@ -149,6 +150,7 @@ export const LoginPage: React.FC = () => {
   // State
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
     setter(value);
@@ -395,6 +397,15 @@ export const LoginPage: React.FC = () => {
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
               />
             </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-[11px] text-slate-400 hover:text-blue-400 transition-colors font-medium cursor-pointer"
+              >
+                Forgot password? Recover account →
+              </button>
+            </div>
           </div>
 
           {/* Prominent Sign In Button */}
@@ -438,6 +449,13 @@ export const LoginPage: React.FC = () => {
       <p className="text-[11px] text-slate-500 mt-6 text-center font-medium">
         Akshara Global Educational Trust • Tenant-Isolated Database Security
       </p>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        portalType="INSTITUTION"
+      />
     </div>
   );
 };

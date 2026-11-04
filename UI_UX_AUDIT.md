@@ -47,3 +47,4 @@ All roles share a single, polished design system rather than disparate color pal
 
 3. **Responsive Breakpoints:**
    - Full support across Desktop (1280px+), Tablet (768px - 1024px), and Mobile (< 768px) with horizontal scroll prevention on all tables.
+
