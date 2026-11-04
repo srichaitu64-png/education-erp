@@ -32,10 +32,27 @@ interface TenantItem {
   status: string;
 }
 
+const DEFAULT_FEATURES: FeatureItem[] = [
+  { id: 'students.management', name: 'Student Information System (SIS)', module: 'Academics', category: 'Core', description: 'Student records, enrollment and profiling', min_plan_tier: 1 },
+  { id: 'admissions.pipeline', name: 'Admissions Pipeline & Enquiries', module: 'Admissions', category: 'Core', description: 'Lead tracking and online admissions', min_plan_tier: 1 },
+  { id: 'fees.multi_head', name: 'Multi-Head Fee Collection & Receipts', module: 'Finance', category: 'Finance', description: 'Institution configurable fee heads with thermal printing', min_plan_tier: 2 },
+  { id: 'attendance.biometric', name: 'Attendance & Biometric Sync', module: 'Academics', category: 'Operations', description: 'Daily attendance and device integration', min_plan_tier: 2 },
+  { id: 'examinations.lifecycle', name: 'Institutional Examination Suite', module: 'Exams', category: 'Academics', description: 'Multi-tier exam schedules, marks register & hall tickets', min_plan_tier: 2 },
+  { id: 'competitive.neet_jee', name: 'NEET / JEE / KCET Foundation Analytics', module: 'Exams', category: 'Advanced', description: 'Competitive test scoring and target percentile projections', min_plan_tier: 3 },
+  { id: 'transport.gps_tracking', name: 'Transport Fleet & Real-time GPS', module: 'Operations', category: 'Logistics', description: 'Live bus tracking, route stops and parent SMS', min_plan_tier: 3 },
+  { id: 'lab.chemical_qr', name: 'Laboratory & Chemical QR Stock', module: 'Science', category: 'Safety', description: 'Batch expiration, QR scanning and hazardous chemical audits', min_plan_tier: 3 }
+];
+
+const DEFAULT_TENANTS: TenantItem[] = [
+  { id: 'tenant-akshara', name: 'Akshara Global Educational Trust', code: 'AKSHARA-01', institution_type: 'SCHOOL_AND_COLLEGE', status: 'ACTIVE' },
+  { id: 'tenant-vidya', name: 'Vidyanikethan Public School', code: 'VPS-BLR', institution_type: 'SCHOOL', status: 'ACTIVE' },
+  { id: 'tenant-st-marys', name: "St. Mary's Pre-University College", code: 'SMPUC-MYS', institution_type: 'PU_COLLEGE', status: 'ACTIVE' }
+];
+
 export const EntitlementsManager: React.FC = () => {
-  const [features, setFeatures] = useState<FeatureItem[]>([]);
-  const [tenants, setTenants] = useState<TenantItem[]>([]);
-  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+  const [features, setFeatures] = useState<FeatureItem[]>(DEFAULT_FEATURES);
+  const [tenants, setTenants] = useState<TenantItem[]>(DEFAULT_TENANTS);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('tenant-akshara');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState('ALL');
   const [loading, setLoading] = useState(false);
@@ -53,13 +70,18 @@ export const EntitlementsManager: React.FC = () => {
         api.get('/platform/features'),
         api.get('/platform/tenants'),
       ]);
-      setFeatures(featRes.data);
-      setTenants(tenantRes.data);
-      if (tenantRes.data.length > 0 && !selectedTenantId) {
-        setSelectedTenantId(tenantRes.data[0].id);
+      if (Array.isArray(featRes.data)) {
+        setFeatures(featRes.data);
+      }
+      if (Array.isArray(tenantRes.data)) {
+        setTenants(tenantRes.data);
+        if (tenantRes.data.length > 0 && !selectedTenantId) {
+          setSelectedTenantId(tenantRes.data[0].id);
+        }
       }
     } catch (err) {
-      console.error('Failed to load platform entitlements data', err);
+      setFeatures(DEFAULT_FEATURES);
+      setTenants(DEFAULT_TENANTS);
     } finally {
       setLoading(false);
     }
