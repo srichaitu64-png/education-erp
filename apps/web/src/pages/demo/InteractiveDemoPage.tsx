@@ -1,6 +1,13 @@
 import { LaboratoryManagementView } from './views/LaboratoryManagementView';
 import { CommunicationHubView } from './views/CommunicationHubView';
 import { PlatformSuperAdminView } from './views/PlatformSuperAdminView';
+import { AcademicStructureView } from './views/AcademicStructureView';
+import { StaffDutyAssignmentView } from './views/StaffDutyAssignmentView';
+import { MarksEntryRegisterView } from './views/MarksEntryRegisterView';
+import { HallTicketManagementView } from './views/HallTicketManagementView';
+import { ConsolidatedFeeReportReviewView } from './views/ConsolidatedFeeReportReviewView';
+import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
+import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import React, { useState } from 'react';
 import {
   FlaskConical,
@@ -256,15 +263,21 @@ export const InteractiveDemoPage: React.FC = () => {
   // Nav items definition
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: Layers, isSuperAdminOnly: false },
+    { id: 'academic-structure', label: 'Academic Sections (Class 6 & PU)', icon: Layers, isSuperAdminOnly: false },
+    { id: 'staff-duties', label: 'Staff Duty Assignments', icon: UserCheck, isSuperAdminOnly: false },
+    { id: 'examinations', label: 'Examinations Lifecycle', icon: Award, isSuperAdminOnly: false },
+    { id: 'marks-register', label: 'Marks Register (Multi-Component)', icon: FileSpreadsheet, isSuperAdminOnly: false },
+    { id: 'hall-tickets', label: 'Hall Tickets & Verification', icon: QrCode, isSuperAdminOnly: false },
+    { id: 'notice-board', label: 'Result Notice Board', icon: Award, isSuperAdminOnly: false },
+    { id: 'fees', label: 'Fee Management & Statements', icon: CreditCard, isSuperAdminOnly: false },
+    { id: 'fee-review', label: 'Consolidated Fee Ledger', icon: DollarSign, isSuperAdminOnly: false },
     { id: 'institution-control-centre', label: 'Institution Control Centre', icon: Building2, isSuperAdminOnly: false },
     { id: 'permissions-centre', label: 'Central Permission Matrix', icon: Key, isSuperAdminOnly: true },
     { id: 'dashboard-designer', label: 'Dashboard & Access Designer', icon: Layout, isSuperAdminOnly: true },
-    { id: 'examinations', label: 'Examinations Lifecycle', icon: Award, isSuperAdminOnly: false },
     { id: 'progress-cards', label: 'Student Progress Cards', icon: FileCheck, isSuperAdminOnly: false },
     { id: 'laboratory', label: 'Laboratory & QR Inventory', icon: FlaskConical, isSuperAdminOnly: false },
     { id: 'communication', label: 'Communication Hub (WhatsApp/Telegram)', icon: MessageSquare, isSuperAdminOnly: false },
     { id: 'platform-superadmin', label: 'Platform SaaS Command (1,000+ Tenancies)', icon: ShieldAlert, isSuperAdminOnly: true },
-    { id: 'fees', label: 'Fee Management & Statements', icon: CreditCard, isSuperAdminOnly: false },
     { id: 'data-migration', label: 'Data Migration Centre', icon: Upload, isSuperAdminOnly: false },
     { id: 'attendance', label: 'Daily Attendance', icon: CalendarCheck, isSuperAdminOnly: false },
     { id: 'transport', label: 'Transport Fleet & GPS', icon: Bus, isSuperAdminOnly: false },
@@ -594,47 +607,14 @@ export const InteractiveDemoPage: React.FC = () => {
         <main className="flex-1 bg-slate-900 overflow-y-auto p-4 sm:p-6 text-slate-100">
 
           {/* ================================================================= */}
-          {/* TAB 1: DASHBOARD OVERVIEW */}
+          {/* TAB 1: ROLE-BASED DASHBOARD OVERVIEW WORKSPACE */}
           {/* ================================================================= */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
-                <div>
-                  <h1 className="text-2xl font-black text-white">{currentPrivilege.title}</h1>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Authenticated session with zero-trust PostgreSQL Row-Level Security tenant boundary
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono font-bold text-blue-400 bg-blue-950/80 px-3 py-1.5 rounded-lg border border-blue-800">
-                    Academic Year 2026–2027
-                  </span>
-                </div>
-              </div>
-
-              {/* High-level Overview Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase">Total Enrolled</p>
-                  <p className="text-2xl font-black text-white mt-1">{students.length} Students</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">School, PU College & Degree College</p>
-                </div>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase">Scheduled Exams</p>
-                  <p className="text-2xl font-black text-white mt-1">{exams.length} Institutional Exams</p>
-                  <p className="text-[11px] text-emerald-400 mt-0.5">Offline Paper + Online CBT</p>
-                </div>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase">Fee Collections</p>
-                  <p className="text-2xl font-black text-white mt-1">₹85,000 Collected</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Tuition, Labs, Hostel, Bus & Board</p>
-                </div>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase">Active Bus Fleet</p>
-                  <p className="text-2xl font-black text-white mt-1">{transportRoutes.length} GPS Routes</p>
-                  <p className="text-[11px] text-emerald-400 mt-0.5">Live telemetry in transit</p>
-                </div>
-              </div>
+            <div className="space-y-6 max-w-7xl">
+              <RoleWorkspaceDispatcher
+                currentRole={currentRole}
+                onNavigateTab={(tabId) => setActiveTab(tabId)}
+              />
 
               {/* RBAC Access Boundaries Summary - Shown ONLY to Platform Super Admin & Backup Super Admin */}
               {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
@@ -1144,7 +1124,28 @@ export const InteractiveDemoPage: React.FC = () => {
                     Institutional Exam Schedules • Paper-based Offline & Online CBT • 4-Stage Approval Workflow
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('marks-register')}
+                    className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    Marks Register
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('hall-tickets')}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    Hall Tickets
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('notice-board')}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    Notice Board
+                  </button>
                   <button
                     onClick={() => setShowExamModal(true)}
                     className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer"
@@ -4426,6 +4427,48 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'platform-superadmin' && (
             <PlatformSuperAdminView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 12: ACADEMIC STRUCTURE & SECTION CAPACITY (CLASS 6 & I PUC) */}
+          {/* ================================================================= */}
+          {activeTab === 'academic-structure' && (
+            <AcademicStructureView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 13: STAFF DUTY & RESPONSIBILITY ASSIGNMENT */}
+          {/* ================================================================= */}
+          {activeTab === 'staff-duties' && (
+            <StaffDutyAssignmentView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 14: MULTI-COMPONENT MARKS ENTRY REGISTER (THEORY/PRACTICAL/INTERNAL) */}
+          {/* ================================================================= */}
+          {activeTab === 'marks-register' && (
+            <MarksEntryRegisterView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 15: HALL TICKET MANAGEMENT & ELIGIBILITY VERIFICATION */}
+          {/* ================================================================= */}
+          {activeTab === 'hall-tickets' && (
+            <HallTicketManagementView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 16: CONSOLIDATED STUDENT FEE LEDGER & CHAIRMAN REVIEW */}
+          {/* ================================================================= */}
+          {activeTab === 'fee-review' && (
+            <ConsolidatedFeeReportReviewView currentRole={currentRole} />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 17: OFFICIAL RESULT NOTICE BOARD & PROGRESS CARDS */}
+          {/* ================================================================= */}
+          {activeTab === 'notice-board' && (
+            <ResultNoticeBoardView currentRole={currentRole} />
           )}
 
         </main>

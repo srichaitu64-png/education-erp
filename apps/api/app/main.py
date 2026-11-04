@@ -15,6 +15,7 @@ from app.api.v1.platform import router as platform_router
 from app.api.v1.institution import router as institution_router
 from app.api.v1.examinations import router as examinations_router
 from app.api.v1.finance import router as finance_router
+from app.api.v1.academic import router as academic_router
 
 # Import all models to ensure they register on Base.metadata
 from app.modules.tenants.models import Tenant, Campus, TenantDomain
@@ -50,6 +51,13 @@ from app.modules.finance.models import (
     FeePayment,
     FeeReceipt,
     ReceiptAuditLog
+)
+from app.modules.academic.models import (
+    AcademicSection,
+    StudentSectionEnrolment,
+    StaffDutyAssignment,
+    HallTicket,
+    ConsolidatedFeeReportSnapshot
 )
 
 
@@ -98,6 +106,7 @@ app.include_router(platform_router, prefix=settings.API_V1_STR)
 app.include_router(institution_router, prefix=settings.API_V1_STR)
 app.include_router(examinations_router, prefix=settings.API_V1_STR)
 app.include_router(finance_router, prefix=settings.API_V1_STR)
+app.include_router(academic_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["System Health"])

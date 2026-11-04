@@ -24,6 +24,7 @@ export type UserRoleType =
   | 'HOSTEL_WARDEN'
   | 'TRANSPORT_MANAGER'
   | 'DRIVER'
+  | 'COMPUTER_OPERATOR'
   | 'PARENT'
   | 'STUDENT';
 
@@ -136,7 +137,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
       'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit',
       'platform-superadmin', 'laboratory', 'communication', 'examinations', 'progress-cards', 'fees',
       'attendance', 'transport', 'academics', 'students', 'staff', 'timetable', 'data-migration',
-      'institution-control-centre', 'institution-login', 'admissions'
+      'institution-control-centre', 'institution-login', 'admissions',
+      'academic-structure', 'staff-duties', 'marks-register', 'hall-tickets', 'fee-review', 'notice-board'
     ],
     canEdit: ['All platform-level policies', 'Multi-tenant database quotas', 'Global RBAC catalog', 'SaaS subscription billing'],
     canApprove: ['Institution tenant onboarding', 'Platform break-glass override', 'Global license keys'],
@@ -150,7 +152,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     allowedTabs: [
       'dashboard', 'institution-control-centre', 'permissions-centre', 'dashboard-designer',
       'examinations', 'progress-cards', 'fees', 'attendance', 'transport', 'students', 'staff', 'timetable', 'data-migration',
-      'laboratory', 'communication', 'academics', 'admissions', 'institution-login'
+      'laboratory', 'communication', 'academics', 'admissions', 'institution-login',
+      'academic-structure', 'staff-duties', 'marks-register', 'hall-tickets', 'fee-review', 'notice-board'
     ],
     canEdit: ['All campus policies & settings', 'Create institution users & assign custom roles', 'Central Permission Matrix for campus', 'Dashboard Designer layout & menu visibility', 'Configure custom fee heads', 'Strategic budget allocation'],
     canApprove: ['Exceptional fee concessions & waivers', 'Staff recruitments & promotions', 'High-value refunds & write-offs', 'Annual academic results publication'],
@@ -217,7 +220,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     allowedTabs: [
       'dashboard', 'admissions', 'students', 'academics', 'fees', 'attendance',
-      'examinations', 'progress-cards', 'laboratory', 'communication', 'transport', 'staff', 'timetable', 'data-migration', 'analytics', 'settings'
+      'examinations', 'progress-cards', 'laboratory', 'communication', 'transport', 'staff', 'timetable', 'data-migration', 'analytics', 'settings',
+      'academic-structure', 'staff-duties', 'marks-register', 'hall-tickets', 'fee-review', 'notice-board'
     ],
     canEdit: ['Curriculum & subjects', 'Staff profiles', 'Fee structures', 'Institution settings'],
     canApprove: ['Student admissions', 'Staff leave requests', 'Department budgets'],
@@ -230,7 +234,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-blue-100 text-blue-900 border-blue-400 font-bold',
     allowedTabs: [
       'dashboard', 'examinations', 'progress-cards', 'attendance', 'students', 'staff', 'timetable', 'fees', 'transport',
-      'laboratory', 'communication', 'academics', 'admissions', 'data-migration'
+      'laboratory', 'communication', 'academics', 'admissions', 'data-migration',
+      'academic-structure', 'staff-duties', 'marks-register', 'hall-tickets', 'fee-review', 'notice-board'
     ],
     canEdit: ['Academic calendar & curriculum', 'Staff classroom evaluations', 'Invigilation duty roster', 'Official student conduct remarks'],
     canApprove: ['Final exam results publication seal (Stage 3)', 'Student leave & transfer certificates', 'Class promotions'],
@@ -303,7 +308,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'VICE_PRINCIPAL',
     title: 'Vice Principal (Academics & Discipline)',
     badgeColor: 'bg-sky-100 text-sky-800 border-sky-300',
-    allowedTabs: ['dashboard', 'students', 'attendance', 'examinations', 'timetable', 'staff'],
+    allowedTabs: ['dashboard', 'students', 'attendance', 'examinations', 'timetable', 'staff', 'academic-structure', 'marks-register', 'hall-tickets', 'notice-board'],
     canEdit: ['Timetable schedules', 'Daily class supervision'],
     canApprove: ['Student leaves', 'Disciplinary reviews'],
     restrictedActions: ['Cannot approve financial transactions or platform settings'],
@@ -313,7 +318,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'ACCOUNTANT',
     title: 'Finance & Accounts Officer',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
-    allowedTabs: ['dashboard', 'fees'],
+    allowedTabs: ['dashboard', 'fees', 'fee-review'],
     canEdit: ['Fee collection', 'Payment allocations', 'Issue digital receipts'],
     canApprove: ['Payment reconciliations', 'Request exceptional fee refunds (Dual Approval required)'],
     restrictedActions: ['LOCKED from editing marks, examinations, attendance, or student academic data; cannot grant permissions'],
@@ -323,7 +328,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'EXAM_CONTROLLER',
     title: 'Controller of Examinations',
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
-    allowedTabs: ['dashboard', 'examinations', 'progress-cards'],
+    allowedTabs: ['dashboard', 'examinations', 'progress-cards', 'academic-structure', 'marks-register', 'hall-tickets', 'notice-board'],
     canEdit: ['Exam timetable schedules', 'Room allocations', 'Invigilator duties', 'Passing criteria'],
     canApprove: ['Audit & verify marks for missing entries/errors (Stage 2)'],
     restrictedActions: ['LOCKED from fee collections, HR, and platform permissions; cannot publish results without Principal seal'],
@@ -333,17 +338,27 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'TEACHER',
     title: 'Faculty / Subject Teacher (Physics - I PUC)',
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    allowedTabs: ['dashboard', 'attendance', 'examinations', 'progress-cards', 'timetable'],
+    allowedTabs: ['dashboard', 'attendance', 'examinations', 'progress-cards', 'timetable', 'marks-register', 'notice-board'],
     canEdit: ['Class attendance for assigned periods', 'Draft marks entry for assigned subjects only'],
     canApprove: ['Submit subject marks batch to Examination Controller (Stage 1)'],
     restrictedActions: ['LOCKED from other teachers\' subjects, fee collections, and student financial records'],
     scopes: [{ scopeType: 'subject', scopeValue: 'PHY-101', description: 'I PUC Physics & Class 10 Science' }]
   },
+  COMPUTER_OPERATOR: {
+    role: 'COMPUTER_OPERATOR',
+    title: 'Computer Data Entry Operator',
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300 font-bold',
+    allowedTabs: ['dashboard', 'marks-register', 'hall-tickets', 'examinations'],
+    canEdit: ['High-speed marks entry for assigned batches', 'Draft marks saving', 'Absentee/Withheld entry'],
+    canApprove: ['None (Operator submissions routed to Teacher / Controller / Principal)'],
+    restrictedActions: ['LOCKED from approving marks, publishing results, fee collections, and platform settings'],
+    scopes: [{ scopeType: 'department', scopeValue: 'DATA_ENTRY', description: 'Central Examination Data Entry Desk' }]
+  },
   PARENT: {
     role: 'PARENT',
     title: 'Parent / Guardian (Aarav Sharma - Class 10)',
     badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    allowedTabs: ['dashboard', 'students', 'fees', 'attendance', 'examinations', 'progress-cards', 'transport', 'timetable'],
+    allowedTabs: ['dashboard', 'students', 'fees', 'attendance', 'examinations', 'progress-cards', 'transport', 'timetable', 'notice-board', 'hall-tickets'],
     canEdit: ['Own emergency contact information'],
     canApprove: ['Online fee payment authorization'],
     restrictedActions: ['STRICTLY ISOLATED to only linked child\'s records; cannot view any other student'],
@@ -353,7 +368,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'STUDENT',
     title: 'Student Portal (Ananya Hegde - I PUC PCMB)',
     badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
-    allowedTabs: ['dashboard', 'examinations', 'progress-cards', 'attendance', 'timetable'],
+    allowedTabs: ['dashboard', 'examinations', 'progress-cards', 'attendance', 'timetable', 'notice-board', 'hall-tickets'],
     canEdit: ['Attempt CBT practice tests & view study materials'],
     canApprove: ['None (Read-only access)'],
     restrictedActions: ['LOCKED from entering marks, attendance, fee collections, or staff records'],
@@ -1019,6 +1034,101 @@ export interface DemoExamMarks {
   max_marks: number;
   obtained_marks: number;
   grade: string;
+  theory_max?: number;
+  theory_obtained?: number;
+  practical_max?: number;
+  practical_obtained?: number;
+  internal_max?: number;
+  internal_obtained?: number;
+  attendance_status?: 'PRESENT' | 'ABSENT' | 'WITHHELD' | 'EXEMPTED';
+  entered_by?: string;
+  entered_by_role?: string;
+  verification_status?: 'DRAFT' | 'SUBMITTED' | 'CONTROLLER_VERIFIED' | 'PRINCIPAL_APPROVED' | 'PUBLISHED';
+}
+
+export interface AcademicSectionModel {
+  id: string;
+  academic_year: string;
+  course_level: 'School' | 'PU College' | 'Degree College';
+  class_name: string;
+  stream: string;
+  section_code: string;
+  room_number: string;
+  max_capacity: number;
+  enrolled_count: number;
+  class_teacher_name: string;
+  status: 'ACTIVE' | 'ARCHIVED';
+}
+
+export interface StudentSectionTransferModel {
+  id: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  source_section: string;
+  target_section: string;
+  reason: string;
+  effective_date: string;
+  approved_by: string;
+  status: 'APPROVED' | 'PENDING' | 'REJECTED';
+}
+
+export interface StaffDutyAssignmentModel {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  duty_role: 'CLASS_TEACHER' | 'SUBJECT_TEACHER' | 'SECTION_COORDINATOR' | 'COMPUTER_OPERATOR' | 'VICE_PRINCIPAL_SUPERVISOR';
+  class_name: string;
+  section_code: string;
+  subject_code?: string;
+  subject_name?: string;
+  examination_title?: string;
+  can_enter_marks: boolean;
+  can_take_attendance: boolean;
+  can_verify_marks: boolean;
+  assigned_by: string;
+  is_active: boolean;
+}
+
+export interface HallTicketModel {
+  id: string;
+  ticket_number: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  class_name: string;
+  section_code: string;
+  exam_title: string;
+  exam_centre: string;
+  room_number: string;
+  seat_number: string;
+  eligibility_status: 'ELIGIBLE' | 'PENDING_FEE_APPROVAL' | 'SPECIAL_EXEMPTION' | 'REVOKED';
+  qr_code_signature: string;
+  timetable: { subject: string; date: string; time: string; room: string }[];
+  photo_url?: string;
+}
+
+export interface ConsolidatedFeeReportSnapshotModel {
+  id: string;
+  snapshot_code: string;
+  academic_year: string;
+  target_class: string;
+  submitted_by_name: string;
+  submitted_at: string;
+  total_students: number;
+  total_assigned: number;
+  total_concessions: number;
+  net_payable: number;
+  total_collected: number;
+  total_outstanding: number;
+  collection_pct: number;
+  fully_paid: number;
+  partially_paid: number;
+  unpaid: number;
+  status: 'SUBMITTED' | 'APPROVED' | 'RETURNED_FOR_REVISION';
+  reviewed_by_name?: string;
+  review_remarks?: string;
+  reviewed_at?: string;
 }
 
 export interface ExamScheduleItem {
@@ -1266,6 +1376,23 @@ interface DemoState {
   createExamViaWizard: (payload: ExamWizardPayload) => { success: boolean; exam: DemoExam };
   updateStudentExamMarks: (studentId: string, subject: string, marksObtained: number) => void;
   advanceExamApprovalStage: (examId: string) => { currentStage: string; published: boolean };
+
+  // ============================================================================
+  // ACADEMIC SECTIONS, STAFF DUTIES, MARKS REGISTER & HALL TICKETS
+  // ============================================================================
+  academicSections: AcademicSectionModel[];
+  studentTransfers: StudentSectionTransferModel[];
+  staffDuties: StaffDutyAssignmentModel[];
+  hallTickets: HallTicketModel[];
+  feeSnapshots: ConsolidatedFeeReportSnapshotModel[];
+
+  addAcademicSection: (payload: Omit<AcademicSectionModel, 'id' | 'enrolled_count'>) => { success: boolean; section: AcademicSectionModel; message: string };
+  transferStudentSection: (payload: { studentId: string; studentName: string; sourceSection: string; targetSection: string; reason: string }) => { success: boolean; message: string };
+  assignStaffDuty: (payload: Omit<StaffDutyAssignmentModel, 'id' | 'assigned_by' | 'is_active'>) => { success: boolean; assignment: StaffDutyAssignmentModel };
+  generateHallTicketsForClass: (payload: { examTitle: string; className: string; sectionCode?: string; enforceFeeClearance?: boolean }) => { count: number; tickets: HallTicketModel[] };
+  updateComponentMarks: (studentId: string, subject: string, components: { theory?: number; practical?: number; internal?: number; status?: 'PRESENT' | 'ABSENT' | 'WITHHELD' | 'EXEMPTED'; enteredBy?: string; enteredByRole?: string }) => void;
+  submitFeeReportSnapshot: (payload: Omit<ConsolidatedFeeReportSnapshotModel, 'id' | 'snapshot_code' | 'submitted_at' | 'status'>) => { success: boolean; snapshot: ConsolidatedFeeReportSnapshotModel };
+  reviewFeeReportSnapshot: (snapshotId: string, decision: 'APPROVED' | 'RETURNED_FOR_REVISION', remarks: string) => void;
 
 
   resetDemoData: () => void;
@@ -1852,6 +1979,86 @@ export const initialProcurementItems: PlatformProcurementItem[] = [
   }
 ];
 
+export const initialAcademicSections: AcademicSectionModel[] = [
+  // School - Class 6 with A, B, C, D
+  { id: 'SEC-SCH-6A', academic_year: '2026-2027', course_level: 'School', class_name: 'Class 6', stream: 'General', section_code: 'A', room_number: 'Room S-101', max_capacity: 40, enrolled_count: 38, class_teacher_name: 'Mrs. Priya Sharma', status: 'ACTIVE' },
+  { id: 'SEC-SCH-6B', academic_year: '2026-2027', course_level: 'School', class_name: 'Class 6', stream: 'General', section_code: 'B', room_number: 'Room S-102', max_capacity: 40, enrolled_count: 39, class_teacher_name: 'Mr. R. Raghavan', status: 'ACTIVE' },
+  { id: 'SEC-SCH-6C', academic_year: '2026-2027', course_level: 'School', class_name: 'Class 6', stream: 'General', section_code: 'C', room_number: 'Room S-103', max_capacity: 40, enrolled_count: 36, class_teacher_name: 'Mrs. K. Malathi', status: 'ACTIVE' },
+  { id: 'SEC-SCH-6D', academic_year: '2026-2027', course_level: 'School', class_name: 'Class 6', stream: 'General', section_code: 'D', room_number: 'Room S-104', max_capacity: 40, enrolled_count: 35, class_teacher_name: 'Mr. Arvind N.', status: 'ACTIVE' },
+
+  // PU College - I PUC PCMB with six sections A, B, C, D, E, F
+  { id: 'SEC-PUC-1A', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'A', room_number: 'Hall ST-201', max_capacity: 50, enrolled_count: 48, class_teacher_name: 'Dr. V. Murthy (Physics)', status: 'ACTIVE' },
+  { id: 'SEC-PUC-1B', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'B', room_number: 'Hall ST-202', max_capacity: 50, enrolled_count: 49, class_teacher_name: 'Prof. S. Joshi (Chem)', status: 'ACTIVE' },
+  { id: 'SEC-PUC-1C', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'C', room_number: 'Hall ST-203', max_capacity: 50, enrolled_count: 47, class_teacher_name: 'Dr. Anita Deshmukh (Bio)', status: 'ACTIVE' },
+  { id: 'SEC-PUC-1D', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'D', room_number: 'Hall ST-204', max_capacity: 50, enrolled_count: 46, class_teacher_name: 'Prof. K. Venkatesh (Maths)', status: 'ACTIVE' },
+  { id: 'SEC-PUC-1E', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'E', room_number: 'Hall ST-205', max_capacity: 50, enrolled_count: 45, class_teacher_name: 'Mrs. S. Radhika', status: 'ACTIVE' },
+  { id: 'SEC-PUC-1F', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', section_code: 'F', room_number: 'Hall ST-206', max_capacity: 50, enrolled_count: 44, class_teacher_name: 'Mr. B. Chandrasekhar', status: 'ACTIVE' },
+
+  // PU College - I PUC Commerce
+  { id: 'SEC-PUC-COMM-A', academic_year: '2026-2027', course_level: 'PU College', class_name: 'I PUC', stream: 'Commerce', section_code: 'A', room_number: 'Hall C-101', max_capacity: 60, enrolled_count: 58, class_teacher_name: 'Prof. R. Ramanathan', status: 'ACTIVE' },
+
+  // Degree College - B.Sc Computer Science
+  { id: 'SEC-DEG-BSC-1', academic_year: '2026-2027', course_level: 'Degree College', class_name: 'B.Sc (CS)', stream: 'Computer Science', section_code: 'A', room_number: 'Block D-301', max_capacity: 45, enrolled_count: 42, class_teacher_name: 'Dr. Rajeshwari Patil', status: 'ACTIVE' }
+];
+
+export const initialStudentTransfers: StudentSectionTransferModel[] = [
+  { id: 'TR-01', student_id: 'st-rahul', student_name: 'Rahul Kumar', admission_number: 'AKG-2026-0152', source_section: 'I PUC PCMB-B', target_section: 'I PUC PCMB-A', reason: 'Accommodated special practical batch & laboratory schedule', effective_date: '2026-07-15', approved_by: 'Principal Dr. V. Murthy', status: 'APPROVED' }
+];
+
+export const initialStaffDuties: StaffDutyAssignmentModel[] = [
+  { id: 'DUTY-01', staff_id: 'EMP-PHY-01', staff_name: 'Dr. Ananya Sharma', duty_role: 'SUBJECT_TEACHER', class_name: 'I PUC', section_code: 'A', subject_code: 'PHY-101', subject_name: 'Physics', can_enter_marks: true, can_take_attendance: true, can_verify_marks: false, assigned_by: 'Principal', is_active: true },
+  { id: 'DUTY-02', staff_id: 'EMP-PHY-01', staff_name: 'Dr. Ananya Sharma', duty_role: 'SUBJECT_TEACHER', class_name: 'I PUC', section_code: 'B', subject_code: 'PHY-101', subject_name: 'Physics', can_enter_marks: true, can_take_attendance: true, can_verify_marks: false, assigned_by: 'Principal', is_active: true },
+  { id: 'DUTY-03', staff_id: 'EMP-OP-01', staff_name: 'Suresh Data Operator', duty_role: 'COMPUTER_OPERATOR', class_name: 'I PUC', section_code: 'A', subject_code: 'CHEM-102', subject_name: 'Chemistry', examination_title: 'Mid-Term Examination 2026', can_enter_marks: true, can_take_attendance: false, can_verify_marks: false, assigned_by: 'Controller of Examinations', is_active: true },
+  { id: 'DUTY-04', staff_id: 'EMP-PRIN-01', staff_name: 'Dr. V. Murthy', duty_role: 'CLASS_TEACHER', class_name: 'I PUC', section_code: 'A', can_enter_marks: true, can_take_attendance: true, can_verify_marks: true, assigned_by: 'Chairman', is_active: true }
+];
+
+export const initialHallTickets: HallTicketModel[] = [
+  {
+    id: 'HT-2026-0152',
+    ticket_number: 'HT-AKG-2026-0152',
+    student_id: 'st-rahul',
+    student_name: 'Rahul Kumar',
+    admission_number: 'AKG-2026-0152',
+    class_name: 'I PUC',
+    section_code: 'A',
+    exam_title: 'Mid-Term Institutional Examination 2026',
+    exam_centre: 'Akshara Global Campus • Block B',
+    room_number: 'Hall ST-201',
+    seat_number: 'Seat #14',
+    eligibility_status: 'ELIGIBLE',
+    qr_code_signature: 'EDOS-VERIFIED-TICKET-AKG-0152-2026-VALID',
+    timetable: [
+      { subject: 'Physics (Theory + Practical)', date: '2026-11-24', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Chemistry (Theory + Practical)', date: '2026-11-26', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Mathematics (Theory)', date: '2026-11-28', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Biology (Theory + Practical)', date: '2026-11-30', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' }
+    ]
+  }
+];
+
+export const initialFeeSnapshots: ConsolidatedFeeReportSnapshotModel[] = [
+  {
+    id: 'SNAP-001',
+    snapshot_code: 'FEE-SNAP-20261104-001',
+    academic_year: '2026-2027',
+    target_class: 'I PUC PCMB (All 6 Sections)',
+    submitted_by_name: 'K. Narayana (Chief Accountant)',
+    submitted_at: '2026-11-04 10:30 AM',
+    total_students: 288,
+    total_assigned: 14400000,
+    total_concessions: 480000,
+    net_payable: 13920000,
+    total_collected: 11200000,
+    total_outstanding: 2720000,
+    collection_pct: 80.5,
+    fully_paid: 210,
+    partially_paid: 62,
+    unpaid: 16,
+    status: 'SUBMITTED',
+    review_remarks: 'Submitted for Chairman quarterly review. Reconciled with Bank Cash Book.'
+  }
+];
+
 const initialStudents: DemoStudent[] = [
   { id: 'st-rahul', admission_number: 'AKG-2026-0152', roll_number: '152', first_name: 'Rahul', last_name: 'Kumar', institution_level: 'PU College', class_name: 'I PUC', section_or_stream: 'PCMB (Science)', guardian_name: 'Ramesh Kumar', guardian_phone: '+91 98450 99887', fee_balance: 70000, attendance_pct: 94.2, status: 'ACTIVE' },
   { id: 'st-1', admission_number: 'ADM-2026-001', roll_number: '101', first_name: 'Aarav', last_name: 'Sharma', institution_level: 'School', class_name: 'Class 10', section_or_stream: 'Section A', guardian_name: 'Rajesh Sharma', guardian_phone: '+91 98450 12345', fee_balance: 0, attendance_pct: 96.5, status: 'ACTIVE' },
@@ -2427,6 +2634,12 @@ const initialRolePermissions: Record<UserRoleType, Record<FineGrainedAction, boo
     assign: false, collect: false, refund: false, reconcile: false, configure: false,
     manage_users: false, manage_permissions: false
   },
+  COMPUTER_OPERATOR: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: false, approve: false, reject: false, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
 };
 
 const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
@@ -2576,6 +2789,12 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
   DRIVER: [
     { id: 'dashboard', label: 'Trip Console', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'transport', label: 'Live Bus Route 104', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
+  ],
+  COMPUTER_OPERATOR: [
+    { id: 'dashboard', label: 'Operator Workspace', iconName: 'Layers', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'marks-register', label: 'Marks Entry Register', iconName: 'FileSpreadsheet', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'submit'] },
+    { id: 'hall-tickets', label: 'Hall Tickets & Verification', iconName: 'QrCode', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'print'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
   ],
 };
 
@@ -2988,8 +3207,12 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       platformTenants: initialPlatformTenants,
       supportTickets: initialSupportTickets,
       procurementItems: initialProcurementItems,
-      activeSubscriptionPlan: 'ENTERPRISE'
-,
+      activeSubscriptionPlan: 'ENTERPRISE',
+      academicSections: initialAcademicSections,
+      studentTransfers: initialStudentTransfers,
+      staffDuties: initialStaffDuties,
+      hallTickets: initialHallTickets,
+      feeSnapshots: initialFeeSnapshots,
 
   // Actions
   addStudent: (data) => {
@@ -4258,6 +4481,145 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     };
   },
 
+  addAcademicSection: (payload) => {
+    const existing = get().academicSections.find(s => 
+      s.class_name.toLowerCase() === payload.class_name.toLowerCase() &&
+      s.section_code.toUpperCase() === payload.section_code.toUpperCase() &&
+      s.academic_year === payload.academic_year
+    );
+    if (existing) {
+      return { success: false, section: existing, message: `Section ${payload.section_code.toUpperCase()} already exists for ${payload.class_name}` };
+    }
+    const newSec: AcademicSectionModel = {
+      id: `SEC-${Date.now().toString().slice(-4)}`,
+      ...payload,
+      section_code: payload.section_code.toUpperCase(),
+      enrolled_count: 0
+    };
+    set(state => ({ academicSections: [newSec, ...state.academicSections] }));
+    return { success: true, section: newSec, message: `Section ${newSec.section_code} created successfully with capacity ${newSec.max_capacity}.` };
+  },
+
+  transferStudentSection: (payload) => {
+    const targetSec = get().academicSections.find(s => s.section_code === payload.targetSection || s.id === payload.targetSection);
+    if (targetSec && targetSec.enrolled_count >= targetSec.max_capacity) {
+      return { success: false, message: `Target section ${targetSec.section_code} has reached its maximum capacity of ${targetSec.max_capacity} students.` };
+    }
+    const transferRecord: StudentSectionTransferModel = {
+      id: `TR-${Date.now().toString().slice(-4)}`,
+      student_id: payload.studentId,
+      student_name: payload.studentName,
+      admission_number: `ADM-${Date.now().toString().slice(-4)}`,
+      source_section: payload.sourceSection,
+      target_section: payload.targetSection,
+      reason: payload.reason,
+      effective_date: new Date().toISOString().split('T')[0],
+      approved_by: 'Principal Dr. V. Murthy',
+      status: 'APPROVED'
+    };
+    set(state => ({
+      studentTransfers: [transferRecord, ...state.studentTransfers],
+      academicSections: state.academicSections.map(s => {
+        if (s.section_code === payload.targetSection) return { ...s, enrolled_count: s.enrolled_count + 1 };
+        if (s.section_code === payload.sourceSection && s.enrolled_count > 0) return { ...s, enrolled_count: s.enrolled_count - 1 };
+        return s;
+      })
+    }));
+    return { success: true, message: `Student transferred to Section ${payload.targetSection} successfully. Historical marks and fee records preserved.` };
+  },
+
+  assignStaffDuty: (payload) => {
+    const newDuty: StaffDutyAssignmentModel = {
+      id: `DUTY-${Date.now().toString().slice(-4)}`,
+      ...payload,
+      assigned_by: 'Principal / Admin',
+      is_active: true
+    };
+    set(state => ({ staffDuties: [newDuty, ...state.staffDuties] }));
+    return { success: true, assignment: newDuty };
+  },
+
+  generateHallTicketsForClass: (payload) => {
+    const studentsToGenerate = get().students.filter(s => 
+      !payload.className || s.class_name.toLowerCase().includes(payload.className.toLowerCase())
+    );
+    const generated: HallTicketModel[] = studentsToGenerate.map((st, idx) => {
+      const isFeeCleared = st.fee_balance === 0;
+      const eligibility = (payload.enforceFeeClearance && !isFeeCleared) ? 'PENDING_FEE_APPROVAL' : 'ELIGIBLE';
+      return {
+        id: `HT-${Date.now()}-${idx}`,
+        ticket_number: `HT-AKG-2026-${st.roll_number.padStart(4, '0')}`,
+        student_id: st.id,
+        student_name: `${st.first_name} ${st.last_name}`,
+        admission_number: st.admission_number,
+        class_name: st.class_name,
+        section_code: payload.sectionCode || 'A',
+        exam_title: payload.examTitle,
+        exam_centre: 'Akshara Global Campus • Hall B-204',
+        room_number: `Room ${101 + (idx % 4)}`,
+        seat_number: `Seat #${idx + 1}`,
+        eligibility_status: eligibility,
+        qr_code_signature: `EDOS-VERIFIED-${st.admission_number}-${Date.now()}`,
+        timetable: [
+          { subject: 'Physics Paper', date: '2026-11-24', time: '09:30 AM - 12:30 PM', room: 'Hall B-204' },
+          { subject: 'Chemistry Paper', date: '2026-11-26', time: '09:30 AM - 12:30 PM', room: 'Hall B-204' },
+          { subject: 'Mathematics Paper', date: '2026-11-28', time: '09:30 AM - 12:30 PM', room: 'Hall B-204' },
+          { subject: 'Biology Paper', date: '2026-11-30', time: '09:30 AM - 12:30 PM', room: 'Hall B-204' }
+        ]
+      };
+    });
+    set(state => ({ hallTickets: [...generated, ...state.hallTickets] }));
+    return { count: generated.length, tickets: generated };
+  },
+
+  updateComponentMarks: (studentId, subject, components) => {
+    set(state => ({
+      marks: state.marks.map(m => {
+        if (m.student_id === studentId && m.subject.toLowerCase() === subject.toLowerCase()) {
+          const tObt = components.theory !== undefined ? components.theory : (m.theory_obtained || 0);
+          const pObt = components.practical !== undefined ? components.practical : (m.practical_obtained || 0);
+          const iObt = components.internal !== undefined ? components.internal : (m.internal_obtained || 0);
+          const total = tObt + pObt + iObt;
+          const status = components.status || m.attendance_status || 'PRESENT';
+          return {
+            ...m,
+            theory_obtained: tObt,
+            practical_obtained: pObt,
+            internal_obtained: iObt,
+            obtained_marks: status === 'ABSENT' ? 0 : total,
+            attendance_status: status,
+            entered_by: components.enteredBy || m.entered_by || 'Subject Teacher',
+            entered_by_role: components.enteredByRole || m.entered_by_role || 'TEACHER',
+            grade: status === 'ABSENT' ? 'F' : total >= 90 ? 'A+' : total >= 80 ? 'A' : total >= 70 ? 'B' : total >= 50 ? 'C' : 'F'
+          };
+        }
+        return m;
+      })
+    }));
+  },
+
+  submitFeeReportSnapshot: (payload) => {
+    const snap: ConsolidatedFeeReportSnapshotModel = {
+      id: `SNAP-${Date.now().toString().slice(-4)}`,
+      snapshot_code: `FEE-SNAP-${new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14)}`,
+      submitted_at: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      status: 'SUBMITTED',
+      ...payload
+    };
+    set(state => ({ feeSnapshots: [snap, ...state.feeSnapshots] }));
+    return { success: true, snapshot: snap };
+  },
+
+  reviewFeeReportSnapshot: (snapshotId, decision, remarks) => {
+    set(state => ({
+      feeSnapshots: state.feeSnapshots.map(s => 
+        s.id === snapshotId 
+          ? { ...s, status: decision, review_remarks: remarks, reviewed_by_name: 'Chairman Dr. S. Rao', reviewed_at: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) }
+          : s
+      )
+    }));
+  },
+
   resetDemoData: () => {
     set({
       currentRole: 'PRINCIPAL',
@@ -4299,7 +4661,12 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       platformTenants: initialPlatformTenants,
       supportTickets: initialSupportTickets,
       procurementItems: initialProcurementItems,
-      activeSubscriptionPlan: 'ENTERPRISE'
+      activeSubscriptionPlan: 'ENTERPRISE',
+      academicSections: initialAcademicSections,
+      studentTransfers: initialStudentTransfers,
+      staffDuties: initialStaffDuties,
+      hallTickets: initialHallTickets,
+      feeSnapshots: initialFeeSnapshots,
     });
   },
 }));
