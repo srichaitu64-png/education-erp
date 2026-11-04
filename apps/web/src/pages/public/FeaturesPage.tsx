@@ -129,3 +129,4 @@ export const FeaturesPage: React.FC = () => {
     </div>
   );
 };
+

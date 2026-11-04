@@ -487,3 +487,4 @@ export const RegisterInstitutionPage: React.FC = () => {
     </PublicLayout>
   );
 };
+

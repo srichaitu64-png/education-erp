@@ -1,8 +1,8 @@
 # Project Status: Enterprise Multi-Tenant Education ERP
 
 **Current Phase:** Phase 1 (Foundation, RLS Database, Entitlement Engine) & Public Commercial Website + Interactive Demo Sandbox  
-**Status:** In Progress / Public Marketing & Interactive Sandbox Live  
-**Updated:** 2026-11-03  
+**Status:** In Progress / Public Marketing & Interactive Sandbox Live / One-Shot Launcher Ready  
+**Updated:** 2026-11-04  
 
 ---
 
@@ -16,7 +16,9 @@ Key architectural boundaries are active:
 - **Mandatory Subscription & Feature Locking Engine:** Complete backend `EntitlementService` with institution-specific overrides (`ALLOW`/`DENY`), usage quotas, and structured `FEATURE_LOCKED` error protocols.
 - **Public Commercial Marketing Website:** 12 production-ready marketing & commercial pages benchmarked against industry leaders (Hero, Features, Modules, Pricing, Subscription Comparison, Testimonials, FAQ, Book a Demo, Institution Registration, About Us, Contact, Login).
 - **Interactive In-Browser Demonstration Sandbox (`/demo`):** Zero-friction, fully functional product sandbox with pre-loaded student records, fee collection with instant receipt generation, attendance marking, marks entry, and report card printing.
-- **Automated Verification:** 100% test pass rate across tenant isolation, RLS enforcement, Argon2id security, and subscription locking workflows.
+- **One-Shot Development Launcher (`./start.sh` or `make run` / `make dev`):** Single command starts PostgreSQL 16 on port 5433, FastAPI backend on port 8000, and Vite React frontend on port 5173.
+- **Workspace Bridge:** `~/Desktop/ERP` is symbolically linked directly to `/home/siva/Desktop/New Folder`, ensuring commands execute identically regardless of directory entry point.
+- **Automated Verification:** 100% test pass rate across tenant isolation, RLS enforcement, Argon2id security, and subscription locking workflows. Front-end compiles with 0 TypeScript errors.
 
 ---
 

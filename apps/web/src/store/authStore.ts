@@ -38,7 +38,7 @@ export interface EntitlementItem {
   module: string;
   category: string;
   description: string;
-  is_enabled: bool;
+  is_enabled: boolean;
   required_plan: string;
   lock_reason?: string;
   upgrade_url?: string;

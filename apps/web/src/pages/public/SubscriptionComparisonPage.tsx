@@ -77,3 +77,4 @@ export const SubscriptionComparisonPage: React.FC = () => {
     </div>
   );
 };
+

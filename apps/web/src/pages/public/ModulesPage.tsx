@@ -137,3 +137,4 @@ export const ModulesPage: React.FC = () => {
     </div>
   );
 };
+

@@ -68,3 +68,4 @@ export const FaqPage: React.FC = () => {
     </div>
   );
 };
+

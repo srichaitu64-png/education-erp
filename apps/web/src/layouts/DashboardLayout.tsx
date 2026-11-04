@@ -20,6 +20,13 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
+interface NavItem {
+  label: string;
+  path: string;
+  icon: any;
+  featureId?: string;
+}
+
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, tenant, entitlements, logout } = useAuthStore();
   const location = useLocation();
@@ -38,7 +45,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isSuperAdmin = user?.is_superadmin;
 
-  const institutionNavItems = [
+  const institutionNavItems: NavItem[] = [
     { label: 'Overview', path: '/dashboard', icon: GraduationCap },
     { label: 'Admissions & Students', path: '/dashboard/students', icon: Users, featureId: 'students.management' },
     { label: 'Fees & Invoicing', path: '/dashboard/fees', icon: CreditCard, featureId: 'fees.basic' },
@@ -50,7 +57,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     { label: 'Multi-Campus Directory', path: '/dashboard/campuses', icon: Building2, featureId: 'multi_campus' },
   ];
 
-  const superAdminNavItems = [
+  const superAdminNavItems: NavItem[] = [
     { label: 'Platform Overview', path: '/superadmin', icon: Shield },
     { label: 'Institutions Directory', path: '/superadmin/institutions', icon: Building2 },
     { label: 'Subscription Plans', path: '/superadmin/plans', icon: CreditCard },
