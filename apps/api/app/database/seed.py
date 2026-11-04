@@ -431,4 +431,198 @@ async def seed_initial_data(db: AsyncSession) -> None:
             )
             db.add_all([ex1, ex2, ex3])
 
+        # Seed School-Defined Fee Structures, Invoices & Receipts
+        from app.modules.finance.models import FeeStructure, FeeInvoice, FeePayment, FeeReceipt, ReceiptAuditLog
+        from datetime import datetime, timezone
+        stmt_fs = select(FeeStructure).where(FeeStructure.tenant_id == pilot_tenant.id)
+        res_fs = await db.execute(stmt_fs)
+        if not res_fs.scalars().first():
+            fs1 = FeeStructure(
+                tenant_id=pilot_tenant.id,
+                academic_year="2026-2027",
+                institution_type="School",
+                class_or_stream="Class 10",
+                term_count=3,
+                terms_config=[
+                    {"term_code": "TERM_1", "name": "Term 1 (June-Aug)", "due_date": "2026-06-30", "share_pct": 40},
+                    {"term_code": "TERM_2", "name": "Term 2 (Sept-Nov)", "due_date": "2026-11-15", "share_pct": 35},
+                    {"term_code": "TERM_3", "name": "Term 3 (Dec-Feb)", "due_date": "2027-01-31", "share_pct": 25},
+                ],
+                fee_heads=[
+                    {"head_code": "TUITION", "title": "Annual Tuition & Digital Classrooms", "amount": 35000.0},
+                    {"head_code": "LAB", "title": "Composite Science & Computer Lab", "amount": 5000.0},
+                    {"head_code": "TRANSPORT", "title": "Bus Transport Fee (Route 104)", "amount": 12000.0},
+                    {"head_code": "LIBRARY", "title": "Library & Co-Curricular", "amount": 3000.0},
+                ],
+                total_annual_fee=55000.0,
+                concessions_allowed=True,
+                version=1,
+            )
+            fs2 = FeeStructure(
+                tenant_id=pilot_tenant.id,
+                academic_year="2026-2027",
+                institution_type="PU College",
+                class_or_stream="I PUC (PCMB)",
+                term_count=2,
+                terms_config=[
+                    {"term_code": "SEM_1", "name": "Semester 1 (June-Nov)", "due_date": "2026-08-31", "share_pct": 50},
+                    {"term_code": "SEM_2", "name": "Semester 2 (Dec-April)", "due_date": "2026-12-31", "share_pct": 50},
+                ],
+                fee_heads=[
+                    {"head_code": "TUITION", "title": "Pre-University Tuition & Integrated Coaching", "amount": 45000.0},
+                    {"head_code": "LAB", "title": "Physics, Chemistry & Biology Practicals", "amount": 15000.0},
+                    {"head_code": "HOSTEL_MESS", "title": "Hostel Boarding & Dining Facility", "amount": 38000.0},
+                    {"head_code": "EXAM", "title": "Pre-University Board & Internal Assessment", "amount": 3500.0},
+                ],
+                total_annual_fee=101500.0,
+                concessions_allowed=True,
+                version=1,
+            )
+            db.add_all([fs1, fs2])
+            await db.flush()
+
+            # Seed pilot invoices
+            inv1 = FeeInvoice(
+                tenant_id=pilot_tenant.id,
+                invoice_number="INV-2026-0091",
+                student_id=uuid.uuid4(),
+                student_name="Aarav Sharma",
+                admission_number="ADM-2026-001",
+                class_name="Class 10-A",
+                academic_year="2026-2027",
+                term_code="TERM_1",
+                term_name="Term 1 (June-Aug)",
+                fee_head="TUITION",
+                fee_title="Annual Tuition & Digital Classrooms",
+                total_amount=35000.0,
+                concession_amount=0.0,
+                net_payable=35000.0,
+                paid_amount=35000.0,
+                balance_amount=0.0,
+                due_date=date(2026, 6, 30),
+                last_payment_date=date(2026, 6, 25),
+                status="PAID",
+                breakdown=[
+                    {"head_code": "TUITION", "title": "Tuition Fee", "amount": 30000.0},
+                    {"head_code": "LAB", "title": "Lab Fee", "amount": 5000.0},
+                ]
+            )
+            inv2 = FeeInvoice(
+                tenant_id=pilot_tenant.id,
+                invoice_number="INV-2026-0092",
+                student_id=uuid.uuid4(),
+                student_name="Ananya Hegde",
+                admission_number="ADM-2026-002",
+                class_name="I PUC (PCMB)",
+                academic_year="2026-2027",
+                term_code="SEM_1",
+                term_name="Semester 1 (June-Nov)",
+                fee_head="LAB",
+                fee_title="Physics, Chemistry & Biology Lab Fee",
+                total_amount=18000.0,
+                concession_amount=0.0,
+                net_payable=18000.0,
+                paid_amount=5500.0,
+                balance_amount=12500.0,
+                due_date=date(2026, 11, 20),
+                last_payment_date=date(2026, 9, 10),
+                status="PARTIAL",
+                breakdown=[
+                    {"head_code": "LAB", "title": "PCB Lab Practicals", "amount": 18000.0},
+                ]
+            )
+            inv3 = FeeInvoice(
+                tenant_id=pilot_tenant.id,
+                invoice_number="INV-2026-0093",
+                student_id=uuid.uuid4(),
+                student_name="Rohan Verma",
+                admission_number="ADM-2026-003",
+                class_name="B.Sc CS (Sem 3)",
+                academic_year="2026-2027",
+                term_code="SEM_1",
+                term_name="Semester 1 (June-Nov)",
+                fee_head="HOSTEL_MESS",
+                fee_title="Hostel Accommodation & Dining (Term 1)",
+                total_amount=38000.0,
+                concession_amount=0.0,
+                net_payable=38000.0,
+                paid_amount=14000.0,
+                balance_amount=24000.0,
+                due_date=date(2026, 10, 31),
+                last_payment_date=date(2026, 10, 5),
+                status="OVERDUE",
+                breakdown=[
+                    {"head_code": "HOSTEL_MESS", "title": "Hostel Boarding", "amount": 25000.0},
+                    {"head_code": "HOSTEL_MESS", "title": "Mess & Dining", "amount": 13000.0},
+                ]
+            )
+            db.add_all([inv1, inv2, inv3])
+            await db.flush()
+
+            # Seed pilot payment and permanent receipt for inv1
+            p1 = FeePayment(
+                tenant_id=pilot_tenant.id,
+                invoice_id=inv1.id,
+                student_id=inv1.student_id,
+                amount_paid=35000.0,
+                payment_method="UPI",
+                transaction_reference="UPI/2026/0625/89210",
+                idempotency_key="SEED-IDEMP-001",
+                collected_by_name="Senior Cashier",
+                payment_date=datetime(2026, 6, 25, 10, 30, tzinfo=timezone.utc),
+                fee_allocations=[
+                    {"head": "TUITION", "title": "Tuition Fee", "allocated": 30000.0, "remaining": 0.0},
+                    {"head": "LAB", "title": "Lab Fee", "allocated": 5000.0, "remaining": 0.0},
+                ],
+                status="CONFIRMED"
+            )
+            db.add(p1)
+            await db.flush()
+
+            rcp1 = FeeReceipt(
+                tenant_id=pilot_tenant.id,
+                receipt_number="RCP-AKSH-2026-1001",
+                payment_id=p1.id,
+                invoice_id=inv1.id,
+                student_id=inv1.student_id,
+                student_name=inv1.student_name,
+                admission_number=inv1.admission_number,
+                class_name=inv1.class_name,
+                academic_year=inv1.academic_year,
+                term_code=inv1.term_code,
+                term_name=inv1.term_name,
+                amount_paid=35000.0,
+                previous_balance=35000.0,
+                current_balance=0.0,
+                payment_method="UPI",
+                transaction_reference=p1.transaction_reference,
+                payment_date=p1.payment_date,
+                fee_allocations=p1.fee_allocations,
+                institution_branding={
+                    "institution_name": "Akshara Global Educational Institutions",
+                    "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
+                    "address": "Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085",
+                    "phone": "+91 80 2345 6789",
+                    "email": "accounts@akshara.erp.in",
+                    "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal"
+                },
+                qr_verification_code="VERIFY:RECEIPT:RCP-AKSH-2026-1001:SEED-IDEMP-001",
+                reprint_count=0,
+                is_duplicate=False,
+                status="CONFIRMED"
+            )
+            db.add(rcp1)
+            await db.flush()
+
+            audit1 = ReceiptAuditLog(
+                tenant_id=pilot_tenant.id,
+                receipt_id=rcp1.id,
+                receipt_number=rcp1.receipt_number,
+                action="GENERATED",
+                performed_by_name="Senior Cashier",
+                role="ACCOUNTANT",
+                details={"amount": 35000.0, "method": "UPI"}
+            )
+            db.add(audit1)
+
     await db.commit()

@@ -265,7 +265,30 @@ export type FeeHeadType =
   | 'TRANSPORT_FEE'
   | 'ADMISSION_FEE'
   | 'EXAM_FEE'
-  | 'LIBRARY_FEE';
+  | 'LIBRARY_FEE'
+  | 'TUITION'
+  | 'LABORATORY'
+  | 'TRANSPORT'
+  | 'LIBRARY'
+  | 'HOSTEL_MESS'
+  | 'EXAM'
+  | 'MISCELLANEOUS';
+
+export type PaymentMethodType =
+  | 'CASH'
+  | 'UPI'
+  | 'BANK_TRANSFER'
+  | 'ONLINE_NETBANKING'
+  | 'CHEQUE';
+
+export type ReceiptPrintLayout = 'A4' | '80MM' | '58MM';
+
+export interface FeeAllocationItem {
+  head: FeeHeadType;
+  title: string;
+  allocated: number;
+  remaining: number;
+}
 
 export interface DemoFeeInvoice {
   id: string;
@@ -273,13 +296,87 @@ export interface DemoFeeInvoice {
   student_name: string;
   admission_number: string;
   class_name: string;
+  academic_year: string;
+  term_code: string;
+  term_name: string;
   fee_head: FeeHeadType;
   fee_title: string;
   total_amount: number;
   paid_amount: number;
   balance_amount: number;
   due_date: string;
+  last_payment_date?: string;
   status: 'PAID' | 'PARTIAL' | 'OVERDUE' | 'UNPAID';
+  breakdown?: { head_code: FeeHeadType; title: string; amount: number }[];
+}
+
+export interface DemoFeeReceipt {
+  id: string;
+  receipt_number: string;
+  invoice_id: string;
+  invoice_number: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  class_name: string;
+  academic_year: string;
+  term_code: string;
+  term_name: string;
+  amount_paid: number;
+  previous_balance: number;
+  current_balance: number;
+  payment_method: PaymentMethodType;
+  transaction_reference: string;
+  payment_date: string;
+  collected_by: string;
+  allocations: FeeAllocationItem[];
+  institution_branding: {
+    institution_name: string;
+    affiliation: string;
+    address: string;
+    phone: string;
+    email: string;
+    receipt_header_note: string;
+  };
+  qr_verification_code: string;
+  reprint_count: number;
+  is_duplicate: boolean;
+  reprinted_at?: string;
+  status: 'CONFIRMED' | 'REVERSED' | 'REFUNDED';
+  notes?: string;
+}
+
+export interface ReceiptAuditLogItem {
+  id: string;
+  receipt_number: string;
+  action: 'GENERATED' | 'PRINTED_A4' | 'PRINTED_80MM' | 'PRINTED_58MM' | 'REPRINTED_DUPLICATE' | 'DOWNLOADED_PDF';
+  performed_by: string;
+  role: string;
+  timestamp: string;
+  details?: Record<string, any>;
+}
+
+export interface TermScheduleItem {
+  term_code: string;
+  name: string;
+  due_date: string;
+  share_pct: number;
+}
+
+export interface DemoFeeStructure {
+  id: string;
+  institution_type: 'School' | 'PU College' | 'Degree College';
+  institution_name: string;
+  academic_year: string;
+  class_or_stream: string;
+  term_count: number;
+  terms_config: TermScheduleItem[];
+  fee_heads: { head_code: FeeHeadType; title: string; amount: number }[];
+  total_annual_fee: number;
+  concessions_allowed: boolean;
+  version: number;
+  is_active: boolean;
+  notes?: string;
 }
 
 export interface DemoAttendanceRecord {
@@ -402,6 +499,10 @@ interface DemoState {
   students: DemoStudent[];
   admissions: DemoAdmission[];
   invoices: DemoFeeInvoice[];
+  receipts: DemoFeeReceipt[];
+  receiptAudits: ReceiptAuditLogItem[];
+  feeStructures: DemoFeeStructure[];
+  activeFeeInstitutionFilter: 'ALL' | 'School' | 'PU College' | 'Degree College';
   attendance: DemoAttendanceRecord[];
   marks: DemoExamMarks[];
   exams: DemoExam[];
@@ -426,6 +527,22 @@ interface DemoState {
   createAdmission: (app: Omit<DemoAdmission, 'id' | 'application_number' | 'submission_date' | 'status'>) => void;
   approveAdmission: (id: string) => void;
   collectFee: (invoiceId: string, amount: number) => { receiptNumber: string };
+  collectFeeWithReceipt: (params: {
+    invoiceId: string;
+    amount: number;
+    paymentMethod: PaymentMethodType;
+    transactionRef?: string;
+    allocations?: FeeAllocationItem[];
+    notes?: string;
+  }) => DemoFeeReceipt;
+  reprintReceipt: (receiptId: string) => DemoFeeReceipt;
+  logReceiptAction: (
+    receiptNumber: string,
+    action: 'PRINTED_A4' | 'PRINTED_80MM' | 'PRINTED_58MM' | 'DOWNLOADED_PDF',
+    details?: Record<string, any>
+  ) => void;
+  saveFeeStructure: (structure: DemoFeeStructure) => { success: boolean; message: string };
+  setActiveFeeInstitutionFilter: (filter: 'ALL' | 'School' | 'PU College' | 'Degree College') => void;
   updateAttendance: (studentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => void;
   saveMark: (studentId: string, subject: string, obtained: number) => void;
 
@@ -481,11 +598,281 @@ const initialAdmissions: DemoAdmission[] = [
 ];
 
 const initialInvoices: DemoFeeInvoice[] = [
-  { id: 'inv-1', invoice_number: 'INV-2026-0091', student_name: 'Aarav Sharma', admission_number: 'ADM-2026-001', class_name: 'Class 10-A', fee_head: 'COLLEGE_FEE', fee_title: 'Annual Tuition & Digital Classrooms', total_amount: 35000, paid_amount: 35000, balance_amount: 0, due_date: '2026-11-15', status: 'PAID' },
-  { id: 'inv-2', invoice_number: 'INV-2026-0092', student_name: 'Ananya Hegde', admission_number: 'ADM-2026-002', class_name: 'I PUC - PCMB', fee_head: 'LAB_FEE', fee_title: 'Physics, Chemistry & Biology Lab Fee', total_amount: 18000, paid_amount: 5500, balance_amount: 12500, due_date: '2026-11-20', status: 'PARTIAL' },
-  { id: 'inv-3', invoice_number: 'INV-2026-0093', student_name: 'Rohan Verma', admission_number: 'ADM-2026-003', class_name: 'B.Sc CS (Sem 3)', fee_head: 'HOSTEL_MESS_FEE', fee_title: 'Hostel Accommodation & Dining (Term 1)', total_amount: 38000, paid_amount: 14000, balance_amount: 24000, due_date: '2026-10-31', status: 'OVERDUE' },
-  { id: 'inv-4', invoice_number: 'INV-2026-0094', student_name: 'Priya Nair', admission_number: 'ADM-2026-004', class_name: 'Class 9-B', fee_head: 'TRANSPORT_FEE', fee_title: 'School Bus Route 104 Transport Fee', total_amount: 12000, paid_amount: 7500, balance_amount: 4500, due_date: '2026-11-25', status: 'PARTIAL' },
-  { id: 'inv-5', invoice_number: 'INV-2026-0095', student_name: 'Aditya Patil', admission_number: 'ADM-2026-005', class_name: 'II PUC Commerce', fee_head: 'EXAM_FEE', fee_title: 'State Pre-University Board Exam Fee', total_amount: 3500, paid_amount: 3500, balance_amount: 0, due_date: '2026-11-10', status: 'PAID' },
+  {
+    id: 'inv-1',
+    invoice_number: 'INV-2026-0091',
+    student_name: 'Aarav Sharma',
+    admission_number: 'ADM-2026-001',
+    class_name: 'Class 10-A',
+    academic_year: '2026-2027',
+    term_code: 'TERM_1',
+    term_name: 'Term 1 (June-Aug)',
+    fee_head: 'COLLEGE_FEE',
+    fee_title: 'Annual Tuition & Digital Classrooms',
+    total_amount: 35000,
+    paid_amount: 35000,
+    balance_amount: 0,
+    due_date: '2026-06-30',
+    last_payment_date: '2026-06-25',
+    status: 'PAID',
+    breakdown: [
+      { head_code: 'TUITION', title: 'Tuition Fee', amount: 30000 },
+      { head_code: 'LABORATORY', title: 'Science Lab Fee', amount: 5000 }
+    ]
+  },
+  {
+    id: 'inv-2',
+    invoice_number: 'INV-2026-0092',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    class_name: 'I PUC - PCMB',
+    academic_year: '2026-2027',
+    term_code: 'SEM_1',
+    term_name: 'Semester 1 (June-Nov)',
+    fee_head: 'LAB_FEE',
+    fee_title: 'Physics, Chemistry & Biology Lab Fee',
+    total_amount: 18000,
+    paid_amount: 5500,
+    balance_amount: 12500,
+    due_date: '2026-11-20',
+    last_payment_date: '2026-09-10',
+    status: 'PARTIAL',
+    breakdown: [
+      { head_code: 'LABORATORY', title: 'PCB Practical Labs', amount: 18000 }
+    ]
+  },
+  {
+    id: 'inv-3',
+    invoice_number: 'INV-2026-0093',
+    student_name: 'Rohan Verma',
+    admission_number: 'ADM-2026-003',
+    class_name: 'B.Sc CS (Sem 3)',
+    academic_year: '2026-2027',
+    term_code: 'SEM_1',
+    term_name: 'Semester 1 (June-Nov)',
+    fee_head: 'HOSTEL_MESS_FEE',
+    fee_title: 'Hostel Accommodation & Dining (Term 1)',
+    total_amount: 38000,
+    paid_amount: 14000,
+    balance_amount: 24000,
+    due_date: '2026-10-31',
+    last_payment_date: '2026-10-05',
+    status: 'OVERDUE',
+    breakdown: [
+      { head_code: 'HOSTEL_MESS_FEE', title: 'Hostel Accommodation', amount: 25000 },
+      { head_code: 'HOSTEL_MESS_FEE', title: 'Mess & Dining', amount: 13000 }
+    ]
+  },
+  {
+    id: 'inv-4',
+    invoice_number: 'INV-2026-0094',
+    student_name: 'Priya Nair',
+    admission_number: 'ADM-2026-004',
+    class_name: 'Class 9-B',
+    academic_year: '2026-2027',
+    term_code: 'TERM_2',
+    term_name: 'Term 2 (Sept-Nov)',
+    fee_head: 'TRANSPORT_FEE',
+    fee_title: 'School Bus Route 104 Transport Fee',
+    total_amount: 12000,
+    paid_amount: 7500,
+    balance_amount: 4500,
+    due_date: '2026-11-25',
+    last_payment_date: '2026-10-12',
+    status: 'PARTIAL',
+    breakdown: [
+      { head_code: 'TRANSPORT_FEE', title: 'GPS Monitored Bus Transport', amount: 12000 }
+    ]
+  },
+  {
+    id: 'inv-5',
+    invoice_number: 'INV-2026-0095',
+    student_name: 'Aditya Patil',
+    admission_number: 'ADM-2026-005',
+    class_name: 'II PUC Commerce',
+    academic_year: '2026-2027',
+    term_code: 'SEM_1',
+    term_name: 'Semester 1 (June-Nov)',
+    fee_head: 'EXAM_FEE',
+    fee_title: 'State Pre-University Board Exam Fee',
+    total_amount: 3500,
+    paid_amount: 3500,
+    balance_amount: 0,
+    due_date: '2026-11-10',
+    last_payment_date: '2026-11-02',
+    status: 'PAID',
+    breakdown: [
+      { head_code: 'EXAM_FEE', title: 'Board Exam Registration', amount: 3500 }
+    ]
+  },
+  {
+    id: 'inv-6',
+    invoice_number: 'INV-2026-0096',
+    student_name: 'Tanvi Deshmukh',
+    admission_number: 'ADM-2026-006',
+    class_name: 'Class 6-A',
+    academic_year: '2026-2027',
+    term_code: 'TERM_2',
+    term_name: 'Term 2 (Sept-Nov)',
+    fee_head: 'COLLEGE_FEE',
+    fee_title: 'Term 2 Tuition & Science Activity Kit',
+    total_amount: 22000,
+    paid_amount: 0,
+    balance_amount: 22000,
+    due_date: '2026-10-15',
+    status: 'OVERDUE',
+    breakdown: [
+      { head_code: 'TUITION', title: 'Middle School Tuition', amount: 18000 },
+      { head_code: 'LABORATORY', title: 'Science Activity Kit', amount: 4000 }
+    ]
+  }
+];
+
+const initialReceipts: DemoFeeReceipt[] = [
+  {
+    id: 'rcp-1001',
+    receipt_number: 'RCP-AKSH-2026-1001',
+    invoice_id: 'inv-1',
+    invoice_number: 'INV-2026-0091',
+    student_id: 'st-1',
+    student_name: 'Aarav Sharma',
+    admission_number: 'ADM-2026-001',
+    class_name: 'Class 10-A',
+    academic_year: '2026-2027',
+    term_code: 'TERM_1',
+    term_name: 'Term 1 (June-Aug)',
+    amount_paid: 35000,
+    previous_balance: 35000,
+    current_balance: 0,
+    payment_method: 'UPI',
+    transaction_reference: 'UPI/2026/0625/89210',
+    payment_date: '2026-06-25 10:30 AM',
+    collected_by: 'Senior Cashier (Accounts)',
+    allocations: [
+      { head: 'TUITION', title: 'Annual Tuition & Digital Classrooms', allocated: 30000, remaining: 0 },
+      { head: 'LABORATORY', title: 'Science Lab Fee', allocated: 5000, remaining: 0 }
+    ],
+    institution_branding: {
+      institution_name: 'Akshara Global Educational Institutions',
+      affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+      address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+      phone: '+91 80 2345 6789',
+      email: 'accounts@akshara.erp.in',
+      receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal'
+    },
+    qr_verification_code: 'VERIFY:RECEIPT:RCP-AKSH-2026-1001:UPI89210:35000',
+    reprint_count: 0,
+    is_duplicate: false,
+    status: 'CONFIRMED',
+    notes: 'Paid in full via campus UPI counter'
+  },
+  {
+    id: 'rcp-1002',
+    receipt_number: 'RCP-AKSH-2026-1002',
+    invoice_id: 'inv-5',
+    invoice_number: 'INV-2026-0095',
+    student_id: 'st-5',
+    student_name: 'Aditya Patil',
+    admission_number: 'ADM-2026-005',
+    class_name: 'II PUC Commerce',
+    academic_year: '2026-2027',
+    term_code: 'SEM_1',
+    term_name: 'Semester 1 (June-Nov)',
+    amount_paid: 3500,
+    previous_balance: 3500,
+    current_balance: 0,
+    payment_method: 'CASH',
+    transaction_reference: 'CSH/2026/1102/0042',
+    payment_date: '2026-11-02 02:15 PM',
+    collected_by: 'Assistant Accountant',
+    allocations: [
+      { head: 'EXAM_FEE', title: 'State Pre-University Board Exam Fee', allocated: 3500, remaining: 0 }
+    ],
+    institution_branding: {
+      institution_name: 'Akshara Global Educational Institutions',
+      affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+      address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+      phone: '+91 80 2345 6789',
+      email: 'accounts@akshara.erp.in',
+      receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal'
+    },
+    qr_verification_code: 'VERIFY:RECEIPT:RCP-AKSH-2026-1002:CSH0042:3500',
+    reprint_count: 0,
+    is_duplicate: false,
+    status: 'CONFIRMED',
+    notes: 'Cash received at fee counter'
+  }
+];
+
+const initialReceiptAudits: ReceiptAuditLogItem[] = [
+  {
+    id: 'aud-1',
+    receipt_number: 'RCP-AKSH-2026-1001',
+    action: 'GENERATED',
+    performed_by: 'Senior Cashier (Accounts)',
+    role: 'ACCOUNTANT',
+    timestamp: '2026-06-25 10:30:15',
+    details: { amount: 35000, method: 'UPI' }
+  },
+  {
+    id: 'aud-2',
+    receipt_number: 'RCP-AKSH-2026-1002',
+    action: 'GENERATED',
+    performed_by: 'Assistant Accountant',
+    role: 'ACCOUNTANT',
+    timestamp: '2026-11-02 14:15:30',
+    details: { amount: 3500, method: 'CASH' }
+  }
+];
+
+const initialFeeStructures: DemoFeeStructure[] = [
+  {
+    id: 'fs-school-10',
+    institution_type: 'School',
+    institution_name: 'Akshara High School',
+    academic_year: '2026-2027',
+    class_or_stream: 'Class 10 (Secondary)',
+    term_count: 3,
+    terms_config: [
+      { term_code: 'TERM_1', name: 'Term 1 (June - Aug)', due_date: '2026-06-30', share_pct: 40 },
+      { term_code: 'TERM_2', name: 'Term 2 (Sept - Nov)', due_date: '2026-11-15', share_pct: 35 },
+      { term_code: 'TERM_3', name: 'Term 3 (Dec - Feb)', due_date: '2027-01-31', share_pct: 25 }
+    ],
+    fee_heads: [
+      { head_code: 'TUITION', title: 'Annual Tuition & Smart Classrooms', amount: 35000 },
+      { head_code: 'LABORATORY', title: 'Composite Science & Robotics Lab', amount: 5000 },
+      { head_code: 'TRANSPORT', title: 'Bus Transport Service (Route 104)', amount: 12000 },
+      { head_code: 'LIBRARY', title: 'Digital Library & Sports Development', amount: 3000 }
+    ],
+    total_annual_fee: 55000,
+    concessions_allowed: true,
+    version: 1,
+    is_active: true,
+    notes: 'Configured by School Administrator for Academic Year 2026-2027 (3 Terms Schedule).'
+  },
+  {
+    id: 'fs-pu-science',
+    institution_type: 'PU College',
+    institution_name: 'Akshara Pre-University College',
+    academic_year: '2026-2027',
+    class_or_stream: 'I PUC - PCMB (Integrated NEET/JEE)',
+    term_count: 2,
+    terms_config: [
+      { term_code: 'SEM_1', name: 'Semester 1 (June - Nov)', due_date: '2026-08-31', share_pct: 50 },
+      { term_code: 'SEM_2', name: 'Semester 2 (Dec - April)', due_date: '2026-12-31', share_pct: 50 }
+    ],
+    fee_heads: [
+      { head_code: 'TUITION', title: 'PU Board Tuition & Foundation Coaching', amount: 45000 },
+      { head_code: 'LABORATORY', title: 'Physics, Chemistry & Biology Practicals', amount: 15000 },
+      { head_code: 'HOSTEL_MESS', title: 'Campus Hostel & Dining (AC Room)', amount: 38000 },
+      { head_code: 'EXAM', title: 'Pre-University Board Examination & Pre-Mocks', amount: 3500 }
+    ],
+    total_annual_fee: 101500,
+    concessions_allowed: true,
+    version: 1,
+    is_active: true,
+    notes: 'Configured by PU College Administrator for 2 Semesters Schedule.'
+  }
 ];
 
 const initialAttendance: DemoAttendanceRecord[] = [
@@ -836,6 +1223,10 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   students: initialStudents,
   admissions: initialAdmissions,
   invoices: initialInvoices,
+  receipts: initialReceipts,
+  receiptAudits: initialReceiptAudits,
+  feeStructures: initialFeeStructures,
+  activeFeeInstitutionFilter: 'ALL',
   attendance: initialAttendance,
   marks: initialMarks,
   exams: initialExams,
@@ -906,6 +1297,227 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       }),
     }));
     return { receiptNumber: receiptNum };
+  },
+
+  collectFeeWithReceipt: ({ invoiceId, amount, paymentMethod, transactionRef, allocations, notes }) => {
+    let generatedReceipt: DemoFeeReceipt | null = null;
+    const now = new Date();
+    const formattedDate =
+      now.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' ' +
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    set((state) => {
+      const inv = state.invoices.find((i) => i.id === invoiceId);
+      if (!inv) return state;
+
+      const previousBalance = inv.balance_amount;
+      const newPaid = inv.paid_amount + amount;
+      const newBalance = Math.max(0, inv.total_amount - newPaid);
+      const newStatus = newBalance <= 0.01 ? 'PAID' : 'PARTIAL';
+
+      const receiptCount = state.receipts.length + 1;
+      const receiptNumber = `RCP-AKSH-2026-${1000 + receiptCount}`;
+      const txnRef =
+        transactionRef || `${paymentMethod.slice(0, 3)}/2026/${Date.now().toString().slice(-6)}`;
+
+      // Auto-compute allocations if not provided
+      let finalAllocations = allocations;
+      if (!finalAllocations || finalAllocations.length === 0) {
+        if (inv.breakdown && inv.breakdown.length > 0) {
+          let remAlloc = amount;
+          finalAllocations = inv.breakdown.map((item) => {
+            const alloc = Math.min(remAlloc, item.amount);
+            remAlloc -= alloc;
+            return {
+              head: item.head_code,
+              title: item.title,
+              allocated: alloc,
+              remaining: Math.max(0, item.amount - alloc),
+            };
+          });
+        } else {
+          finalAllocations = [
+            {
+              head: inv.fee_head,
+              title: inv.fee_title,
+              allocated: amount,
+              remaining: newBalance,
+            },
+          ];
+        }
+      }
+
+      generatedReceipt = {
+        id: `rcp-${Date.now()}`,
+        receipt_number: receiptNumber,
+        invoice_id: inv.id,
+        invoice_number: inv.invoice_number,
+        student_id: `st-${inv.admission_number}`,
+        student_name: inv.student_name,
+        admission_number: inv.admission_number,
+        class_name: inv.class_name,
+        academic_year: inv.academic_year || '2026-2027',
+        term_code: inv.term_code || 'TERM_1',
+        term_name: inv.term_name || 'Term 1',
+        amount_paid: amount,
+        previous_balance: previousBalance,
+        current_balance: newBalance,
+        payment_method: paymentMethod,
+        transaction_reference: txnRef,
+        payment_date: formattedDate,
+        collected_by: state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`,
+        allocations: finalAllocations,
+        institution_branding: {
+          institution_name: 'Akshara Global Educational Institutions',
+          affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+          address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          phone: '+91 80 2345 6789',
+          email: 'accounts@akshara.erp.in',
+          receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
+        },
+        qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${amount}`,
+        reprint_count: 0,
+        is_duplicate: false,
+        status: 'CONFIRMED',
+        notes: notes || `Payment received via ${paymentMethod}`,
+      };
+
+      const newAudit: ReceiptAuditLogItem = {
+        id: `aud-${Date.now()}`,
+        receipt_number: receiptNumber,
+        action: 'GENERATED',
+        performed_by: state.currentRole,
+        role: state.currentRole,
+        timestamp: formattedDate,
+        details: { amount, paymentMethod, invoice_number: inv.invoice_number, student_name: inv.student_name },
+      };
+
+      return {
+        invoices: state.invoices.map((i) =>
+          i.id === invoiceId
+            ? {
+                ...i,
+                paid_amount: newPaid,
+                balance_amount: newBalance,
+                status: newStatus,
+                last_payment_date: now.toISOString().split('T')[0],
+              }
+            : i
+        ),
+        receipts: [generatedReceipt, ...state.receipts],
+        receiptAudits: [newAudit, ...state.receiptAudits],
+      };
+    });
+
+    return generatedReceipt!;
+  },
+
+  reprintReceipt: (receiptId) => {
+    let updatedReceipt: DemoFeeReceipt | null = null;
+    const now = new Date();
+    const formattedTimestamp =
+      now.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' ' +
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) +
+      ' IST';
+
+    set((state) => {
+      const rcp = state.receipts.find((r) => r.id === receiptId);
+      if (!rcp) return state;
+
+      const newReprintCount = rcp.reprint_count + 1;
+      updatedReceipt = {
+        ...rcp,
+        reprint_count: newReprintCount,
+        is_duplicate: true,
+        reprinted_at: formattedTimestamp,
+      };
+
+      const newAudit: ReceiptAuditLogItem = {
+        id: `aud-${Date.now()}`,
+        receipt_number: rcp.receipt_number,
+        action: 'REPRINTED_DUPLICATE',
+        performed_by: state.currentRole,
+        role: state.currentRole,
+        timestamp: formattedTimestamp,
+        details: { reprint_count: newReprintCount, reprinted_at: formattedTimestamp },
+      };
+
+      return {
+        receipts: state.receipts.map((r) => (r.id === receiptId ? updatedReceipt! : r)),
+        receiptAudits: [newAudit, ...state.receiptAudits],
+      };
+    });
+
+    return updatedReceipt!;
+  },
+
+  logReceiptAction: (receiptNumber, action, details) => {
+    set((state) => {
+      const formattedTimestamp =
+        new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST';
+      const newAudit: ReceiptAuditLogItem = {
+        id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        receipt_number: receiptNumber,
+        action,
+        performed_by: state.currentRole,
+        role: state.currentRole,
+        timestamp: formattedTimestamp,
+        details: details || {},
+      };
+      return {
+        receiptAudits: [newAudit, ...state.receiptAudits],
+      };
+    });
+  },
+
+  saveFeeStructure: (structure) => {
+    const { currentRole, rolePermissions } = get();
+    const canConfigure =
+      currentRole === 'SUPER_ADMIN' ||
+      currentRole === 'INSTITUTION_ADMIN' ||
+      rolePermissions[currentRole]?.['configure'] === true;
+
+    if (!canConfigure) {
+      return {
+        success: false,
+        message:
+          'Security Guard: Only Institution Admin or Super Admin permitted accounts can configure fee schedules.',
+      };
+    }
+
+    set((state) => {
+      const existing = state.feeStructures.find((fs) => fs.id === structure.id);
+      if (existing) {
+        return {
+          feeStructures: state.feeStructures.map((fs) =>
+            fs.id === structure.id ? { ...structure, version: fs.version + 1 } : fs
+          ),
+        };
+      } else {
+        return {
+          feeStructures: [structure, ...state.feeStructures],
+        };
+      }
+    });
+
+    return {
+      success: true,
+      message: `Fee structure for ${structure.class_or_stream} successfully saved (${structure.term_count} terms schedule).`,
+    };
+  },
+
+  setActiveFeeInstitutionFilter: (filter) => {
+    set({ activeFeeInstitutionFilter: filter });
   },
 
   updateAttendance: (studentId, status) => {
@@ -1255,6 +1867,10 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       students: initialStudents,
       admissions: initialAdmissions,
       invoices: initialInvoices,
+      receipts: initialReceipts,
+      receiptAudits: initialReceiptAudits,
+      feeStructures: initialFeeStructures,
+      activeFeeInstitutionFilter: 'ALL',
       attendance: initialAttendance,
       marks: initialMarks,
       exams: initialExams,

@@ -14,6 +14,11 @@ TENANT_SCOPED_TABLES = [
     "external_exam_providers",
     "exam_approval_audits",
     "permission_change_requests",
+    "fee_structures",
+    "fee_invoices",
+    "fee_payments",
+    "fee_receipts",
+    "receipt_audit_logs",
 ]
 
 
