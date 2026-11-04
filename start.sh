@@ -126,3 +126,4 @@ echo -e "Press ${BOLD}Ctrl+C${NC} anytime to stop both frontend and backend."
 
 # Keep script running while child processes are active
 wait "${API_PID}" "${WEB_PID}"
+
