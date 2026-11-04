@@ -133,7 +133,10 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     title: 'Platform Super Administrator (SaaS Root)',
     badgeColor: 'bg-purple-100 text-purple-900 border-purple-400 font-extrabold',
     allowedTabs: [
-      'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit'
+      'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit',
+      'platform-superadmin', 'laboratory', 'communication', 'examinations', 'progress-cards', 'fees',
+      'attendance', 'transport', 'academics', 'students', 'staff', 'timetable', 'data-migration',
+      'institution-control-centre', 'institution-login', 'admissions'
     ],
     canEdit: ['All platform-level policies', 'Multi-tenant database quotas', 'Global RBAC catalog', 'SaaS subscription billing'],
     canApprove: ['Institution tenant onboarding', 'Platform break-glass override', 'Global license keys'],
@@ -146,7 +149,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-purple-100 text-purple-950 border-purple-500 font-black',
     allowedTabs: [
       'dashboard', 'institution-control-centre', 'permissions-centre', 'dashboard-designer',
-      'examinations', 'progress-cards', 'fees', 'attendance', 'transport', 'students', 'staff', 'timetable', 'data-migration'
+      'examinations', 'progress-cards', 'fees', 'attendance', 'transport', 'students', 'staff', 'timetable', 'data-migration',
+      'laboratory', 'communication', 'academics', 'admissions', 'institution-login'
     ],
     canEdit: ['All campus policies & settings', 'Create institution users & assign custom roles', 'Central Permission Matrix for campus', 'Dashboard Designer layout & menu visibility', 'Configure custom fee heads', 'Strategic budget allocation'],
     canApprove: ['Exceptional fee concessions & waivers', 'Staff recruitments & promotions', 'High-value refunds & write-offs', 'Annual academic results publication'],
@@ -213,7 +217,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     allowedTabs: [
       'dashboard', 'admissions', 'students', 'academics', 'fees', 'attendance',
-      'examinations', 'transport', 'staff', 'timetable', 'analytics', 'settings'
+      'examinations', 'progress-cards', 'laboratory', 'communication', 'transport', 'staff', 'timetable', 'data-migration', 'analytics', 'settings'
     ],
     canEdit: ['Curriculum & subjects', 'Staff profiles', 'Fee structures', 'Institution settings'],
     canApprove: ['Student admissions', 'Staff leave requests', 'Department budgets'],
@@ -225,7 +229,8 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     title: 'Principal (Academic Operations & Approvals)',
     badgeColor: 'bg-blue-100 text-blue-900 border-blue-400 font-bold',
     allowedTabs: [
-      'dashboard', 'examinations', 'progress-cards', 'attendance', 'students', 'staff', 'timetable', 'fees', 'transport'
+      'dashboard', 'examinations', 'progress-cards', 'attendance', 'students', 'staff', 'timetable', 'fees', 'transport',
+      'laboratory', 'communication', 'academics', 'admissions', 'data-migration'
     ],
     canEdit: ['Academic calendar & curriculum', 'Staff classroom evaluations', 'Invigilation duty roster', 'Official student conduct remarks'],
     canApprove: ['Final exam results publication seal (Stage 3)', 'Student leave & transfer certificates', 'Class promotions'],
@@ -2495,11 +2500,17 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify', 'approve', 'publish'] },
     { id: 'progress-cards', label: 'Student Progress Cards', iconName: 'FileCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export', 'print'] },
+    { id: 'laboratory', label: 'Laboratory & QR Inventory', iconName: 'FlaskConical', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify', 'approve'] },
+    { id: 'communication', label: 'Communication Hub (WhatsApp/Telegram)', iconName: 'MessageSquare', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'configure'] },
     { id: 'fees', label: 'Fee Overview & Refunds', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
     { id: 'attendance', label: 'Daily Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify'] },
+    { id: 'academics', label: 'Academic & Subjects', iconName: 'BookOpen', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
     { id: 'students', label: 'Students (SIS)', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'staff', label: 'Faculty & HR', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'timetable', label: 'Weekly Timetable', iconName: 'Clock', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'transport', label: 'Transport Fleet & GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'admissions', label: 'Admissions Pipeline', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
+    { id: 'data-migration', label: 'Data Migration Centre', iconName: 'Upload', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
   ],
   VICE_PRINCIPAL: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
