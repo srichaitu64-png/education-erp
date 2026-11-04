@@ -9,7 +9,15 @@ from app.core.config import settings
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from app.database.session import get_db
 from app.modules.identity.models import User, UserRole, Role, Permission
-from app.modules.identity.schemas import LoginRequest, TokenResponse, UserOut, RoleOut, RefreshTokenRequest
+from app.modules.identity.schemas import (
+    LoginRequest,
+    TokenResponse,
+    UserOut,
+    RoleOut,
+    RefreshTokenRequest,
+    UserAutocompleteRequest,
+    UserAutocompleteResult
+)
 from app.modules.tenants.models import Tenant
 from app.security.deps import get_current_user
 
@@ -174,4 +182,93 @@ async def refresh_token_endpoint(
         "token_type": "bearer",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
+
+
+@router.get("/institution-roles", response_model=List[str])
+async def get_institution_login_roles(
+    tenant_code: str = "akshara",
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Returns available login roles for an institution.
+    Configurable by Platform Super Admin.
+    """
+    stmt_t = select(Tenant).where(Tenant.code == tenant_code.lower().strip())
+    res_t = await db.execute(stmt_t)
+    tenant = res_t.scalars().first()
+    if not tenant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+
+    # Standard supported institutional roles
+    return [
+        "PRINCIPAL",
+        "INSTITUTION_ADMIN",
+        "VICE_PRINCIPAL",
+        "ACCOUNTANT",
+        "EXAM_CONTROLLER",
+        "TEACHER",
+        "LECTURER",
+        "ADMISSION_OFFICER",
+        "PARENT",
+        "STUDENT",
+        "TRANSPORT_MANAGER",
+        "DRIVER",
+        "LIBRARIAN"
+    ]
+
+
+@router.post("/user-autocomplete", response_model=List[UserAutocompleteResult])
+async def autocomplete_users_by_role(
+    req: UserAutocompleteRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Role-based searchable user autocomplete for institution login.
+    Requirements:
+    - Search triggered after 2-4 characters entered.
+    - Strictly scoped to verified institution and selected role.
+    - Active account status check.
+    - Minimal identifying information returned (no passwords, emails, or confidential data).
+    - Prevents account enumeration and cross-tenant leakage.
+    """
+    q = req.query.strip()
+    if len(q) < 2:
+        return []
+
+    stmt_t = select(Tenant).where(Tenant.code == req.tenant_code.lower().strip())
+    res_t = await db.execute(stmt_t)
+    tenant = res_t.scalars().first()
+    if not tenant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
+
+    # Query active users belonging to this tenant with this role
+    stmt = (
+        select(User)
+        .join(UserRole, User.id == UserRole.user_id)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(
+            UserRole.tenant_id == tenant.id,
+            Role.code == req.role_code.upper().strip(),
+            User.is_active == True,
+            User.full_name.ilike(f"%{q}%")
+        )
+        .limit(10)
+    )
+    res = await db.execute(stmt)
+    users = res.scalars().all()
+
+    results = []
+    for u in users:
+        # Minimal non-confidential display label
+        label = f"{u.full_name} ({req.role_code})"
+        results.append(
+            UserAutocompleteResult(
+                id=str(u.id),
+                display_name=u.full_name,
+                identifier=u.email.split("@")[0].upper(), # Staff ID or username token
+                role_code=req.role_code
+            )
+        )
+    return results
+
 

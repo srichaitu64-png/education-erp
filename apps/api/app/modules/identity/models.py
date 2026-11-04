@@ -1,6 +1,7 @@
 import uuid
-from typing import Optional, List
-from sqlalchemy import Boolean, ForeignKey, Index, String, Table, Column
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+from sqlalchemy import Boolean, ForeignKey, Index, String, Table, Column, JSON, DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base, TimestampMixin
@@ -104,4 +105,114 @@ class UserRole(Base, TimestampMixin):
     __table_args__ = (
         Index("idx_user_tenant_role", "user_id", "tenant_id", "role_id", unique=True),
     )
+
+
+class PermissionChangeAudit(Base, TimestampMixin):
+    """
+    Immutable audit log of all permission, role and scope assignments.
+    Records acting Super Admin, target tenant, target user/role, previous state,
+    new state, reason, and supports rollback to a previous version.
+    """
+    __tablename__ = "permission_change_audits"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, index=True)
+    acting_superadmin_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    acting_superadmin_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    target_tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    target_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    target_role_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    action_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        index=True
+        # ROLE_CREATE, ROLE_UPDATE, PERMISSION_ASSIGN, PERMISSION_REVOKE,
+        # USER_ROLE_ASSIGN, USER_ROLE_REVOKE, SCOPE_SET, TEMP_PERMISSION_SET, ROLLBACK
+    )
+    previous_state: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    new_state: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class UserPermissionOverride(Base, TimestampMixin):
+    """
+    Fine-grained user permission override with scope and expiry.
+    Enforces deny-by-default and explicit scope constraints.
+    """
+    __tablename__ = "user_permission_overrides"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    permission_code: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    is_granted: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    
+    # Scopes: tenant, campus, department, programme, class, section, subject, assigned_students, own_child, assigned_route
+    scope_type: Mapped[str] = mapped_column(String(64), default="tenant", nullable=False)
+    scope_value: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    granted_by_superadmin_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+
+class DashboardLayoutConfig(Base, TimestampMixin):
+    """
+    Super Admin Access & Dashboard Designer configurations.
+    Manages menu visibility (Show/Hide), module access (Accessible/Inaccessible),
+    and action permissions per institution role with 3 presentation states:
+    - VISIBLE_ACCESSIBLE
+    - VISIBLE_LOCKED (with explanation)
+    - COMPLETELY_HIDDEN
+    """
+    __tablename__ = "dashboard_layout_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    role_code: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="PUBLISHED", nullable=False) # DRAFT, PUBLISHED, ARCHIVED
+    layout_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    created_by_superadmin_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("idx_dashboard_layout_tenant_role", "tenant_id", "role_code", "version"),
+    )
+
+
+class PermissionChangeRequest(Base, TimestampMixin):
+    """
+    Permission change request submitted by Institution Admins to Platform Super Admin.
+    Ordinary institution roles cannot edit privileges themselves.
+    """
+    __tablename__ = "permission_change_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    requested_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requested_by_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    target_role_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    requested_changes: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
+    justification: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="PENDING", nullable=False) # PENDING, APPROVED, REJECTED
+    reviewed_by_superadmin_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    reviewer_comments: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
 

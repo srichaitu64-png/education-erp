@@ -13,10 +13,20 @@ from app.middleware.tenant import TenantResolutionMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.platform import router as platform_router
 from app.api.v1.institution import router as institution_router
+from app.api.v1.examinations import router as examinations_router
 
 # Import all models to ensure they register on Base.metadata
 from app.modules.tenants.models import Tenant, Campus, TenantDomain
-from app.modules.identity.models import User, Role, Permission, UserRole
+from app.modules.identity.models import (
+    User,
+    Role,
+    Permission,
+    UserRole,
+    PermissionChangeAudit,
+    UserPermissionOverride,
+    DashboardLayoutConfig,
+    PermissionChangeRequest
+)
 from app.modules.subscriptions.models import (
     SubscriptionPlan,
     FeatureCatalog,
@@ -25,6 +35,13 @@ from app.modules.subscriptions.models import (
     TenantFeatureOverride,
     FeatureUsage,
     SubscriptionAuditLog
+)
+from app.modules.examinations.models import (
+    Examination,
+    ExamAttendanceAndMarks,
+    OfflineSyncQueue,
+    ExternalExamProviderConfig,
+    ExamApprovalAudit
 )
 
 
@@ -71,6 +88,7 @@ app.add_middleware(TenantResolutionMiddleware)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(platform_router, prefix=settings.API_V1_STR)
 app.include_router(institution_router, prefix=settings.API_V1_STR)
+app.include_router(examinations_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["System Health"])

@@ -1,18 +1,108 @@
 import { create } from 'zustand';
 
 // ---------------------------------------------------------------------------
-// Role-Based Access Control (RBAC)
+// Role-Based Access Control (RBAC) & Governance Types
 // ---------------------------------------------------------------------------
 export type UserRoleType =
   | 'SUPER_ADMIN'
   | 'INSTITUTION_ADMIN'
   | 'PRINCIPAL'
+  | 'VICE_PRINCIPAL'
   | 'ACCOUNTANT'
   | 'EXAM_CONTROLLER'
   | 'TEACHER'
   | 'PARENT'
   | 'STUDENT'
   | 'TRANSPORT_MANAGER';
+
+export type FineGrainedAction =
+  | 'view'
+  | 'create'
+  | 'edit'
+  | 'delete'
+  | 'archive'
+  | 'submit'
+  | 'verify'
+  | 'approve'
+  | 'reject'
+  | 'publish'
+  | 'export'
+  | 'print'
+  | 'assign'
+  | 'collect'
+  | 'refund'
+  | 'reconcile'
+  | 'configure'
+  | 'manage_users'
+  | 'manage_permissions';
+
+export type PermissionScopeType =
+  | 'tenant'
+  | 'campus'
+  | 'department'
+  | 'programme'
+  | 'class'
+  | 'section'
+  | 'subject'
+  | 'assigned_students'
+  | 'own_child'
+  | 'assigned_route';
+
+export interface ScopeAssignment {
+  scopeType: PermissionScopeType;
+  scopeValue: string;
+  description: string;
+}
+
+export interface TemporaryPermission {
+  id: string;
+  roleCode: UserRoleType;
+  action: FineGrainedAction;
+  module: string;
+  expiresAt: string;
+  reason: string;
+}
+
+export interface PermissionAuditEntry {
+  id: string;
+  version: number;
+  timestamp: string;
+  actingSuperAdmin: string;
+  targetRole: UserRoleType;
+  actionType: string;
+  description: string;
+  previousState: Record<string, boolean>;
+  newState: Record<string, boolean>;
+  canRollback: boolean;
+}
+
+export interface PermissionChangeRequestItem {
+  id: string;
+  requestedByRole: string;
+  requestedByName: string;
+  targetRole: UserRoleType;
+  action: FineGrainedAction;
+  module: string;
+  justification: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  submittedAt: string;
+}
+
+export type PresentationState =
+  | 'VISIBLE_ACCESSIBLE'
+  | 'VISIBLE_LOCKED'
+  | 'COMPLETELY_HIDDEN';
+
+export interface DashboardDesignerNavItem {
+  id: string;
+  label: string;
+  iconName: string;
+  menuVisibility: 'SHOW' | 'HIDE';
+  moduleAccess: 'ACCESSIBLE' | 'INACCESSIBLE';
+  presentationState: PresentationState;
+  lockReason?: string;
+  actionPermissions: FineGrainedAction[];
+}
 
 export interface RolePrivilegeInfo {
   role: UserRoleType;
@@ -22,6 +112,7 @@ export interface RolePrivilegeInfo {
   canEdit: string[];
   canApprove: string[];
   restrictedActions: string[];
+  scopes: ScopeAssignment[];
 }
 
 export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
@@ -29,10 +120,13 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     role: 'SUPER_ADMIN',
     title: 'Platform Super Administrator',
     badgeColor: 'bg-purple-100 text-purple-800 border-purple-300',
-    allowedTabs: ['dashboard', 'tenants', 'plans', 'entitlements', 'audit'],
-    canEdit: ['Tenant subscriptions', 'Platform feature locks', 'Global pricing'],
-    canApprove: ['Institution tenant provisioning', 'Emergency license extensions'],
-    restrictedActions: ['Cannot modify individual student marks or classroom attendance directly'],
+    allowedTabs: [
+      'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit'
+    ],
+    canEdit: ['All platform privileges', 'Role matrix', 'Dashboard Designer layouts', 'Tenant plans', 'Scopes & Temporary permissions'],
+    canApprove: ['Institution tenant provisioning', 'Permission change requests', 'Emergency license overrides'],
+    restrictedActions: ['Protected by Lockout Guard: Cannot remove last Platform Super Admin access'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'ALL_TENANTS', description: 'Platform-wide authority' }]
   },
   INSTITUTION_ADMIN: {
     role: 'INSTITUTION_ADMIN',
@@ -40,23 +134,35 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     allowedTabs: [
       'dashboard', 'admissions', 'students', 'academics', 'fees', 'attendance',
-      'examinations', 'competitive-exams', 'transport', 'staff', 'timetable', 'analytics', 'settings'
+      'examinations', 'transport', 'staff', 'timetable', 'analytics', 'settings'
     ],
     canEdit: ['Curriculum & subjects', 'Staff profiles', 'Fee structures', 'Institution settings'],
     canApprove: ['Student admissions', 'Staff leave requests', 'Department budgets'],
-    restrictedActions: ['Cannot bypass platform subscription tier feature locks'],
+    restrictedActions: ['CANNOT create, modify or grant permissions. Must submit requests to Platform Super Admin'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Global Campus' }]
   },
   PRINCIPAL: {
     role: 'PRINCIPAL',
     title: 'Principal / Director',
     badgeColor: 'bg-blue-100 text-blue-800 border-blue-300',
     allowedTabs: [
-      'dashboard', 'students', 'attendance', 'examinations', 'competitive-exams',
+      'dashboard', 'students', 'attendance', 'examinations',
       'fees', 'transport', 'staff', 'timetable', 'analytics'
     ],
     canEdit: ['Academic calendar', 'Staff evaluations', 'Performance reviews'],
-    canApprove: ['Final exam results publication', 'Fee concessions & refunds', 'Student transfer certificates'],
-    restrictedActions: ['Cannot silently overwrite marks entered by teachers without audit trail'],
+    canApprove: ['Final exam results publication (Stage 3)', 'Fee concessions & refunds', 'Student transfer certificates'],
+    restrictedActions: ['Cannot silently overwrite marks entered by teachers without audit trail; cannot edit permissions'],
+    scopes: [{ scopeType: 'campus', scopeValue: 'MAIN_CAMPUS', description: 'Main Campus & All Academic Streams' }]
+  },
+  VICE_PRINCIPAL: {
+    role: 'VICE_PRINCIPAL',
+    title: 'Vice Principal (Academics & Discipline)',
+    badgeColor: 'bg-sky-100 text-sky-800 border-sky-300',
+    allowedTabs: ['dashboard', 'students', 'attendance', 'examinations', 'timetable', 'staff'],
+    canEdit: ['Timetable schedules', 'Daily class supervision'],
+    canApprove: ['Student leaves', 'Disciplinary reviews'],
+    restrictedActions: ['Cannot approve financial transactions or platform settings'],
+    scopes: [{ scopeType: 'department', scopeValue: 'ACADEMICS', description: 'Secondary & PU Classes' }]
   },
   ACCOUNTANT: {
     role: 'ACCOUNTANT',
@@ -64,17 +170,19 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
     allowedTabs: ['dashboard', 'fees'],
     canEdit: ['Fee collection', 'Payment allocations', 'Issue digital receipts'],
-    canApprove: ['Payment reconciliations', 'Request exceptional fee refunds'],
-    restrictedActions: ['LOCKED from editing marks, examinations, attendance, or student academic data'],
+    canApprove: ['Payment reconciliations', 'Request exceptional fee refunds (Dual Approval required)'],
+    restrictedActions: ['LOCKED from editing marks, examinations, attendance, or student academic data; cannot grant permissions'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Accounts Ledger' }]
   },
   EXAM_CONTROLLER: {
     role: 'EXAM_CONTROLLER',
     title: 'Controller of Examinations',
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
-    allowedTabs: ['dashboard', 'examinations', 'competitive-exams'],
+    allowedTabs: ['dashboard', 'examinations'],
     canEdit: ['Exam timetable schedules', 'Room allocations', 'Invigilator duties', 'Passing criteria'],
-    canApprove: ['Verify submitted marks for anomalies', 'Forward marks to Principal for final publication'],
-    restrictedActions: ['LOCKED from fee collections and HR administration'],
+    canApprove: ['Audit & verify marks for missing entries/errors (Stage 2)'],
+    restrictedActions: ['LOCKED from fee collections, HR, and platform permissions; cannot publish results without Principal seal'],
+    scopes: [{ scopeType: 'programme', scopeValue: 'ALL_PROGRAMMES', description: 'All Academic Examination Batches' }]
   },
   TEACHER: {
     role: 'TEACHER',
@@ -82,8 +190,9 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     allowedTabs: ['dashboard', 'attendance', 'examinations', 'timetable'],
     canEdit: ['Class attendance for assigned periods', 'Draft marks entry for assigned subjects only'],
-    canApprove: ['Submit subject marks batch to Examination Controller'],
+    canApprove: ['Submit subject marks batch to Examination Controller (Stage 1)'],
     restrictedActions: ['LOCKED from other teachers\' subjects, fee collections, and student financial records'],
+    scopes: [{ scopeType: 'subject', scopeValue: 'PHY-101', description: 'I PUC Physics & Class 10 Science' }]
   },
   PARENT: {
     role: 'PARENT',
@@ -93,15 +202,17 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Own emergency contact information'],
     canApprove: ['Online fee payment authorization'],
     restrictedActions: ['STRICTLY ISOLATED to only linked child\'s records; cannot view any other student'],
+    scopes: [{ scopeType: 'own_child', scopeValue: 'ADM-2026-001', description: 'Aarav Sharma (Class 10-A)' }]
   },
   STUDENT: {
     role: 'STUDENT',
     title: 'Student Portal (Ananya Hegde - I PUC PCMB)',
     badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
-    allowedTabs: ['dashboard', 'examinations', 'competitive-exams', 'attendance', 'timetable'],
-    canEdit: ['Attempt mock tests & practice papers'],
+    allowedTabs: ['dashboard', 'examinations', 'attendance', 'timetable'],
+    canEdit: ['Attempt CBT practice tests & view study materials'],
     canApprove: ['None (Read-only access)'],
     restrictedActions: ['LOCKED from entering marks, attendance, fee collections, or staff records'],
+    scopes: [{ scopeType: 'assigned_students', scopeValue: 'ADM-2026-002', description: 'Ananya Hegde (I PUC)' }]
   },
   TRANSPORT_MANAGER: {
     role: 'TRANSPORT_MANAGER',
@@ -111,6 +222,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Routes, bus stops, vehicle documents, driver assignments', 'Trip status updates'],
     canApprove: ['Route allocation requests'],
     restrictedActions: ['LOCKED from academic marks, examination records, and fee ledgers'],
+    scopes: [{ scopeType: 'assigned_route', scopeValue: 'ROUTE_104_208', description: 'Campus Bus Routes' }]
   },
 };
 
@@ -201,15 +313,39 @@ export interface ExamScheduleItem {
   passing_marks: number;
 }
 
+export type InstitutionalExamCategory =
+  | 'Weekly Test'
+  | 'Unit Test'
+  | 'Monthly Test'
+  | 'Quarterly Exam'
+  | 'Half-Yearly'
+  | 'Annual Board Pre-Mock'
+  | 'Practical Lab'
+  | 'Model Exam'
+  | 'NEET Foundation'
+  | 'JEE Foundation'
+  | 'KCET Foundation'
+  | 'PU Competitive Exam Record';
+
+export type ExamDeliveryMode =
+  | 'Offline (Paper-based)'
+  | 'Internal Online'
+  | 'External Provider Adapter';
+
 export interface DemoExam {
   id: string;
   title: string;
+  code: string;
   academic_year: string;
   target_level: 'School' | 'PU College' | 'Degree College';
   class_name: string;
-  exam_type: 'Unit Test' | 'Midterm' | 'Annual Board Pre-Mock' | 'Practical Lab';
+  category: InstitutionalExamCategory;
+  exam_mode: ExamDeliveryMode;
+  question_paper_attached: boolean;
+  online_provider_name?: string;
   status: 'SCHEDULED' | 'MARKS_ENTRY' | 'CONTROLLER_VERIFIED' | 'PRINCIPAL_APPROVED' | 'PUBLISHED';
   schedules: ExamScheduleItem[];
+  instructions?: string;
 }
 
 export interface AcademicSubject {
@@ -225,19 +361,6 @@ export interface AcademicSubject {
   is_compulsory: boolean;
   assigned_teacher: string;
   is_archived: boolean;
-}
-
-export interface CompetitiveQuestion {
-  id: string;
-  exam_type: 'NEET' | 'JEE_MAIN' | 'JEE_ADVANCED' | 'KCET' | 'COMEDK';
-  subject: string;
-  chapter: string;
-  question_text: string;
-  options: { label: string; text: string }[];
-  correct_label: string;
-  explanation: string;
-  marks_positive: number;
-  marks_negative: number;
 }
 
 export interface TransportRoute {
@@ -256,8 +379,19 @@ export interface TransportRoute {
   stops: { stop_name: string; scheduled_time: string; student_count: number; is_passed: boolean }[];
 }
 
+export interface ExternalExamProvider {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+  endpoint: string;
+  hasApiKey: boolean;
+  lastSync: string;
+  syncStatus: string;
+}
+
 // ---------------------------------------------------------------------------
-// Zustand Store State
+// Zustand Store State Interface
 // ---------------------------------------------------------------------------
 interface DemoState {
   // Active Simulated Role
@@ -272,8 +406,20 @@ interface DemoState {
   marks: DemoExamMarks[];
   exams: DemoExam[];
   subjects: AcademicSubject[];
-  competitiveQuestions: CompetitiveQuestion[];
   transportRoutes: TransportRoute[];
+  externalProviders: ExternalExamProvider[];
+
+  // Super Admin Controlled Permission Management Matrix
+  rolePermissions: Record<UserRoleType, Record<FineGrainedAction, boolean>>;
+  temporaryPermissions: TemporaryPermission[];
+  permissionAudits: PermissionAuditEntry[];
+  changeRequests: PermissionChangeRequestItem[];
+  
+  // Super Admin Dashboard & Access Designer State
+  designerRolePreview: UserRoleType;
+  designerNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]>;
+  designerVersion: number;
+  designerStatus: 'DRAFT' | 'PUBLISHED';
 
   // Actions
   addStudent: (student: Omit<DemoStudent, 'id'>) => void;
@@ -283,10 +429,13 @@ interface DemoState {
   updateAttendance: (studentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => void;
   saveMark: (studentId: string, subject: string, obtained: number) => void;
 
-  // Exam Workflow Actions
+  // Institutional Exam Workflow Actions (4-stage approval)
+  submitMarksAsTeacher: (examId: string) => void;
   verifyExamAsController: (examId: string) => void;
   approveExamAsPrincipal: (examId: string) => void;
   publishExamResults: (examId: string) => void;
+  addExam: (exam: Omit<DemoExam, 'id' | 'status'>) => void;
+  simulateOfflineSync: (examId: string) => { status: 'APPLIED' | 'CONFLICT_DETECTED'; message: string };
 
   // Subject Management Actions
   addSubject: (subj: Omit<AcademicSubject, 'id' | 'is_archived'>) => void;
@@ -296,11 +445,26 @@ interface DemoState {
   // Transport Tracking Simulator
   toggleTripStatus: (routeId: string) => void;
 
+  // Super Admin Permission Governance Controls
+  updateRoleActionPermission: (role: UserRoleType, action: FineGrainedAction, allowed: boolean, reason: string) => boolean;
+  addTemporaryPermission: (temp: Omit<TemporaryPermission, 'id'>) => void;
+  revokeTemporaryPermission: (id: string) => void;
+  submitPermissionChangeRequest: (req: Omit<PermissionChangeRequestItem, 'id' | 'status' | 'submittedAt'>) => void;
+  reviewPermissionChangeRequest: (requestId: string, approved: boolean, reason: string) => void;
+  rollbackPermissionVersion: (targetVersion: number) => void;
+
+  // Super Admin Dashboard Designer Controls
+  setDesignerRolePreview: (role: UserRoleType) => void;
+  updateDesignerItemState: (role: UserRoleType, itemId: string, state: PresentationState, lockReason?: string) => void;
+  updateDesignerItemVisibility: (role: UserRoleType, itemId: string, visibility: 'SHOW' | 'HIDE') => void;
+  publishDashboardDesignerConfig: (reason: string) => void;
+  rollbackDashboardDesignerConfig: () => void;
+
   resetDemoData: () => void;
 }
 
 // ---------------------------------------------------------------------------
-// Seed Data
+// Initial Seed Data
 // ---------------------------------------------------------------------------
 const initialStudents: DemoStudent[] = [
   { id: 'st-1', admission_number: 'ADM-2026-001', roll_number: '101', first_name: 'Aarav', last_name: 'Sharma', institution_level: 'School', class_name: 'Class 10', section_or_stream: 'Section A', guardian_name: 'Rajesh Sharma', guardian_phone: '+91 98450 12345', fee_balance: 0, attendance_pct: 96.5, status: 'ACTIVE' },
@@ -344,30 +508,71 @@ const initialExams: DemoExam[] = [
   {
     id: 'exam-1',
     title: 'Mid-Term Examinations 2026',
+    code: 'EXAM-2026-MID',
     academic_year: '2026-2027',
     target_level: 'PU College',
     class_name: 'I & II PUC (Science & Commerce)',
-    exam_type: 'Midterm',
+    category: 'Half-Yearly',
+    exam_mode: 'Offline (Paper-based)',
+    question_paper_attached: true,
     status: 'CONTROLLER_VERIFIED',
+    instructions: 'Bring scientific calculator, non-programmable, and certified laboratory observation log.',
     schedules: [
       { id: 'sch-1', subject: 'Physics', exam_date: '2026-11-18', start_time: '09:30 AM', end_time: '12:30 PM', room: 'Hall A-101', invigilator: 'Dr. V. Murthy', theory_max: 70, practical_max: 30, passing_marks: 35 },
       { id: 'sch-2', subject: 'Chemistry', exam_date: '2026-11-20', start_time: '09:30 AM', end_time: '12:30 PM', room: 'Hall A-102', invigilator: 'Prof. S. Joshi', theory_max: 70, practical_max: 30, passing_marks: 35 },
       { id: 'sch-3', subject: 'Mathematics', exam_date: '2026-11-23', start_time: '09:30 AM', end_time: '12:30 PM', room: 'Hall B-201', invigilator: 'Mrs. K. Swamy', theory_max: 80, practical_max: 20, passing_marks: 35 },
       { id: 'sch-4', subject: 'Biology', exam_date: '2026-11-25', start_time: '09:30 AM', end_time: '12:30 PM', room: 'Bio Lab Complex', invigilator: 'Dr. Anita Rao', theory_max: 70, practical_max: 30, passing_marks: 35 },
-    ]
+    ],
   },
   {
     id: 'exam-2',
     title: 'Unit Test 2 (Formative Assessment)',
+    code: 'EXAM-2026-UT2',
     academic_year: '2026-2027',
     target_level: 'School',
     class_name: 'Class 9 & 10',
-    exam_type: 'Unit Test',
+    category: 'Unit Test',
+    exam_mode: 'Offline (Paper-based)',
+    question_paper_attached: true,
     status: 'PUBLISHED',
+    instructions: 'Internal continuous evaluation assessment.',
     schedules: [
-      { id: 'sch-5', subject: 'Mathematics', exam_date: '2026-10-15', start_time: '10:00 AM', end_time: '11:30 AM', room: 'Classrooms 10A, 10B', invigilator: 'Class Teachers', theory_max: 50, practical_max: 0, passing_marks: 18 },
-      { id: 'sch-6', subject: 'Science', exam_date: '2026-10-16', start_time: '10:00 AM', end_time: '11:30 AM', room: 'Classrooms 10A, 10B', invigilator: 'Class Teachers', theory_max: 50, practical_max: 0, passing_marks: 18 },
-    ]
+      { id: 'sch-5', subject: 'Science & Technology', exam_date: '2026-11-10', start_time: '10:00 AM', end_time: '11:30 AM', room: 'Classroom 10-A', invigilator: 'Mrs. K. Swamy', theory_max: 40, practical_max: 10, passing_marks: 18 },
+      { id: 'sch-6', subject: 'Mathematics', exam_date: '2026-11-12', start_time: '10:00 AM', end_time: '11:30 AM', room: 'Classroom 10-A', invigilator: 'Mr. Arvind G.', theory_max: 40, practical_max: 10, passing_marks: 18 },
+    ],
+  },
+  {
+    id: 'exam-3',
+    title: 'NEET Foundation Diagnostic Test 3',
+    code: 'EXAM-2026-NEET-FND',
+    academic_year: '2026-2027',
+    target_level: 'PU College',
+    class_name: 'I PUC (PCMB Batch A)',
+    category: 'NEET Foundation',
+    exam_mode: 'Internal Online',
+    question_paper_attached: false,
+    status: 'SCHEDULED',
+    instructions: '720 marks full syllabus diagnostic simulator. Automatic objective scoring with negative marking.',
+    schedules: [
+      { id: 'sch-7', subject: 'Physics, Chemistry & Biology', exam_date: '2026-11-28', start_time: '02:00 PM', end_time: '05:20 PM', room: 'Digital CBT Lab 2', invigilator: 'Dr. V. Murthy', theory_max: 720, practical_max: 0, passing_marks: 300 },
+    ],
+  },
+  {
+    id: 'exam-4',
+    title: 'External TCS iON State Pre-Mock',
+    code: 'EXAM-2026-EXT-TCS',
+    academic_year: '2026-2027',
+    target_level: 'PU College',
+    class_name: 'II PUC (Science & Commerce)',
+    category: 'Model Exam',
+    exam_mode: 'External Provider Adapter',
+    online_provider_name: 'TCS iON Assessment Engine',
+    question_paper_attached: false,
+    status: 'SCHEDULED',
+    instructions: 'Institution subscription reference: TCS-ION-AKSHARA-2026. External platform costs billed separately.',
+    schedules: [
+      { id: 'sch-8', subject: 'All Board Papers Pre-Mock', exam_date: '2026-12-05', start_time: '09:00 AM', end_time: '12:00 PM', room: 'TCS Authorized Center', invigilator: 'TCS Invigilator Lead', theory_max: 100, practical_max: 0, passing_marks: 35 },
+    ],
   }
 ];
 
@@ -376,81 +581,10 @@ const initialSubjects: AcademicSubject[] = [
   { id: 'sub-2', code: 'CHEM-102', name: 'Chemistry (Inorganic & Organic)', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMB / PCMC', theory_marks: 70, practical_marks: 30, is_compulsory: true, assigned_teacher: 'Prof. S. Joshi', is_archived: false },
   { id: 'sub-3', code: 'MATH-103', name: 'Pure & Applied Mathematics', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMB / PCMC', theory_marks: 80, practical_marks: 20, is_compulsory: true, assigned_teacher: 'Mrs. K. Swamy', is_archived: false },
   { id: 'sub-4', code: 'BIO-104', name: 'Biology (Botany & Zoology)', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMB', theory_marks: 70, practical_marks: 30, is_compulsory: false, assigned_teacher: 'Dr. Anita Rao', is_archived: false },
-  { id: 'sub-5', code: 'CS-105', name: 'Computer Science (Python & SQL)', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMC', theory_marks: 70, practical_marks: 30, is_compulsory: false, assigned_teacher: 'Mr. Arvind Nathan', is_archived: false },
-  { id: 'sub-6', code: 'ENG-100', name: 'General English & Communication', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'Common', theory_marks: 100, practical_marks: 0, is_compulsory: true, assigned_teacher: 'Mrs. Mary D\'Souza', is_archived: false },
-  { id: 'sub-7', code: 'SCH-MTH', name: 'Mathematics 10', institution_level: 'School', target_class: 'Class 10', stream_or_comb: 'General', theory_marks: 80, practical_marks: 20, is_compulsory: true, assigned_teacher: 'Mrs. Geetha R.', is_archived: false },
-  { id: 'sub-8', code: 'SCH-SCI', name: 'Science 10', institution_level: 'School', target_class: 'Class 10', stream_or_comb: 'General', theory_marks: 80, practical_marks: 20, is_compulsory: true, assigned_teacher: 'Mr. Pradeep K.', is_archived: false },
-];
-
-const initialCompetitiveQuestions: CompetitiveQuestion[] = [
-  {
-    id: 'q-neet-1',
-    exam_type: 'NEET',
-    subject: 'Physics',
-    chapter: 'Ray Optics and Optical Instruments',
-    question_text: 'A convex lens of focal length 20 cm is placed in contact with a concave lens of focal length 40 cm. The power of the combination is:',
-    options: [
-      { label: 'A', text: '+2.5 D' },
-      { label: 'B', text: '-2.5 D' },
-      { label: 'C', text: '+5.0 D' },
-      { label: 'D', text: '-1.25 D' }
-    ],
-    correct_label: 'A',
-    explanation: '1/F = 1/f1 + 1/f2 = 1/20 - 1/40 = 1/40 cm = 1/0.4 m => P = 1/0.4 = +2.5 Dioptres.',
-    marks_positive: 4,
-    marks_negative: 1
-  },
-  {
-    id: 'q-neet-2',
-    exam_type: 'NEET',
-    subject: 'Biology',
-    chapter: 'Genetics and Evolution',
-    question_text: 'In Mendel\'s dihybrid cross with heterozygous yellow round seeds (YyRr), the proportion of F2 offspring with wrinkled green phenotype is:',
-    options: [
-      { label: 'A', text: '9/16' },
-      { label: 'B', text: '3/16' },
-      { label: 'C', text: '1/16' },
-      { label: 'D', text: '1/4' }
-    ],
-    correct_label: 'C',
-    explanation: 'The phenotypic ratio is 9:3:3:1. The double recessive genotype yyrr (wrinkled green) is 1/16.',
-    marks_positive: 4,
-    marks_negative: 1
-  },
-  {
-    id: 'q-jee-1',
-    exam_type: 'JEE_MAIN',
-    subject: 'Mathematics',
-    chapter: 'Definite Integrals',
-    question_text: 'The value of the definite integral ∫ (from 0 to π/2) [sin³(x) / (sin³(x) + cos³(x))] dx is equal to:',
-    options: [
-      { label: 'A', text: 'π/2' },
-      { label: 'B', text: 'π/4' },
-      { label: 'C', text: '0' },
-      { label: 'D', text: '1' }
-    ],
-    correct_label: 'B',
-    explanation: 'Using property ∫[0 to a] f(x)dx = ∫[0 to a] f(a-x)dx, 2I = ∫[0 to π/2] 1 dx = π/2 => I = π/4.',
-    marks_positive: 4,
-    marks_negative: 1
-  },
-  {
-    id: 'q-kcet-1',
-    exam_type: 'KCET',
-    subject: 'Chemistry',
-    chapter: 'Electrochemistry',
-    question_text: 'The quantity of electricity required to liberate 1 mole of Aluminium from molten Al2O3 is:',
-    options: [
-      { label: 'A', text: '1 Faraday' },
-      { label: 'B', text: '2 Faradays' },
-      { label: 'C', text: '3 Faradays' },
-      { label: 'D', text: '6 Faradays' }
-    ],
-    correct_label: 'C',
-    explanation: 'Al3+ + 3e- -> Al requires 3 moles of electrons = 3 Faradays per mole of aluminium metal.',
-    marks_positive: 1,
-    marks_negative: 0
-  }
+  { id: 'sub-5', code: 'CS-105', name: 'Computer Science (Python & SQL)', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMC', theory_marks: 70, practical_marks: 30, is_compulsory: false, assigned_teacher: 'Mr. Arvind G.', is_archived: false },
+  { id: 'sub-6', code: 'ACC-201', name: 'Accountancy & Financial Statements', institution_level: 'PU College', target_class: 'I PUC', stream_or_comb: 'Commerce', theory_marks: 80, practical_marks: 20, is_compulsory: true, assigned_teacher: 'K. S. Narayana', is_archived: false },
+  { id: 'sub-7', code: 'SCI-091', name: 'Secondary Science & Experimentation', institution_level: 'School', target_class: 'Class 10', theory_marks: 80, practical_marks: 20, is_compulsory: true, assigned_teacher: 'Mrs. K. Swamy', is_archived: false },
+  { id: 'sub-8', code: 'DSA-301', name: 'Data Structures & Algorithms', institution_level: 'Degree College', target_class: 'B.Sc Computer Science', theory_marks: 60, practical_marks: 40, credits: 4, is_compulsory: true, assigned_teacher: 'Prof. Alok Nath', is_archived: false },
 ];
 
 const initialTransportRoutes: TransportRoute[] = [
@@ -464,7 +598,7 @@ const initialTransportRoutes: TransportRoute[] = [
     driver_name: 'Ramesh Gowda',
     driver_phone: '+91 98451 98765',
     attendant_name: 'Manjula Devi',
-    current_location: 'JP Nagar 6th Phase Metro Junction',
+    current_location: 'Vega City Mall Junction, Bannerghatta Road',
     status: 'IN_TRANSIT',
     current_speed_kmh: 36,
     stops: [
@@ -472,7 +606,7 @@ const initialTransportRoutes: TransportRoute[] = [
       { stop_name: 'Sarakki Signal', scheduled_time: '07:45 AM', student_count: 12, is_passed: true },
       { stop_name: 'Vega City Mall Junction', scheduled_time: '08:00 AM', student_count: 9, is_passed: false },
       { stop_name: 'Akshara Global Main Campus Gate', scheduled_time: '08:25 AM', student_count: 0, is_passed: false },
-    ]
+    ],
   },
   {
     id: 'route-2',
@@ -484,27 +618,220 @@ const initialTransportRoutes: TransportRoute[] = [
     driver_name: 'Suresh Kumar',
     driver_phone: '+91 98452 45678',
     attendant_name: 'Basavaraj P.',
-    current_location: 'Marathahalli Bridge',
+    current_location: 'Marathahalli Multiplex Flyover',
     status: 'IN_TRANSIT',
     current_speed_kmh: 42,
     stops: [
       { stop_name: 'ITPB Main Gate Whitefield', scheduled_time: '07:15 AM', student_count: 15, is_passed: true },
-      { stop_name: 'Marathahalli Multiplex', scheduled_time: '07:40 AM', student_count: 14, is_passed: true },
+      { stop_name: 'Marathahalli Multiplex', scheduled_time: '07:40 AM', student_count: 14, is_passed: false },
       { stop_name: 'Bellandur EcoSpace', scheduled_time: '08:05 AM', student_count: 11, is_passed: false },
       { stop_name: 'Akshara Global Main Campus Gate', scheduled_time: '08:30 AM', student_count: 0, is_passed: false },
-    ]
+    ],
+  },
+];
+
+const initialExternalProviders: ExternalExamProvider[] = [
+  { id: 'prov-1', code: 'TCS_ION_ADAPTER', name: 'TCS iON Assessment Engine', isActive: true, endpoint: 'https://api.tcsion.example.com/v2', hasApiKey: true, lastSync: '2026-11-03 18:30 IST', syncStatus: 'HEALTHY' },
+  { id: 'prov-2', code: 'NTA_MOCK_ADAPTER', name: 'National Testing Agency Mock Adapter', isActive: true, endpoint: 'https://api.nta-mock.example.com/sync', hasApiKey: true, lastSync: '2026-11-02 11:15 IST', syncStatus: 'IDLE' },
+  { id: 'prov-3', code: 'EDUTECH_CBT_PROV', name: 'EduTech Cloud CBT Engine', isActive: false, endpoint: 'https://cbt.edutech.example.com', hasApiKey: false, lastSync: 'Never', syncStatus: 'NOT_CONFIGURED' },
+];
+
+// Initial fine-grained permissions matrix for 10 roles
+const initialRolePermissions: Record<UserRoleType, Record<FineGrainedAction, boolean>> = {
+  SUPER_ADMIN: {
+    view: true, create: true, edit: true, delete: true, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: true, collect: true, refund: true, reconcile: true, configure: true,
+    manage_users: true, manage_permissions: true
+  },
+  INSTITUTION_ADMIN: {
+    view: true, create: true, edit: true, delete: false, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: false, export: true, print: true,
+    assign: true, collect: false, refund: false, reconcile: false, configure: true,
+    manage_users: true, manage_permissions: false
+  },
+  PRINCIPAL: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: false, collect: false, refund: true, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  VICE_PRINCIPAL: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: false, reject: true, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  ACCOUNTANT: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: false, reject: false, publish: false, export: true, print: true,
+    assign: false, collect: true, refund: false, reconcile: true, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  EXAM_CONTROLLER: {
+    view: true, create: true, edit: true, delete: false, archive: true, submit: true,
+    verify: true, approve: false, reject: true, publish: false, export: true, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: true,
+    manage_users: false, manage_permissions: false
+  },
+  TEACHER: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: false, approve: false, reject: false, publish: false, export: false, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  PARENT: {
+    view: true, create: false, edit: false, delete: false, archive: false, submit: false,
+    verify: false, approve: false, reject: false, publish: false, export: false, print: true,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  STUDENT: {
+    view: true, create: false, edit: false, delete: false, archive: false, submit: true,
+    verify: false, approve: false, reject: false, publish: false, export: false, print: false,
+    assign: false, collect: false, refund: false, reconcile: false, configure: false,
+    manage_users: false, manage_permissions: false
+  },
+  TRANSPORT_MANAGER: {
+    view: true, create: true, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: false, reject: false, publish: false, export: true, print: true,
+    assign: true, collect: false, refund: false, reconcile: false, configure: true,
+    manage_users: false, manage_permissions: false
+  },
+};
+
+const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
+  SUPER_ADMIN: [
+    { id: 'dashboard', label: 'Platform Overview', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
+    { id: 'permissions-centre', label: 'Central Permission Matrix', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'assign', 'manage_permissions'] },
+    { id: 'dashboard-designer', label: 'Dashboard & Access Designer', iconName: 'Layout', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'configure'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve', 'publish'] },
+    { id: 'fees', label: 'Multi-Category Fee Engine', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'reconcile'] },
+    { id: 'transport', label: 'Transport & Fleet GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'configure'] },
+  ],
+  INSTITUTION_ADMIN: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'admissions', label: 'Admissions Pipeline', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'approve'] },
+    { id: 'academics', label: 'Academic & Subjects', iconName: 'BookOpen', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'archive'] },
+    { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'verify'] },
+    { id: 'fees', label: 'Fee Management', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'permissions-centre', label: 'Permission Requests', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Only Platform Super Admin can edit privileges. Submit a Change Request for approval.', actionPermissions: ['view', 'submit'] },
+  ],
+  PRINCIPAL: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify', 'approve', 'publish'] },
+    { id: 'fees', label: 'Fee Overview & Refunds', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
+    { id: 'attendance', label: 'Daily Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify'] },
+    { id: 'permissions-centre', label: 'System Privileges', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'INACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Principal role cannot grant or modify system permissions directly.', actionPermissions: ['view'] },
+  ],
+  VICE_PRINCIPAL: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify'] },
+    { id: 'attendance', label: 'Daily Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
+    { id: 'fees', label: 'Financial Ledgers', iconName: 'CreditCard', menuVisibility: 'HIDE', moduleAccess: 'INACCESSIBLE', presentationState: 'COMPLETELY_HIDDEN', actionPermissions: [] },
+  ],
+  ACCOUNTANT: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'fees', label: 'Fee Collection & Dues', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'collect', 'reconcile', 'print'] },
+    { id: 'examinations', label: 'Academic Examinations', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'INACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Finance roles are strictly separated from academic examination marks and grading.', actionPermissions: ['view'] },
+  ],
+  EXAM_CONTROLLER: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Examinations Management', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'verify', 'export'] },
+    { id: 'fees', label: 'Fee Collections', iconName: 'CreditCard', menuVisibility: 'HIDE', moduleAccess: 'INACCESSIBLE', presentationState: 'COMPLETELY_HIDDEN', actionPermissions: [] },
+  ],
+  TEACHER: [
+    { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Subject Marks Entry', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'submit'] },
+    { id: 'attendance', label: 'Class Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit'] },
+    { id: 'fees', label: 'Fee Ledgers', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'INACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Faculty members do not have access to financial ledgers.', actionPermissions: [] },
+  ],
+  PARENT: [
+    { id: 'dashboard', label: 'Student Profile', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Published Report Cards', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'print'] },
+    { id: 'fees', label: 'Online Fee Payment', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'collect'] },
+    { id: 'transport', label: 'Live Bus Tracking', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  STUDENT: [
+    { id: 'dashboard', label: 'My Academic Dashboard', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'examinations', label: 'Exam Timetables & Results', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'attendance', label: 'My Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
+  TRANSPORT_MANAGER: [
+    { id: 'dashboard', label: 'Fleet Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'transport', label: 'Transport Routes & GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'assign'] },
+  ],
+};
+
+const initialPermissionAudits: PermissionAuditEntry[] = [
+  {
+    id: 'audit-v3',
+    version: 3,
+    timestamp: '2026-11-04 10:15 IST',
+    actingSuperAdmin: 'admin@platform.erp.in',
+    targetRole: 'PRINCIPAL',
+    actionType: 'ROLE_UPDATE',
+    description: 'Updated Principal privileges: Added Result Publication and Concession Approval; enforced anti-overwrite marks audit.',
+    previousState: { publish: false, approve: true },
+    newState: { publish: true, approve: true },
+    canRollback: true
+  },
+  {
+    id: 'audit-v2',
+    version: 2,
+    timestamp: '2026-11-03 14:20 IST',
+    actingSuperAdmin: 'admin@platform.erp.in',
+    targetRole: 'ACCOUNTANT',
+    actionType: 'RESTRICTION_ENFORCE',
+    description: 'Enforced strict segregation of duties: Locked Accountant from academic examination editing.',
+    previousState: { edit_marks: false },
+    newState: { edit_marks: false },
+    canRollback: true
+  },
+  {
+    id: 'audit-v1',
+    version: 1,
+    timestamp: '2026-11-01 09:00 IST',
+    actingSuperAdmin: 'admin@platform.erp.in',
+    targetRole: 'SUPER_ADMIN',
+    actionType: 'INITIAL_BASELINE',
+    description: 'Initial platform RBAC baseline seeded. Non-destructive migration applied.',
+    previousState: {},
+    newState: {},
+    canRollback: false
   }
 ];
 
+const initialChangeRequests: PermissionChangeRequestItem[] = [
+  {
+    id: 'pcr-101',
+    requestedByRole: 'INSTITUTION_ADMIN',
+    requestedByName: 'Dr. Ramesh Kumar (Principal / Admin)',
+    targetRole: 'EXAM_CONTROLLER',
+    action: 'publish',
+    module: 'examinations',
+    justification: 'Authorize Exam Controller to publish Unit Test 2 formative assessment results directly.',
+    status: 'PENDING',
+    submittedAt: '2026-11-04 09:30 IST'
+  }
+];
+
+// Helper calculation
+const calcGrade = (m: number): string => {
+  if (m >= 90) return 'A+';
+  if (m >= 80) return 'A';
+  if (m >= 70) return 'B+';
+  if (m >= 60) return 'B';
+  if (m >= 50) return 'C';
+  return 'F';
+};
+
 // ---------------------------------------------------------------------------
-// Store Implementation
+// Store Creation
 // ---------------------------------------------------------------------------
 export const useDemoStore = create<DemoState>((set, get) => ({
   currentRole: 'PRINCIPAL',
-
-  switchRole: (role) => {
-    set({ currentRole: role });
-  },
+  switchRole: (role) => set({ currentRole: role }),
 
   students: initialStudents,
   admissions: initialAdmissions,
@@ -513,9 +840,29 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   marks: initialMarks,
   exams: initialExams,
   subjects: initialSubjects,
-  competitiveQuestions: initialCompetitiveQuestions,
   transportRoutes: initialTransportRoutes,
+  externalProviders: initialExternalProviders,
 
+  rolePermissions: initialRolePermissions,
+  temporaryPermissions: [
+    {
+      id: 'temp-1',
+      roleCode: 'TEACHER',
+      action: 'edit',
+      module: 'examinations',
+      expiresAt: '2026-11-10 23:59 IST',
+      reason: 'Mid-term paper grading window extension'
+    }
+  ],
+  permissionAudits: initialPermissionAudits,
+  changeRequests: initialChangeRequests,
+
+  designerRolePreview: 'PRINCIPAL',
+  designerNavConfigs: initialNavConfigs,
+  designerVersion: 2,
+  designerStatus: 'PUBLISHED',
+
+  // Actions
   addStudent: (data) => {
     const newStudent: DemoStudent = {
       id: `st-${Date.now()}`,
@@ -524,13 +871,13 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     set((state) => ({ students: [newStudent, ...state.students] }));
   },
 
-  createAdmission: (data) => {
+  createAdmission: (appData) => {
     const newApp: DemoAdmission = {
       id: `adm-${Date.now()}`,
       application_number: `APP-2026-${Math.floor(100 + Math.random() * 900)}`,
       submission_date: new Date().toISOString().split('T')[0],
       status: 'PENDING',
-      ...data,
+      ...appData,
     };
     set((state) => ({ admissions: [newApp, ...state.admissions] }));
   },
@@ -542,7 +889,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   },
 
   collectFee: (invoiceId, amount) => {
-    const receiptNum = `RCP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNum = `RCPT-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     set((state) => ({
       invoices: state.invoices.map((inv) => {
         if (inv.id === invoiceId) {
@@ -570,20 +917,8 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   },
 
   saveMark: (studentId, subject, obtained) => {
-    const calcGrade = (score: number) => {
-      if (score >= 90) return 'A+';
-      if (score >= 80) return 'A';
-      if (score >= 70) return 'B+';
-      if (score >= 60) return 'B';
-      if (score >= 50) return 'C';
-      if (score >= 35) return 'Pass';
-      return 'F';
-    };
-
     set((state) => {
-      const existing = state.marks.find(
-        (m) => m.student_id === studentId && m.subject === subject
-      );
+      const existing = state.marks.find((m) => m.student_id === studentId && m.subject === subject);
       if (existing) {
         return {
           marks: state.marks.map((m) =>
@@ -611,7 +946,15 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     });
   },
 
-  // Exam Workflow
+  // 4-Stage Institutional Examination Workflow
+  submitMarksAsTeacher: (examId) => {
+    set((state) => ({
+      exams: state.exams.map((e) =>
+        e.id === examId ? { ...e, status: 'MARKS_ENTRY' } : e
+      )
+    }));
+  },
+
   verifyExamAsController: (examId) => {
     set((state) => ({
       exams: state.exams.map((e) =>
@@ -634,6 +977,30 @@ export const useDemoStore = create<DemoState>((set, get) => ({
         e.id === examId ? { ...e, status: 'PUBLISHED' } : e
       )
     }));
+  },
+
+  addExam: (examData) => {
+    const newEx: DemoExam = {
+      id: `exam-${Date.now()}`,
+      status: 'SCHEDULED',
+      ...examData
+    };
+    set((state) => ({ exams: [...state.exams, newEx] }));
+  },
+
+  simulateOfflineSync: (examId) => {
+    const exam = get().exams.find(e => e.id === examId);
+    if (!exam) return { status: 'CONFLICT_DETECTED', message: 'Exam record not found' };
+    if (exam.status === 'PRINCIPAL_APPROVED' || exam.status === 'PUBLISHED') {
+      return {
+        status: 'CONFLICT_DETECTED',
+        message: 'Conflict: Examination results already approved/published by Principal. Silent offline overwrite prevented.'
+      };
+    }
+    return {
+      status: 'APPLIED',
+      message: 'Offline operation validated against server version (v1). Synchronized successfully.'
+    };
   },
 
   // Subjects Management
@@ -675,6 +1042,213 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     }));
   },
 
+  // Super Admin Permission Governance
+  updateRoleActionPermission: (role, action, allowed, reason) => {
+    // Lockout Guard: Super Admin cannot strip manage_permissions or view from SUPER_ADMIN
+    if (role === 'SUPER_ADMIN' && action === 'manage_permissions' && !allowed) {
+      alert('Security Lockout Guard: Cannot revoke platform management privileges from Super Admin.');
+      return false;
+    }
+
+    set((state) => {
+      const currentRoleActions = state.rolePermissions[role] || ({} as Record<FineGrainedAction, boolean>);
+      const updated = {
+        ...state.rolePermissions,
+        [role]: {
+          ...currentRoleActions,
+          [action]: allowed
+        }
+      };
+
+      const newAudit: PermissionAuditEntry = {
+        id: `audit-${Date.now()}`,
+        version: state.permissionAudits.length + 1,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+        actingSuperAdmin: 'admin@platform.erp.in',
+        targetRole: role,
+        actionType: 'ACTION_PERMISSION_UPDATE',
+        description: `Set permission '${action}' to ${allowed ? 'ALLOWED' : 'DENIED'} for role '${role}'. Reason: ${reason}`,
+        previousState: { [action]: !allowed },
+        newState: { [action]: allowed },
+        canRollback: true
+      };
+
+      return {
+        rolePermissions: updated,
+        permissionAudits: [newAudit, ...state.permissionAudits]
+      };
+    });
+    return true;
+  },
+
+  addTemporaryPermission: (tempData) => {
+    const item: TemporaryPermission = {
+      id: `temp-${Date.now()}`,
+      ...tempData
+    };
+    set((state) => ({ temporaryPermissions: [item, ...state.temporaryPermissions] }));
+  },
+
+  revokeTemporaryPermission: (id) => {
+    set((state) => ({
+      temporaryPermissions: state.temporaryPermissions.filter(t => t.id !== id)
+    }));
+  },
+
+  submitPermissionChangeRequest: (reqData) => {
+    const item: PermissionChangeRequestItem = {
+      id: `pcr-${Date.now()}`,
+      status: 'PENDING',
+      submittedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+      ...reqData
+    };
+    set((state) => ({ changeRequests: [item, ...state.changeRequests] }));
+  },
+
+  reviewPermissionChangeRequest: (requestId, approved, reason) => {
+    set((state) => {
+      const targetReq = state.changeRequests.find(r => r.id === requestId);
+      if (!targetReq) return state;
+
+      let updatedPermissions = state.rolePermissions;
+      if (approved) {
+        const role = targetReq.targetRole;
+        const action = targetReq.action;
+        updatedPermissions = {
+          ...state.rolePermissions,
+          [role]: {
+            ...state.rolePermissions[role],
+            [action]: true
+          }
+        };
+      }
+
+      const updatedRequests = state.changeRequests.map(r =>
+        r.id === requestId ? { ...r, status: (approved ? 'APPROVED' : 'REJECTED') as 'APPROVED' | 'REJECTED' } : r
+      );
+
+      const newAudit: PermissionAuditEntry = {
+        id: `audit-${Date.now()}`,
+        version: state.permissionAudits.length + 1,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+        actingSuperAdmin: 'admin@platform.erp.in',
+        targetRole: targetReq.targetRole,
+        actionType: approved ? 'REQUEST_APPROVED' : 'REQUEST_REJECTED',
+        description: `Institution request ${approved ? 'APPROVED' : 'REJECTED'} for ${targetReq.action} on ${targetReq.targetRole}. ${reason}`,
+        previousState: {},
+        newState: {},
+        canRollback: approved
+      };
+
+      return {
+        changeRequests: updatedRequests,
+        rolePermissions: updatedPermissions,
+        permissionAudits: [newAudit, ...state.permissionAudits]
+      };
+    });
+  },
+
+  rollbackPermissionVersion: (targetVersion) => {
+    set((state) => {
+      const audit = state.permissionAudits.find(a => a.version === targetVersion);
+      if (!audit) return state;
+
+      const newAudit: PermissionAuditEntry = {
+        id: `audit-${Date.now()}`,
+        version: state.permissionAudits.length + 1,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+        actingSuperAdmin: 'admin@platform.erp.in',
+        targetRole: audit.targetRole,
+        actionType: 'CONFIG_ROLLBACK',
+        description: `Rolled back configuration to Version #${targetVersion}. History preserved.`,
+        previousState: audit.newState,
+        newState: audit.previousState,
+        canRollback: false
+      };
+
+      return {
+        permissionAudits: [newAudit, ...state.permissionAudits]
+      };
+    });
+  },
+
+  // Super Admin Dashboard Designer Controls
+  setDesignerRolePreview: (role) => set({ designerRolePreview: role }),
+
+  updateDesignerItemState: (role, itemId, presentationState, lockReason) => {
+    set((state) => {
+      const items = state.designerNavConfigs[role] || [];
+      const updatedItems = items.map((it) =>
+        it.id === itemId
+          ? {
+              ...it,
+              presentationState,
+              lockReason: presentationState === 'VISIBLE_LOCKED' ? (lockReason || 'Restricted by institutional policy') : undefined,
+              moduleAccess: presentationState === 'VISIBLE_ACCESSIBLE' ? ('ACCESSIBLE' as const) : ('INACCESSIBLE' as const),
+            }
+          : it
+      );
+      return {
+        designerNavConfigs: {
+          ...state.designerNavConfigs,
+          [role]: updatedItems
+        },
+        designerStatus: 'DRAFT'
+      };
+    });
+  },
+
+  updateDesignerItemVisibility: (role, itemId, menuVisibility) => {
+    set((state) => {
+      const items = state.designerNavConfigs[role] || [];
+      const updatedItems = items.map((it) =>
+        it.id === itemId
+          ? {
+              ...it,
+              menuVisibility,
+              presentationState: menuVisibility === 'HIDE' ? ('COMPLETELY_HIDDEN' as const) : it.presentationState
+            }
+          : it
+      );
+      return {
+        designerNavConfigs: {
+          ...state.designerNavConfigs,
+          [role]: updatedItems
+        },
+        designerStatus: 'DRAFT'
+      };
+    });
+  },
+
+  publishDashboardDesignerConfig: (reason) => {
+    set((state) => ({
+      designerVersion: state.designerVersion + 1,
+      designerStatus: 'PUBLISHED',
+      permissionAudits: [
+        {
+          id: `audit-${Date.now()}`,
+          version: state.permissionAudits.length + 1,
+          timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+          actingSuperAdmin: 'admin@platform.erp.in',
+          targetRole: state.designerRolePreview,
+          actionType: 'DASHBOARD_DESIGN_PUBLISH',
+          description: `Published new dashboard layout configuration (v${state.designerVersion + 1}). ${reason}`,
+          previousState: {},
+          newState: {},
+          canRollback: true
+        },
+        ...state.permissionAudits
+      ]
+    }));
+  },
+
+  rollbackDashboardDesignerConfig: () => {
+    set((state) => ({
+      designerNavConfigs: initialNavConfigs,
+      designerStatus: 'PUBLISHED'
+    }));
+  },
+
   resetDemoData: () => {
     set({
       currentRole: 'PRINCIPAL',
@@ -685,8 +1259,14 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       marks: initialMarks,
       exams: initialExams,
       subjects: initialSubjects,
-      competitiveQuestions: initialCompetitiveQuestions,
       transportRoutes: initialTransportRoutes,
+      externalProviders: initialExternalProviders,
+      rolePermissions: initialRolePermissions,
+      permissionAudits: initialPermissionAudits,
+      changeRequests: initialChangeRequests,
+      designerNavConfigs: initialNavConfigs,
+      designerVersion: 2,
+      designerStatus: 'PUBLISHED'
     });
   },
 }));

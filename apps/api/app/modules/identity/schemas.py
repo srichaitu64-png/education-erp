@@ -52,3 +52,17 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     is_superadmin: bool = False
 
+
+class UserAutocompleteRequest(BaseModel):
+    tenant_code: str
+    role_code: str
+    query: str
+
+
+class UserAutocompleteResult(BaseModel):
+    id: str
+    display_name: str
+    identifier: str
+    role_code: str
+
+

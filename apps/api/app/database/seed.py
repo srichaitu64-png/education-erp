@@ -128,20 +128,45 @@ PLAN_DEFINITIONS: List[Dict[str, Any]] = [
 
 # Standard RBAC Permissions
 DEFAULT_PERMISSIONS: List[Dict[str, str]] = [
+    # Students & Admissions
     {"code": "students.view", "name": "View Students", "module": "students"},
     {"code": "students.create", "name": "Register Students", "module": "students"},
     {"code": "students.edit", "name": "Edit Students", "module": "students"},
+    {"code": "students.archive", "name": "Archive Students", "module": "students"},
     {"code": "admissions.manage", "name": "Manage Admissions", "module": "admissions"},
+    
+    # Financial Management
     {"code": "fees.view", "name": "View Fee Invoices", "module": "fees"},
     {"code": "fees.collect", "name": "Collect Fee Payments", "module": "fees"},
     {"code": "fees.refund", "name": "Process Fee Refunds", "module": "fees"},
+    {"code": "fees.reconcile", "name": "Reconcile Bank & Gateway Statements", "module": "fees"},
+    {"code": "fees.configure", "name": "Configure Fee Structures", "module": "fees"},
+    
+    # Attendance
     {"code": "attendance.mark", "name": "Mark Attendance", "module": "attendance"},
-    {"code": "exams.manage", "name": "Configure Examinations", "module": "examinations"},
+    {"code": "attendance.verify", "name": "Verify Attendance & Biometrics", "module": "attendance"},
+    
+    # Examinations & Marks Lifecycle
+    {"code": "exams.view", "name": "View Examination Schedules & Timetables", "module": "examinations"},
+    {"code": "exams.manage", "name": "Configure & Schedule Examinations", "module": "examinations"},
+    {"code": "exams.delete", "name": "Delete or Archive Examinations", "module": "examinations"},
     {"code": "marks.enter", "name": "Enter Exam Marks", "module": "examinations"},
-    {"code": "marks.publish", "name": "Publish Exam Results", "module": "examinations"},
+    {"code": "marks.verify", "name": "Controller Audit & Verification", "module": "examinations"},
+    {"code": "marks.approve", "name": "Principal Official Approval", "module": "examinations"},
+    {"code": "marks.publish", "name": "Publish Results to Portals", "module": "examinations"},
+    {"code": "marks.export", "name": "Export Report Cards & Ledgers", "module": "examinations"},
+    
+    # HR & Transport
     {"code": "staff.manage", "name": "Manage Staff Directory", "module": "hr"},
+    {"code": "transport.view", "name": "View Transport Routes & Fleet", "module": "transport"},
+    {"code": "transport.manage", "name": "Manage Vehicles, Routes & Stops", "module": "transport"},
+    {"code": "transport.track", "name": "Live GPS Tracking Telemetry", "module": "transport"},
+    
+    # Governance & Platform
     {"code": "reports.export", "name": "Generate & Export Reports", "module": "reports"},
     {"code": "settings.branding", "name": "Configure White-Label Branding", "module": "settings"},
+    {"code": "permissions.manage", "name": "Super Admin Permission Control", "module": "governance"},
+    {"code": "dashboard.design", "name": "Super Admin Dashboard Designer", "module": "governance"},
 ]
 
 
@@ -208,14 +233,20 @@ async def seed_initial_data(db: AsyncSession) -> None:
             db.add(perm)
     await db.flush()
 
-    # 4. Global System Roles (SUPER_ADMIN, INSTITUTION_ADMIN, TEACHER, etc.)
+    # 4. Global System Roles (Never overwritten during migrations)
     system_roles = [
         ("SUPER_ADMIN", "Platform Super Administrator", True),
-        ("INSTITUTION_ADMIN", "Institution Principal / Director", False),
+        ("INSTITUTION_ADMIN", "Institution Administrator", False),
+        ("PRINCIPAL", "Principal / Director", False),
+        ("VICE_PRINCIPAL", "Vice Principal", False),
         ("ACCOUNTANT", "Finance and Accounts Officer", False),
+        ("EXAM_CONTROLLER", "Examination Controller", False),
         ("TEACHER", "Faculty and Subject Teacher", False),
         ("PARENT", "Parent / Guardian", False),
-        ("STUDENT", "Enrolled Student", False)
+        ("STUDENT", "Enrolled Student", False),
+        ("TRANSPORT_MANAGER", "Transport Fleet Manager", False),
+        ("DRIVER", "School/College Bus Driver", False),
+        ("LIBRARIAN", "Head Librarian", False)
     ]
     for r_code, r_name, is_sys in system_roles:
         stmt = select(Role).where(Role.code == r_code, Role.tenant_id == None)
@@ -322,5 +353,82 @@ async def seed_initial_data(db: AsyncSession) -> None:
             if inst_role:
                 ur_inst = UserRole(user_id=principal.id, role_id=inst_role.id, tenant_id=pilot_tenant.id)
                 db.add(ur_inst)
+
+        # Seed Standard Examination Categories
+        from app.modules.examinations.models import Examination
+        from datetime import date
+        stmt_ex = select(Examination).where(Examination.tenant_id == pilot_tenant.id)
+        res_ex = await db.execute(stmt_ex)
+        if not res_ex.scalars().first():
+            ex1 = Examination(
+                tenant_id=pilot_tenant.id,
+                name="Mid-Term Examinations 2026",
+                code="EXAM-2026-MID",
+                category="midterm",
+                foundation_programme="NONE",
+                academic_year="2026-2027",
+                target_class="I & II PUC (Science)",
+                target_section="A",
+                subject_code="PHY-101",
+                subject_name="Physics (Theory + Practical)",
+                exam_date=date(2026, 11, 18),
+                start_time="09:30 AM",
+                end_time="12:30 PM",
+                max_marks=100.0,
+                passing_marks=35.0,
+                theory_max_marks=70.0,
+                practical_max_marks=30.0,
+                exam_mode="offline_paper",
+                location_or_hall="Hall A-101",
+                invigilator_name="Dr. V. Murthy",
+                status="CONTROLLER_VERIFIED"
+            )
+            ex2 = Examination(
+                tenant_id=pilot_tenant.id,
+                name="Unit Test 2 (Formative Assessment)",
+                code="EXAM-2026-UT2",
+                category="unit_test",
+                foundation_programme="NONE",
+                academic_year="2026-2027",
+                target_class="Class 10",
+                target_section="A",
+                subject_code="SCI-101",
+                subject_name="Science & Technology",
+                exam_date=date(2026, 11, 24),
+                start_time="10:00 AM",
+                end_time="11:30 AM",
+                max_marks=50.0,
+                passing_marks=18.0,
+                theory_max_marks=40.0,
+                practical_max_marks=10.0,
+                exam_mode="offline_paper",
+                location_or_hall="Classroom 10-A",
+                invigilator_name="Mrs. K. Swamy",
+                status="PUBLISHED"
+            )
+            ex3 = Examination(
+                tenant_id=pilot_tenant.id,
+                name="NEET / JEE Foundation Diagnostic Test",
+                code="EXAM-2026-NEET-FND",
+                category="competitive_foundation",
+                foundation_programme="NEET_FOUNDATION",
+                academic_year="2026-2027",
+                target_class="I PUC (PCMB)",
+                target_section="A",
+                subject_code="NEET-F1",
+                subject_name="Physics & Biology Foundation",
+                exam_date=date(2026, 11, 28),
+                start_time="02:00 PM",
+                end_time="05:00 PM",
+                max_marks=180.0,
+                passing_marks=72.0,
+                theory_max_marks=180.0,
+                practical_max_marks=0.0,
+                exam_mode="internal_online",
+                location_or_hall="Digital CBT Lab 2",
+                invigilator_name="Prof. S. Joshi",
+                status="SCHEDULED"
+            )
+            db.add_all([ex1, ex2, ex3])
 
     await db.commit()

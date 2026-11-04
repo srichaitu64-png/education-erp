@@ -8,6 +8,12 @@ TENANT_SCOPED_TABLES = [
     "subscriptions",
     "tenant_feature_overrides",
     "feature_usage",
+    "examinations",
+    "exam_marks",
+    "offline_sync_queue",
+    "external_exam_providers",
+    "exam_approval_audits",
+    "permission_change_requests",
 ]
 
 
