@@ -5,6 +5,8 @@ import { create } from 'zustand';
 // ---------------------------------------------------------------------------
 export type UserRoleType =
   | 'SUPER_ADMIN'
+  | 'BACKUP_SUPER_ADMIN'
+  | 'DEVELOPER'
   | 'INSTITUTION_ADMIN'
   | 'PRINCIPAL'
   | 'VICE_PRINCIPAL'
@@ -127,6 +129,30 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canApprove: ['Institution tenant provisioning', 'Permission change requests', 'Emergency license overrides'],
     restrictedActions: ['Protected by Lockout Guard: Cannot remove last Platform Super Admin access'],
     scopes: [{ scopeType: 'tenant', scopeValue: 'ALL_TENANTS', description: 'Platform-wide authority' }]
+  },
+  BACKUP_SUPER_ADMIN: {
+    role: 'BACKUP_SUPER_ADMIN',
+    title: 'Backup Platform Super Administrator',
+    badgeColor: 'bg-violet-100 text-violet-800 border-violet-300',
+    allowedTabs: [
+      'dashboard', 'permissions-centre', 'dashboard-designer', 'tenants', 'plans', 'entitlements', 'audit'
+    ],
+    canEdit: ['Delegated platform privileges', 'Tenant configurations', 'Temporary access overrides'],
+    canApprove: ['Emergency break-glass changes', 'Secondary platform approvals'],
+    restrictedActions: ['Protected by Primary Lockout Guard: Cannot revoke Primary Super Admin credentials'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'ALL_TENANTS', description: 'Secondary Platform Authority with MFA' }]
+  },
+  DEVELOPER: {
+    role: 'DEVELOPER',
+    title: 'Platform Technical Support & Developer',
+    badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
+    allowedTabs: [
+      'dashboard', 'tenants', 'audit'
+    ],
+    canEdit: ['Diagnostics', 'Config validation', 'Demo & Sandbox environments'],
+    canApprove: ['None (Technical audit only)'],
+    restrictedActions: ['NO ACCESS to production financial records, student PII, or live gradebooks without explicit time-bound Super Admin ticket'],
+    scopes: [{ scopeType: 'tenant', scopeValue: 'SANDBOX_DEV', description: 'Engineering Support & Diagnostic Sandboxes' }]
   },
   INSTITUTION_ADMIN: {
     role: 'INSTITUTION_ADMIN',
@@ -258,21 +284,88 @@ export interface DemoAdmission {
   status: 'PENDING' | 'VERIFIED' | 'APPROVED' | 'REJECTED';
 }
 
-export type FeeHeadType =
-  | 'COLLEGE_FEE'
-  | 'LAB_FEE'
-  | 'HOSTEL_MESS_FEE'
-  | 'TRANSPORT_FEE'
-  | 'ADMISSION_FEE'
-  | 'EXAM_FEE'
-  | 'LIBRARY_FEE'
-  | 'TUITION'
-  | 'LABORATORY'
-  | 'TRANSPORT'
-  | 'LIBRARY'
-  | 'HOSTEL_MESS'
-  | 'EXAM'
-  | 'MISCELLANEOUS';
+export type FeeHeadType = string;
+
+export interface FeeHeadDefinition {
+  id: string;
+  head_code: string;
+  title: string;
+  category: string;
+  default_amount: number;
+  is_refundable: boolean;
+  institution_type: 'School' | 'PU College' | 'Degree College' | 'All';
+  description?: string;
+}
+
+export const DEFAULT_SCHOOL_FEE_HEADS: FeeHeadDefinition[] = [
+  { id: 'sch-fh-01', head_code: 'TUITION_FEE', title: 'Tuition Fee', category: 'Tuition', default_amount: 35000, is_refundable: false, institution_type: 'School', description: 'Core curriculum, instructional sessions & classroom learning' },
+  { id: 'sch-fh-02', head_code: 'ADMISSION_FEE', title: 'Admission Fee', category: 'Admission', default_amount: 15000, is_refundable: false, institution_type: 'School', description: 'One-time admission registration fee' },
+  { id: 'sch-fh-03', head_code: 'REGISTRATION_FEE', title: 'Registration Fee', category: 'Admission', default_amount: 2500, is_refundable: false, institution_type: 'School', description: 'Annual student file maintenance & enrollment charges' },
+  { id: 'sch-fh-04', head_code: 'BOOKS_NOTEBOOKS', title: 'Books and Notebooks', category: 'Books', default_amount: 6500, is_refundable: false, institution_type: 'School', description: 'Textbooks, workbooks and official school notebooks' },
+  { id: 'sch-fh-05', head_code: 'UNIFORM_FEE', title: 'Uniform Fee', category: 'Uniform', default_amount: 4500, is_refundable: false, institution_type: 'School', description: '2 Regular sets & 1 House sports uniform set' },
+  { id: 'sch-fh-06', head_code: 'SHOES_ACCESSORIES', title: 'Shoes and Accessories', category: 'Uniform', default_amount: 2000, is_refundable: false, institution_type: 'School', description: 'Formal shoes, canvas shoes, socks, belt & ID card' },
+  { id: 'sch-fh-07', head_code: 'SCIENCE_LAB_FEE', title: 'Science Laboratory Fee', category: 'Laboratory', default_amount: 5000, is_refundable: false, institution_type: 'School', description: 'Physics, Chemistry and Biology experimental lab consumables' },
+  { id: 'sch-fh-08', head_code: 'COMPUTER_LAB_FEE', title: 'Computer Laboratory Fee', category: 'Laboratory', default_amount: 4500, is_refundable: false, institution_type: 'School', description: 'Computer lab workstations, robotics kits & internet' },
+  { id: 'sch-fh-09', head_code: 'LIBRARY_FEE', title: 'Library Fee', category: 'Library', default_amount: 2000, is_refundable: false, institution_type: 'School', description: 'Library lending subscription & children digital encyclopedias' },
+  { id: 'sch-fh-10', head_code: 'EXAMINATION_FEE', title: 'Examination Fee', category: 'Examination', default_amount: 3000, is_refundable: false, institution_type: 'School', description: 'Unit tests, half-yearly & annual printed exam papers' },
+  { id: 'sch-fh-11', head_code: 'SPORTS_GAMES', title: 'Sports and Games', category: 'Activities', default_amount: 3500, is_refundable: false, institution_type: 'School', description: 'Athletic coaching, sports equipment & inter-school events' },
+  { id: 'sch-fh-12', head_code: 'CULTURAL_ANNUAL_DAY', title: 'Cultural and Annual Day', category: 'Activities', default_amount: 2500, is_refundable: false, institution_type: 'School', description: 'Annual cultural day celebrations, music & stage productions' },
+  { id: 'sch-fh-13', head_code: 'EDUCATIONAL_TRIPS', title: 'Educational Trips & Excursions', category: 'Activities', default_amount: 4000, is_refundable: false, institution_type: 'School', description: 'Field visits, science museum trips & nature camps' },
+  { id: 'sch-fh-14', head_code: 'SMART_CLASSROOM', title: 'Smart Classroom & Audio-Visual', category: 'Technology', default_amount: 3000, is_refundable: false, institution_type: 'School', description: 'Interactive smart boards, 3D visual learning & digital projectors' },
+  { id: 'sch-fh-15', head_code: 'DIGITAL_LEARNING', title: 'Digital Learning & Software', category: 'Technology', default_amount: 2500, is_refundable: false, institution_type: 'School', description: 'Online student portal, mobile app & learning management system' },
+  { id: 'sch-fh-16', head_code: 'DEVELOPMENT_FEE', title: 'School Development Fund', category: 'Development', default_amount: 8000, is_refundable: false, institution_type: 'School', description: 'Campus infrastructure improvement & classroom upgrades' },
+  { id: 'sch-fh-17', head_code: 'HOSTEL_ACCOMMODATION', title: 'Hostel Accommodation', category: 'Hostel', default_amount: 30000, is_refundable: false, institution_type: 'School', description: 'Boarding room, warden supervision & laundry services' },
+  { id: 'sch-fh-18', head_code: 'MESS_DINING', title: 'Mess & Dining Charges', category: 'Hostel', default_amount: 25000, is_refundable: false, institution_type: 'School', description: 'Nutritious breakfast, lunch, dinner & evening snacks' },
+  { id: 'sch-fh-19', head_code: 'CAUTION_DEPOSIT', title: 'Caution Deposit (Refundable)', category: 'Other', default_amount: 10000, is_refundable: true, institution_type: 'School', description: 'Security deposit refundable on transfer certificate issuance' },
+  { id: 'sch-fh-20', head_code: 'LATE_FEE_FINE', title: 'Late Payment Fine', category: 'Other', default_amount: 500, is_refundable: false, institution_type: 'School', description: 'Penalty for installments paid past due date' },
+  { id: 'sch-fh-21', head_code: 'MISCELLANEOUS', title: 'Miscellaneous & Student Welfare', category: 'Other', default_amount: 1500, is_refundable: false, institution_type: 'School', description: 'First-aid medical insurance & identity card charges' },
+];
+
+export const DEFAULT_COLLEGE_FEE_HEADS: FeeHeadDefinition[] = [
+  { id: 'col-fh-01', head_code: 'PU_TUITION_FEE', title: 'College Tuition Fee', category: 'Tuition', default_amount: 42000, is_refundable: false, institution_type: 'PU College', description: 'Core lecture hours, tutorial sessions and academic faculty delivery' },
+  { id: 'col-fh-02', head_code: 'PU_ADMISSION_FEE', title: 'Admission & Enrolment Fee', category: 'Admission', default_amount: 18000, is_refundable: false, institution_type: 'PU College', description: 'College admission processing & pre-university board dossier' },
+  { id: 'col-fh-03', head_code: 'UNIVERSITY_BOARD_REG', title: 'Board / University Enrolment Fee', category: 'Admission', default_amount: 3500, is_refundable: false, institution_type: 'PU College', description: 'State Pre-University Education Board statutory registration' },
+  { id: 'col-fh-04', head_code: 'PHYSICS_CHEM_BIO_LAB', title: 'PCMB Practical Science Lab Fee', category: 'Laboratory', default_amount: 8500, is_refundable: false, institution_type: 'PU College', description: 'Practical lab chemicals, specimens, optics & electrical setups' },
+  { id: 'col-fh-05', head_code: 'COMP_SCIENCE_LAB', title: 'Computer Science & Python Lab', category: 'Laboratory', default_amount: 6000, is_refundable: false, institution_type: 'PU College', description: 'High-performance computing lab & Linux programming setups' },
+  { id: 'col-fh-06', head_code: 'PU_LIBRARY_READING', title: 'College Library & Digital Journals', category: 'Library', default_amount: 3000, is_refundable: false, institution_type: 'PU College', description: 'Reference books, NCERT exemplar guides & e-journal access' },
+  { id: 'col-fh-07', head_code: 'PU_TERM_EXAM', title: 'Term & Preparatory Examination Fee', category: 'Examination', default_amount: 4000, is_refundable: false, institution_type: 'PU College', description: 'Quarterly, Mid-term and State Preparatory mock exam papers' },
+  { id: 'col-fh-08', head_code: 'PU_BOARD_EXAM', title: 'Annual Board Examination Fee', category: 'Examination', default_amount: 3500, is_refundable: false, institution_type: 'PU College', description: 'Board examination hall ticket, answer scripts & center fee' },
+  { id: 'col-fh-09', head_code: 'STUDY_MATERIALS_MANUALS', title: 'Competitive Study Materials & Manuals', category: 'Books', default_amount: 8000, is_refundable: false, institution_type: 'PU College', description: 'NEET & JEE coaching modules, question banks & lab manuals' },
+  { id: 'col-fh-10', head_code: 'CAMPUS_WIFI_TECH', title: 'Campus Wi-Fi & LMS Access', category: 'Technology', default_amount: 2500, is_refundable: false, institution_type: 'PU College', description: 'Campus high-speed fiber Wi-Fi & recorded lecture repository' },
+  { id: 'col-fh-11', head_code: 'SPORTS_GYMKHANA', title: 'Sports & Gymkhana Membership', category: 'Activities', default_amount: 3000, is_refundable: false, institution_type: 'PU College', description: 'Gymnasium, indoor badminton court & inter-collegiate sports' },
+  { id: 'col-fh-12', head_code: 'PU_HOSTEL_ROOM', title: 'Hostel Accommodation', category: 'Hostel', default_amount: 35000, is_refundable: false, institution_type: 'PU College', description: 'Twin/triple-sharing residential room with 24/7 security' },
+  { id: 'col-fh-13', head_code: 'PU_HOSTEL_MESS', title: 'Hostel Mess & Dining', category: 'Hostel', default_amount: 28000, is_refundable: false, institution_type: 'PU College', description: 'Hygienic vegetarian dining & evening milk/snacks' },
+  { id: 'col-fh-14', head_code: 'PU_BUS_TRANSPORT', title: 'Campus Fleet Bus / Transport Route', category: 'Transport', default_amount: 16000, is_refundable: false, institution_type: 'PU College', description: 'GPS-tracked pickup & drop transportation' },
+  { id: 'col-fh-15', head_code: 'COLLEGE_DEV_FUND', title: 'College Development Fund', category: 'Development', default_amount: 10000, is_refundable: false, institution_type: 'PU College', description: 'Research seminar hall, auditorium & robotics center fund' },
+  { id: 'col-fh-16', head_code: 'CAREER_PLACEMENT_TRAIN', title: 'Career Guidance, Placement & Training', category: 'Activities', default_amount: 15000, is_refundable: false, institution_type: 'PU College', description: 'NEET/JEE foundation, KCET coaching & career counseling sessions' },
+  { id: 'col-fh-17', head_code: 'PU_CAUTION_DEPOSIT', title: 'College Caution Deposit (Refundable)', category: 'Other', default_amount: 12000, is_refundable: true, institution_type: 'PU College', description: 'Library & science laboratory security deposit (refundable)' },
+  { id: 'col-fh-18', head_code: 'PU_MISC_LATE_FEE', title: 'Miscellaneous & Late Surcharge', category: 'Other', default_amount: 1000, is_refundable: false, institution_type: 'PU College', description: 'Duplicate ID card, late payment surcharge & badge fees' },
+];
+
+export interface MultiHeadFeeItem {
+  head_code: string;
+  head_title: string;
+  category: string;
+  configured_amount: number;
+  previously_paid: number;
+  concession_amount: number;
+  collected_amount: number;
+}
+
+export interface MultiHeadFeeCollectionPayload {
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  class_name: string;
+  academic_year: string;
+  term_code: string;
+  term_name: string;
+  fee_items: MultiHeadFeeItem[];
+  payment_method: PaymentMethodType;
+  reference_number?: string;
+  notes?: string;
+  collected_by?: string;
+}
 
 export type PaymentMethodType =
   | 'CASH'
@@ -535,6 +628,9 @@ interface DemoState {
     allocations?: FeeAllocationItem[];
     notes?: string;
   }) => DemoFeeReceipt;
+  customFeeHeads: FeeHeadDefinition[];
+  addCustomFeeHead: (head: Omit<FeeHeadDefinition, 'id'>) => { success: boolean; message: string };
+  collectMultiHeadFee: (payload: MultiHeadFeeCollectionPayload) => DemoFeeReceipt;
   reprintReceipt: (receiptId: string) => DemoFeeReceipt;
   logReceiptAction: (
     receiptNumber: string,
@@ -1023,13 +1119,25 @@ const initialExternalProviders: ExternalExamProvider[] = [
   { id: 'prov-3', code: 'EDUTECH_CBT_PROV', name: 'EduTech Cloud CBT Engine', isActive: false, endpoint: 'https://cbt.edutech.example.com', hasApiKey: false, lastSync: 'Never', syncStatus: 'NOT_CONFIGURED' },
 ];
 
-// Initial fine-grained permissions matrix for 10 roles
+// Initial fine-grained permissions matrix for 12 roles
 const initialRolePermissions: Record<UserRoleType, Record<FineGrainedAction, boolean>> = {
   SUPER_ADMIN: {
     view: true, create: true, edit: true, delete: true, archive: true, submit: true,
     verify: true, approve: true, reject: true, publish: true, export: true, print: true,
     assign: true, collect: true, refund: true, reconcile: true, configure: true,
     manage_users: true, manage_permissions: true
+  },
+  BACKUP_SUPER_ADMIN: {
+    view: true, create: true, edit: true, delete: true, archive: true, submit: true,
+    verify: true, approve: true, reject: true, publish: true, export: true, print: true,
+    assign: true, collect: true, refund: true, reconcile: true, configure: true,
+    manage_users: true, manage_permissions: true
+  },
+  DEVELOPER: {
+    view: true, create: false, edit: true, delete: false, archive: false, submit: true,
+    verify: true, approve: false, reject: false, publish: false, export: true, print: false,
+    assign: false, collect: false, refund: false, reconcile: false, configure: true,
+    manage_users: false, manage_permissions: false
   },
   INSTITUTION_ADMIN: {
     view: true, create: true, edit: true, delete: false, archive: true, submit: true,
@@ -1096,20 +1204,32 @@ const initialNavConfigs: Record<UserRoleType, DashboardDesignerNavItem[]> = {
     { id: 'fees', label: 'Multi-Category Fee Engine', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'reconcile'] },
     { id: 'transport', label: 'Transport & Fleet GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'configure'] },
   ],
+  BACKUP_SUPER_ADMIN: [
+    { id: 'dashboard', label: 'Platform Overview', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
+    { id: 'permissions-centre', label: 'Central Permission Matrix', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'assign', 'manage_permissions'] },
+    { id: 'dashboard-designer', label: 'Dashboard & Access Designer', iconName: 'Layout', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'edit', 'configure'] },
+    { id: 'examinations', label: 'Examinations Lifecycle', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve', 'publish'] },
+    { id: 'fees', label: 'Multi-Category Fee Engine', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'reconcile'] },
+    { id: 'transport', label: 'Transport & Fleet GPS', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'configure'] },
+  ],
+  DEVELOPER: [
+    { id: 'dashboard', label: 'Developer Sandbox Overview', iconName: 'Shield', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'export'] },
+    { id: 'examinations', label: 'Examinations Diagnostic View', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'fees', label: 'Fee Schema Inspection', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+    { id: 'transport', label: 'Telemetry & GPS Telemetry', iconName: 'Bus', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
+  ],
   INSTITUTION_ADMIN: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'admissions', label: 'Admissions Pipeline', iconName: 'Users', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'approve'] },
     { id: 'academics', label: 'Academic & Subjects', iconName: 'BookOpen', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'edit', 'archive'] },
     { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'create', 'verify'] },
     { id: 'fees', label: 'Fee Management', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
-    { id: 'permissions-centre', label: 'Permission Requests', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Only Platform Super Admin can edit privileges. Submit a Change Request for approval.', actionPermissions: ['view', 'submit'] },
   ],
   PRINCIPAL: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
     { id: 'examinations', label: 'Examinations Module', iconName: 'Award', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify', 'approve', 'publish'] },
     { id: 'fees', label: 'Fee Overview & Refunds', iconName: 'CreditCard', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'approve'] },
     { id: 'attendance', label: 'Daily Attendance', iconName: 'CalendarCheck', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view', 'verify'] },
-    { id: 'permissions-centre', label: 'System Privileges', iconName: 'Key', menuVisibility: 'SHOW', moduleAccess: 'INACCESSIBLE', presentationState: 'VISIBLE_LOCKED', lockReason: 'Principal role cannot grant or modify system permissions directly.', actionPermissions: ['view'] },
   ],
   VICE_PRINCIPAL: [
     { id: 'dashboard', label: 'Overview', iconName: 'GraduationCap', menuVisibility: 'SHOW', moduleAccess: 'ACCESSIBLE', presentationState: 'VISIBLE_ACCESSIBLE', actionPermissions: ['view'] },
@@ -1227,6 +1347,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   receiptAudits: initialReceiptAudits,
   feeStructures: initialFeeStructures,
   activeFeeInstitutionFilter: 'ALL',
+  customFeeHeads: [],
   attendance: initialAttendance,
   marks: initialMarks,
   exams: initialExams,
@@ -1410,6 +1531,109 @@ export const useDemoStore = create<DemoState>((set, get) => ({
             : i
         ),
         receipts: [generatedReceipt, ...state.receipts],
+        receiptAudits: [newAudit, ...state.receiptAudits],
+      };
+    });
+
+    return generatedReceipt!;
+  },
+
+  addCustomFeeHead: (headData) => {
+    const state = get();
+    const isSuperAdmin = state.currentRole === 'SUPER_ADMIN' || state.currentRole === 'BACKUP_SUPER_ADMIN';
+    const hasConfigPerm = state.rolePermissions[state.currentRole]?.['configure'] === true;
+    if (!isSuperAdmin && !hasConfigPerm) {
+      return {
+        success: false,
+        message: 'Permission denied: Ordinary users cannot add or modify fee structures without Platform Super Admin authorization.'
+      };
+    }
+    const newHead: FeeHeadDefinition = {
+      id: `custom-fh-${Date.now()}`,
+      ...headData,
+    };
+    set((s) => ({ customFeeHeads: [...s.customFeeHeads, newHead] }));
+    return { success: true, message: `Fee head '${headData.title}' created successfully.` };
+  },
+
+  collectMultiHeadFee: (payload) => {
+    let generatedReceipt: DemoFeeReceipt | null = null;
+    const now = new Date();
+    const formattedDate =
+      now.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' ' +
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) +
+      ' IST';
+
+    set((state) => {
+      const receiptNumber = `RCP-2026-${Date.now().toString().slice(-6)}`;
+      const totalPaid = payload.fee_items.reduce((sum, item) => sum + (Number(item.collected_amount) || 0), 0);
+      const txnRef = payload.reference_number || `TXN-UPI-${Date.now().toString().slice(-8)}`;
+
+      const allocations: FeeAllocationItem[] = payload.fee_items.map((it) => ({
+        head: it.head_code,
+        title: it.head_title,
+        allocated: Number(it.collected_amount) || 0,
+        remaining: Math.max(0, it.configured_amount - it.previously_paid - it.concession_amount - (Number(it.collected_amount) || 0)),
+      }));
+
+      const totalConfigured = payload.fee_items.reduce((s, it) => s + it.configured_amount, 0);
+      const totalPrevPaid = payload.fee_items.reduce((s, it) => s + it.previously_paid, 0);
+      const totalConcessions = payload.fee_items.reduce((s, it) => s + it.concession_amount, 0);
+      const prevBal = Math.max(0, totalConfigured - totalPrevPaid - totalConcessions);
+      const currBal = Math.max(0, prevBal - totalPaid);
+
+      generatedReceipt = {
+        id: `rcp-${Date.now()}`,
+        receipt_number: receiptNumber,
+        invoice_id: `inv-${payload.student_id}-${payload.term_code}`,
+        invoice_number: `INV-2026-${Date.now().toString().slice(-4)}`,
+        student_id: payload.student_id,
+        student_name: payload.student_name,
+        admission_number: payload.admission_number,
+        class_name: payload.class_name,
+        academic_year: payload.academic_year || '2026-2027',
+        term_code: payload.term_code || 'TERM_1',
+        term_name: payload.term_name || 'Term 1',
+        amount_paid: totalPaid,
+        previous_balance: prevBal,
+        current_balance: currBal,
+        payment_method: payload.payment_method,
+        transaction_reference: txnRef,
+        payment_date: formattedDate,
+        collected_by: payload.collected_by || (state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`),
+        allocations: allocations,
+        institution_branding: {
+          institution_name: 'Akshara Global Educational Institutions',
+          affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+          address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          phone: '+91 80 2345 6789',
+          email: 'accounts@akshara.erp.in',
+          receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
+        },
+        qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${totalPaid}`,
+        reprint_count: 0,
+        is_duplicate: false,
+        status: 'CONFIRMED',
+        notes: payload.notes || `Multi-head fee collection settled via ${payload.payment_method}`,
+      };
+
+      const newAudit: ReceiptAuditLogItem = {
+        id: `aud-${Date.now()}`,
+        receipt_number: receiptNumber,
+        action: 'GENERATED',
+        performed_by: state.currentRole,
+        role: state.currentRole,
+        timestamp: formattedDate,
+        details: { amount: totalPaid, paymentMethod: payload.payment_method, student_name: payload.student_name, heads: payload.fee_items.map(h => h.head_title) },
+      };
+
+      return {
+        receipts: [generatedReceipt!, ...state.receipts],
         receiptAudits: [newAudit, ...state.receiptAudits],
       };
     });

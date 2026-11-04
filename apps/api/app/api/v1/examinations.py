@@ -502,3 +502,4 @@ async def configure_external_exam_provider(
         last_sync_at=provider.last_sync_at,
         last_sync_status=provider.last_sync_status
     )
+

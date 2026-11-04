@@ -42,7 +42,8 @@ import {
   Building2,
   Copy,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import {
   useDemoStore,
@@ -56,7 +57,11 @@ import {
   PaymentMethodType,
   ReceiptPrintLayout,
   DemoFeeReceipt,
-  DemoFeeStructure
+  DemoFeeStructure,
+  DEFAULT_SCHOOL_FEE_HEADS,
+  DEFAULT_COLLEGE_FEE_HEADS,
+  FeeHeadDefinition,
+  MultiHeadFeeItem
 } from '../../store/demoStore';
 
 export const InteractiveDemoPage: React.FC = () => {
@@ -84,6 +89,9 @@ export const InteractiveDemoPage: React.FC = () => {
     designerNavConfigs,
     designerVersion,
     designerStatus,
+    customFeeHeads,
+    addCustomFeeHead,
+    collectMultiHeadFee,
     collectFee,
     collectFeeWithReceipt,
     reprintReceipt,
@@ -160,6 +168,34 @@ export const InteractiveDemoPage: React.FC = () => {
   const [dueReportStatusFilter, setDueReportStatusFilter] = useState<string>('ALL');
   const [feeStructureFeedback, setFeeStructureFeedback] = useState<string | null>(null);
   const [reprintFeedback, setReprintFeedback] = useState<string | null>(null);
+
+  // Multi-Head Fee Collection Counter State
+  const [multiStudentId, setMultiStudentId] = useState<string>('st-2'); // Ananya Hegde (PUC)
+  const [multiAcademicYear, setMultiAcademicYear] = useState<string>('2026-2027');
+  const [multiTerm, setMultiTerm] = useState<string>('TERM_1');
+  const [multiStream, setMultiStream] = useState<'School' | 'PU College'>('PU College');
+  const [multiSelectedHeadCodes, setMultiSelectedHeadCodes] = useState<string[]>([
+    'PU_TUITION_FEE', 'PHYSICS_CHEM_BIO_LAB', 'PU_LIBRARY_READING'
+  ]);
+  const [headSearchQuery, setHeadSearchQuery] = useState<string>('');
+  const [multiHeadAmounts, setMultiHeadAmounts] = useState<Record<string, { collected: number; concession: number }>>({
+    'PU_TUITION_FEE': { collected: 21000, concession: 2000 },
+    'PHYSICS_CHEM_BIO_LAB': { collected: 8500, concession: 0 },
+    'PU_LIBRARY_READING': { collected: 3000, concession: 0 },
+  });
+  const [multiPaymentMethod, setMultiPaymentMethod] = useState<PaymentMethodType>('UPI');
+  const [multiTxnRef, setMultiTxnRef] = useState<string>('UPI-HDFC-99382104');
+  const [multiNotes, setMultiNotes] = useState<string>('Term 1 installment collected at front counter');
+
+  // Custom Fee Head Modal State
+  const [showAddHeadModal, setShowAddHeadModal] = useState<boolean>(false);
+  const [newHeadTitle, setNewHeadTitle] = useState<string>('');
+  const [newHeadCode, setNewHeadCode] = useState<string>('');
+  const [newHeadCategory, setNewHeadCategory] = useState<string>('Tuition');
+  const [newHeadAmount, setNewHeadAmount] = useState<number>(5000);
+  const [newHeadRefundable, setNewHeadRefundable] = useState<boolean>(false);
+  const [newHeadInstType, setNewHeadInstType] = useState<'School' | 'PU College' | 'Degree College'>('School');
+  const [newHeadFeedback, setNewHeadFeedback] = useState<string | null>(null);
 
   // Current Role Privileges
   const currentPrivilege = ROLE_PRIVILEGES[currentRole] || ROLE_PRIVILEGES.PRINCIPAL;
@@ -242,6 +278,74 @@ export const InteractiveDemoPage: React.FC = () => {
     setTimeout(() => setSyncFeedback(null), 5000);
   };
 
+  const availableHeads: FeeHeadDefinition[] = [
+    ...(multiStream === 'School' ? DEFAULT_SCHOOL_FEE_HEADS : DEFAULT_COLLEGE_FEE_HEADS),
+    ...customFeeHeads.filter(h => h.institution_type === multiStream || h.institution_type === 'All')
+  ];
+
+  const filteredHeads = availableHeads.filter(h =>
+    h.title.toLowerCase().includes(headSearchQuery.toLowerCase()) ||
+    h.category.toLowerCase().includes(headSearchQuery.toLowerCase()) ||
+    h.head_code.toLowerCase().includes(headSearchQuery.toLowerCase())
+  );
+
+  const toggleFeeHead = (head: FeeHeadDefinition) => {
+    if (multiSelectedHeadCodes.includes(head.head_code)) {
+      setMultiSelectedHeadCodes(multiSelectedHeadCodes.filter(c => c !== head.head_code));
+    } else {
+      setMultiSelectedHeadCodes([...multiSelectedHeadCodes, head.head_code]);
+      if (!multiHeadAmounts[head.head_code]) {
+        setMultiHeadAmounts(prev => ({
+          ...prev,
+          [head.head_code]: { collected: head.default_amount, concession: 0 }
+        }));
+      }
+    }
+  };
+
+  const handleExecuteMultiHeadCollection = () => {
+    const selectedStudent = students.find(s => s.id === multiStudentId) || students[0];
+    const feeItems: MultiHeadFeeItem[] = multiSelectedHeadCodes.map(code => {
+      const headDef = availableHeads.find(h => h.head_code === code) || {
+        head_code: code,
+        title: code.replace(/_/g, ' '),
+        category: 'General',
+        default_amount: 5000,
+        id: code,
+        is_refundable: false,
+        institution_type: 'All'
+      };
+      const amounts = multiHeadAmounts[code] || { collected: headDef.default_amount, concession: 0 };
+      return {
+        head_code: code,
+        head_title: headDef.title,
+        category: headDef.category,
+        configured_amount: headDef.default_amount,
+        previously_paid: 0,
+        concession_amount: amounts.concession || 0,
+        collected_amount: amounts.collected !== undefined ? Number(amounts.collected) : headDef.default_amount
+      };
+    });
+
+    const receipt = collectMultiHeadFee({
+      student_id: selectedStudent.id,
+      student_name: `${selectedStudent.first_name} ${selectedStudent.last_name}`,
+      admission_number: selectedStudent.admission_number,
+      class_name: selectedStudent.class_name,
+      academic_year: multiAcademicYear,
+      term_code: multiTerm,
+      term_name: multiTerm === 'TERM_1' ? 'Term 1 / Semester 1' : 'Term 2 / Semester 2',
+      fee_items: feeItems,
+      payment_method: multiPaymentMethod,
+      reference_number: multiTxnRef || `TXN-UPI-${Date.now().toString().slice(-6)}`,
+      notes: multiNotes,
+      collected_by: currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${currentRole} User`
+    });
+
+    setActiveReceiptForModal(receipt);
+    setShowReceiptModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col font-sans">
       {/* Top Banner with Role Switcher & Reset */}
@@ -271,6 +375,8 @@ export const InteractiveDemoPage: React.FC = () => {
             >
               <option value="PRINCIPAL">👑 Principal / Director</option>
               <option value="SUPER_ADMIN">🌐 Platform Super Admin (Full Control)</option>
+              <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin (Secondary Authority)</option>
+              <option value="DEVELOPER">💻 Developer / Tech Support</option>
               <option value="INSTITUTION_ADMIN">🏛️ Institution Admin</option>
               <option value="VICE_PRINCIPAL">🎓 Vice Principal</option>
               <option value="ACCOUNTANT">💰 Accountant / Finance</option>
@@ -309,19 +415,35 @@ export const InteractiveDemoPage: React.FC = () => {
           </span>
           <span className="text-slate-400">•</span>
           <span className="text-slate-300">
-            <strong className="text-slate-100 font-semibold">Scope: </strong>
-            {currentPrivilege.scopes.map(s => `${s.scopeType}: ${s.description}`).join(' • ')}
+            {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
+              <>
+                <strong className="text-slate-100 font-semibold">Scope: </strong>
+                {currentPrivilege.scopes.map(s => `${s.scopeType}: ${s.description}`).join(' • ')}
+              </>
+            ) : (
+              <span className="text-slate-300 font-medium">
+                Akshara Global Campus • Affiliation # 830192 • Karnataka State PU Board
+              </span>
+            )}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[11px]">
-          <span className="text-emerald-400">
-            <strong>Can Edit:</strong> {currentPrivilege.canEdit.join(', ')}
-          </span>
-          <span className="text-slate-500">|</span>
-          <span className="text-amber-400">
-            <strong>Restriction:</strong> {currentPrivilege.restrictedActions[0]}
-          </span>
-        </div>
+        {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="text-emerald-400">
+              <strong>Can Edit:</strong> {currentPrivilege.canEdit.join(', ')}
+            </span>
+            <span className="text-slate-500">|</span>
+            <span className="text-amber-400">
+              <strong>Restriction:</strong> {currentPrivilege.restrictedActions[0]}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            <span className="text-emerald-400 font-semibold">Academic Session: 2026-2027</span>
+            <span>•</span>
+            <span>Front Counter Terminal</span>
+          </div>
+        )}
       </div>
 
       {/* Main Sandbox Layout */}
@@ -351,23 +473,8 @@ export const InteractiveDemoPage: React.FC = () => {
                 return null; // Omitted from DOM
               }
 
-              if (item.isSuperAdminOnly && currentRole !== 'SUPER_ADMIN') {
-                // Render as Locked with explanation
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      alert(`🔒 Super Admin Exclusive Control:\n\nThis module ('${item.label}') can only be accessed by Platform Super Admin. Ordinary roles (including Institution Admin & Principal) cannot manage platform permissions or layouts.`);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 bg-slate-900/40 border border-slate-800/60 opacity-60 hover:opacity-100 transition-all cursor-not-allowed"
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <Icon className="w-4 h-4 text-slate-500 shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </div>
-                    <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  </button>
-                );
+              if (item.isSuperAdminOnly && currentRole !== 'SUPER_ADMIN' && currentRole !== 'BACKUP_SUPER_ADMIN') {
+                return null; // Omitted completely from DOM & navigation for ordinary users
               }
 
               if (lockInfo.locked) {
@@ -482,51 +589,94 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* RBAC Access Boundaries Summary */}
-              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
-                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-blue-400" />
-                  Active Role Authorization & Access Boundaries
-                </h3>
+              {/* RBAC Access Boundaries Summary - Shown ONLY to Platform Super Admin & Backup Super Admin */}
+              {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
+                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-400" />
+                    Platform Security & Active Role Authorization Matrix
+                  </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Permitted Actions</p>
-                    <ul className="text-xs space-y-1.5 text-slate-300">
-                      {currentPrivilege.canEdit.map((act, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{act}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Permitted Actions</p>
+                      <ul className="text-xs space-y-1.5 text-slate-300">
+                        {currentPrivilege.canEdit.map((act, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                            <span>{act}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Approval Powers</p>
-                    <ul className="text-xs space-y-1.5 text-slate-300">
-                      {currentPrivilege.canApprove.map((app, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
-                          <FileCheck className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                          <span>{app}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Approval Powers</p>
+                      <ul className="text-xs space-y-1.5 text-slate-300">
+                        {currentPrivilege.canApprove.map((app, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <FileCheck className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                            <span>{app}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <p className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">Security Restrictions</p>
-                    <ul className="text-xs space-y-1.5 text-slate-300">
-                      {currentPrivilege.restrictedActions.map((res, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                          <span>{res}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <p className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">Security Restrictions</p>
+                      <ul className="text-xs space-y-1.5 text-slate-300">
+                        {currentPrivilege.restrictedActions.map((res, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                            <span>{res}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Institutional Operations Summary for Ordinary Roles */
+                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-blue-400" />
+                        Campus Operations & Academic Live Highlights
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Term 1 (2026-2027) • Affiliated with CBSE & Karnataka Pre-University Board
+                      </p>
+                    </div>
+                    <span className="text-[11px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-3 py-1 rounded-full font-bold">
+                      Session Active • All Streams Operating
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
+                      <p className="text-slate-400 font-medium">Class Attendance Today</p>
+                      <p className="text-lg font-bold text-emerald-400 mt-1">96.5%</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">1,348 of 1,396 students present</p>
+                    </div>
+                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
+                      <p className="text-slate-400 font-medium">Term 1 Fee Realisation</p>
+                      <p className="text-lg font-bold text-blue-400 mt-1">₹85.4 Lakhs</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
+                    </div>
+                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
+                      <p className="text-slate-400 font-medium">Ongoing Exam Cycles</p>
+                      <p className="text-lg font-bold text-amber-400 mt-1">4 Batches Active</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">NEET Foundation & Term Tests</p>
+                    </div>
+                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
+                      <p className="text-slate-400 font-medium">GPS Transport Tracking</p>
+                      <p className="text-lg font-bold text-teal-400 mt-1">8 Buses on Route</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Live geo-telemetry broadcasting</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1088,33 +1238,49 @@ export const InteractiveDemoPage: React.FC = () => {
               </div>
 
               <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4">
-                {/* 1. Select Login Role */}
+                {/* 1. Select Login Role Dropdown */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                    1. Select Role to Authenticate:
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {(['PRINCIPAL', 'INSTITUTION_ADMIN', 'ACCOUNTANT', 'EXAM_CONTROLLER', 'TEACHER', 'PARENT', 'STUDENT'] as UserRoleType[]).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => {
-                          setLoginRole(r);
-                          if (r === 'TEACHER') setSelectedUserIdentity('Dr. V. Murthy (EMP-PHY-102)');
-                          else if (r === 'PARENT') setSelectedUserIdentity('Rajesh Sharma (Father of Aarav - Class 10)');
-                          else if (r === 'STUDENT') setSelectedUserIdentity('Ananya Hegde (ADM-2026-092)');
-                          else setSelectedUserIdentity('Dr. Ramesh Kumar (EMP-PRIN-01)');
-                        }}
-                        className={`p-2 rounded-xl text-xs font-bold border text-left transition-colors cursor-pointer ${
-                          loginRole === r
-                            ? 'bg-blue-600 text-white border-blue-500'
-                            : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-850'
-                        }`}
-                      >
-                        {r.replace('_', ' ')}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>1. Select Login Role</span>
+                    </label>
+                    <span className="text-[10px] text-blue-400 font-semibold bg-blue-950/60 px-2 py-0.5 rounded border border-blue-800/50">
+                      Scope: {loginRole}
+                    </span>
                   </div>
+                  <select
+                    value={loginRole}
+                    onChange={(e) => {
+                      const r = e.target.value as UserRoleType;
+                      setLoginRole(r);
+                      if (r === 'TEACHER') setSelectedUserIdentity('Dr. V. Murthy (EMP-PHY-102)');
+                      else if (r === 'PARENT') setSelectedUserIdentity('Rajesh Sharma (Father of Aarav - Class 10)');
+                      else if (r === 'STUDENT') setSelectedUserIdentity('Ananya Hegde (ADM-2026-092)');
+                      else if (r === 'ACCOUNTANT') setSelectedUserIdentity('K. S. Narayana (EMP-ACC-09)');
+                      else if (r === 'EXAM_CONTROLLER') setSelectedUserIdentity('Prof. S. Joshi (EMP-EC-02)');
+                      else if (r === 'TRANSPORT_MANAGER') setSelectedUserIdentity('Suresh Gowda (Route 104 Fleet)');
+                      else if (r === 'SUPER_ADMIN') setSelectedUserIdentity('Platform Super Administrator (PLATFORM-ROOT)');
+                      else if (r === 'BACKUP_SUPER_ADMIN') setSelectedUserIdentity('Secondary Platform Administrator (PLATFORM-BACKUP-01)');
+                      else if (r === 'DEVELOPER') setSelectedUserIdentity('Lead Platform Engineer / Support (DEV-ENG-42)');
+                      else setSelectedUserIdentity('Dr. Ramesh Kumar (EMP-PRIN-01)');
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="PRINCIPAL">👑 Principal / Director (Leadership)</option>
+                    <option value="INSTITUTION_ADMIN">🏛️ Institution Admin (Operations)</option>
+                    <option value="ACCOUNTANT">💰 Accountant / Finance Desk (Accounts)</option>
+                    <option value="EXAM_CONTROLLER">📝 Examination Controller (Academics)</option>
+                    <option value="TEACHER">👩‍🏫 Faculty / Lecturer (Academics)</option>
+                    <option value="PARENT">👨‍👩‍👧 Parent / Guardian (Portal)</option>
+                    <option value="STUDENT">🎒 Enrolled Student (Portal)</option>
+                    <option value="TRANSPORT_MANAGER">🚌 Transport Manager (Fleet)</option>
+                    <option value="SUPER_ADMIN">🌐 Platform Super Admin (Root)</option>
+                    <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin (Security)</option>
+                    <option value="DEVELOPER">💻 Developer / Tech Support (DevOps)</option>
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Role selection filters accounts and loads assigned permissions.
+                  </p>
                 </div>
 
                 {/* 2. User Autocomplete Field */}
@@ -1385,10 +1551,363 @@ export const InteractiveDemoPage: React.FC = () => {
               {/* ============================================================= */}
               {feeSubTab === 'collection' && (
                 <div className="space-y-6">
-                  {/* Category Filter & Stats */}
+                  {/* Searchable Multi-Head Fee Collection Counter */}
+                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-5 shadow-xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                      <div>
+                        <h2 className="text-base font-black text-white flex items-center gap-2">
+                          <CreditCard className="w-5 h-5 text-emerald-400" />
+                          Multi-Head Cashier Fee Collection & Instant Receipt
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Search & select multiple fee heads in a single transaction • Auto-calculated dues, concessions & instant receipt emission
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddHeadModal(true)}
+                          className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Institution Fee Head
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Form Controls: Student, Academic Year, Term, Stream */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      {/* 1. Student Selector */}
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">1. Select Enrolled Student</label>
+                        <select
+                          value={multiStudentId}
+                          onChange={(e) => {
+                            setMultiStudentId(e.target.value);
+                            const st = students.find(s => s.id === e.target.value);
+                            if (st) {
+                              const isPuc = st.institution_level === 'PU College';
+                              setMultiStream(isPuc ? 'PU College' : 'School');
+                              setMultiSelectedHeadCodes(isPuc
+                                ? ['PU_TUITION_FEE', 'PHYSICS_CHEM_BIO_LAB', 'PU_LIBRARY_READING']
+                                : ['TUITION_FEE', 'SCIENCE_LAB_FEE', 'LIBRARY_FEE']);
+                            }
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                        >
+                          {students.map((st) => (
+                            <option key={st.id} value={st.id} className="bg-slate-900 text-white">
+                              {st.first_name} {st.last_name} ({st.admission_number} • {st.class_name})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* 2. Academic Year */}
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">2. Academic Session</label>
+                        <select
+                          value={multiAcademicYear}
+                          onChange={(e) => setMultiAcademicYear(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="2026-2027">2026-2027 (Active Session)</option>
+                          <option value="2027-2028">2027-2028 (Next Session)</option>
+                        </select>
+                      </div>
+
+                      {/* 3. Term / Installment */}
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">3. Term / Installment</label>
+                        <select
+                          value={multiTerm}
+                          onChange={(e) => setMultiTerm(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="TERM_1">Term 1 / Semester 1 (June-Aug)</option>
+                          <option value="TERM_2">Term 2 / Semester 2 (Sept-Nov)</option>
+                          <option value="TERM_3">Term 3 / Semester 3 (Dec-Feb)</option>
+                          <option value="ANNUAL">Full Annual Consolidated</option>
+                        </select>
+                      </div>
+
+                      {/* 4. Curriculum / Stream */}
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">4. Standard Fee Catalog</label>
+                        <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-700">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMultiStream('School');
+                              setMultiSelectedHeadCodes(['TUITION_FEE', 'SCIENCE_LAB_FEE', 'LIBRARY_FEE']);
+                            }}
+                            className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
+                              multiStream === 'School'
+                                ? 'bg-blue-600 text-white'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            School (21 Heads)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMultiStream('PU College');
+                              setMultiSelectedHeadCodes(['PU_TUITION_FEE', 'PHYSICS_CHEM_BIO_LAB', 'PU_LIBRARY_READING']);
+                            }}
+                            className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
+                              multiStream === 'PU College'
+                                ? 'bg-blue-600 text-white'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            PU College (18 Heads)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Searchable Multi-Select Fee Head Dropdown & Active Pills */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Search className="w-3.5 h-3.5 text-blue-400" />
+                          Search & Select Fee Heads ({multiSelectedHeadCodes.length} Selected)
+                        </label>
+                        <span className="text-[11px] text-slate-400">
+                          Searchable dropdown across {availableHeads.length} institution fee heads
+                        </span>
+                      </div>
+
+                      {/* Search Input */}
+                      <div className="relative mb-2">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          value={headSearchQuery}
+                          onChange={(e) => setHeadSearchQuery(e.target.value)}
+                          placeholder="Search fee head by name, code or category (e.g. Tuition, Lab, Hostel, Transport, Caution Deposit)..."
+                          className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Active Selected Fee Heads Pills */}
+                      {multiSelectedHeadCodes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                          <span className="text-[11px] font-bold text-slate-400 self-center mr-1">Active Heads:</span>
+                          {multiSelectedHeadCodes.map(code => {
+                            const hd = availableHeads.find(h => h.head_code === code) || { title: code.replace(/_/g, ' '), head_code: code };
+                            return (
+                              <span
+                                key={code}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-900/40 border border-blue-500/40 text-blue-200 text-xs font-semibold"
+                              >
+                                <span>{hd.title}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setMultiSelectedHeadCodes(multiSelectedHeadCodes.filter(c => c !== code))}
+                                  className="text-blue-400 hover:text-white font-bold ml-1 cursor-pointer"
+                                  title="Remove fee head"
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Filtered Dropdown Options (shows matching results when searching or click to view) */}
+                      {headSearchQuery.trim().length > 0 && (
+                        <div className="max-h-48 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 shadow-xl mb-3">
+                          {filteredHeads.map(h => {
+                            const isSelected = multiSelectedHeadCodes.includes(h.head_code);
+                            return (
+                              <button
+                                key={h.id}
+                                type="button"
+                                onClick={() => toggleFeeHead(h)}
+                                className={`p-2 rounded-lg text-left text-xs flex items-center justify-between border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-blue-600/30 border-blue-500 text-white font-bold'
+                                    : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                                }`}
+                              >
+                                <div className="truncate min-w-0 pr-2">
+                                  <p className="truncate font-semibold">{h.title}</p>
+                                  <span className="text-[10px] text-slate-400 font-mono">₹{h.default_amount.toLocaleString()} • {h.category}</span>
+                                </div>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                  {isSelected ? '✓ Added' : '+ Add'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fee Head Breakdown & Collection Input Table */}
+                    {multiSelectedHeadCodes.length > 0 ? (
+                      <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-900/60">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                              <th className="p-3">Fee Head Title</th>
+                              <th className="p-3">Category</th>
+                              <th className="p-3">Configured Base</th>
+                              <th className="p-3">Concession / Disc. (₹)</th>
+                              <th className="p-3">Net Due (₹)</th>
+                              <th className="p-3 text-right">Collect In This Receipt (₹)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-850">
+                            {multiSelectedHeadCodes.map(code => {
+                              const headDef = availableHeads.find(h => h.head_code === code) || {
+                                head_code: code,
+                                title: code.replace(/_/g, ' '),
+                                category: 'General',
+                                default_amount: 5000,
+                                id: code,
+                                is_refundable: false,
+                                institution_type: 'All'
+                              };
+                              const amounts = multiHeadAmounts[code] || { collected: headDef.default_amount, concession: 0 };
+                              const netDue = Math.max(0, headDef.default_amount - (amounts.concession || 0));
+
+                              return (
+                                <tr key={code} className="hover:bg-slate-800/40 transition-colors">
+                                  <td className="p-3 font-semibold text-white">
+                                    {headDef.title}
+                                    {headDef.is_refundable && (
+                                      <span className="ml-1.5 text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded font-mono">Refundable</span>
+                                    )}
+                                  </td>
+                                  <td className="p-3">
+                                    <span className="text-[10px] bg-slate-800 text-amber-300 px-2 py-0.5 rounded font-mono font-semibold">
+                                      {headDef.category}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 font-mono font-bold text-slate-300">₹{headDef.default_amount.toLocaleString()}</td>
+                                  <td className="p-3">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={headDef.default_amount}
+                                      value={amounts.concession || ''}
+                                      placeholder="0"
+                                      onChange={(e) => {
+                                        const conc = Math.max(0, Number(e.target.value) || 0);
+                                        const newColl = Math.max(0, headDef.default_amount - conc);
+                                        setMultiHeadAmounts(prev => ({
+                                          ...prev,
+                                          [code]: { collected: newColl, concession: conc }
+                                        }));
+                                      }}
+                                      className="w-24 px-2 py-1 rounded bg-slate-800 border border-slate-700 text-amber-300 font-mono text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                  </td>
+                                  <td className="p-3 font-mono font-bold text-rose-400">₹{netDue.toLocaleString()}</td>
+                                  <td className="p-3 text-right">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={netDue}
+                                      value={amounts.collected !== undefined ? amounts.collected : netDue}
+                                      onChange={(e) => {
+                                        const coll = Math.max(0, Number(e.target.value) || 0);
+                                        setMultiHeadAmounts(prev => ({
+                                          ...prev,
+                                          [code]: { ...amounts, collected: coll }
+                                        }));
+                                      }}
+                                      className="w-28 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-emerald-300 font-mono font-bold text-xs text-right focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-950 border-t border-slate-800 font-bold text-xs">
+                              <td colSpan={4} className="p-3 text-slate-400 text-right uppercase">
+                                Total Collection in this Transaction:
+                              </td>
+                              <td colSpan={2} className="p-3 text-right">
+                                <span className="text-xl font-black text-emerald-400 font-mono">
+                                  ₹{multiSelectedHeadCodes.reduce((sum, code) => {
+                                    const hd = availableHeads.find(h => h.head_code === code);
+                                    const defAmt = hd?.default_amount || 5000;
+                                    const amt = multiHeadAmounts[code];
+                                    return sum + (amt?.collected !== undefined ? Number(amt.collected) : defAmt);
+                                  }, 0).toLocaleString()}
+                                </span>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="p-6 rounded-xl border border-dashed border-slate-800 text-center text-slate-400 text-xs">
+                        No fee heads selected. Choose from the catalog or search above to add heads to this collection.
+                      </div>
+                    )}
+
+                    {/* Payment Mode, Reference & Instant Collect Action */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-800/80">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">Payment Method</label>
+                        <select
+                          value={multiPaymentMethod}
+                          onChange={(e) => setMultiPaymentMethod(e.target.value as PaymentMethodType)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="UPI">UPI / QR Code Scan</option>
+                          <option value="CASH">Cash Counter Payment</option>
+                          <option value="ONLINE_NETBANKING">Online / Netbanking</option>
+                          <option value="CHEQUE">Bank Cheque / DD</option>
+                          <option value="BANK_TRANSFER">NEFT / RTGS Transfer</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">Transaction Ref / Cheque #</label>
+                        <input
+                          type="text"
+                          value={multiTxnRef}
+                          onChange={(e) => setMultiTxnRef(e.target.value)}
+                          placeholder="e.g. UPI-UTR-90128471"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">Front Desk Receipt Note</label>
+                        <input
+                          type="text"
+                          value={multiNotes}
+                          onChange={(e) => setMultiNotes(e.target.value)}
+                          placeholder="e.g. Collected at main counter"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleExecuteMultiHeadCollection}
+                        disabled={multiSelectedHeadCodes.length === 0}
+                        className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Confirm & Collect Fee • Generate Official Receipt</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Category Filter & Historical Ledger Invoices Table */}
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-slate-400 uppercase text-[11px]">Fee Head Filter:</span>
+                      <span className="font-bold text-slate-400 uppercase text-[11px]">Ledger Head Filter:</span>
                       {(['ALL', 'COLLEGE_FEE', 'LAB_FEE', 'HOSTEL_MESS_FEE', 'TRANSPORT_FEE', 'EXAM_FEE'] as const).map((head) => (
                         <button
                           key={head}
@@ -2410,6 +2929,171 @@ export const InteractiveDemoPage: React.FC = () => {
                           Close Preview
                         </button>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Institution-Specific Fee Head Modal */}
+              {showAddHeadModal && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl text-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <h3 className="text-base font-black text-white flex items-center gap-2">
+                        <Plus className="w-4 h-4 text-purple-400" />
+                        Add Institution-Specific Fee Head
+                      </h3>
+                      <button
+                        onClick={() => { setShowAddHeadModal(false); setNewHeadFeedback(null); }}
+                        className="text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {newHeadFeedback && (
+                      <div className={`p-3 rounded-xl text-xs font-semibold ${
+                        newHeadFeedback.startsWith('Permission denied')
+                          ? 'bg-rose-950 text-rose-200 border border-rose-800'
+                          : 'bg-emerald-950 text-emerald-200 border border-emerald-800'
+                      }`}>
+                        {newHeadFeedback}
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Fee Head Name / Title *</label>
+                        <input
+                          type="text"
+                          value={newHeadTitle}
+                          onChange={(e) => {
+                            setNewHeadTitle(e.target.value);
+                            setNewHeadCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_'));
+                          }}
+                          placeholder="e.g. Robotics & AI Lab Fee"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Fee Head Identifier Code</label>
+                        <input
+                          type="text"
+                          value={newHeadCode}
+                          onChange={(e) => setNewHeadCode(e.target.value)}
+                          placeholder="e.g. ROBOTICS_AI_LAB"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-300 font-bold mb-1">Category</label>
+                          <select
+                            value={newHeadCategory}
+                            onChange={(e) => setNewHeadCategory(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                          >
+                            <option value="Tuition">Tuition</option>
+                            <option value="Admission">Admission</option>
+                            <option value="Laboratory">Laboratory</option>
+                            <option value="Library">Library</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Hostel">Hostel</option>
+                            <option value="Examination">Examination</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Development">Development</option>
+                            <option value="Activities">Activities</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-300 font-bold mb-1">Default Base Amount (₹)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={newHeadAmount}
+                            onChange={(e) => setNewHeadAmount(Number(e.target.value) || 0)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-300 font-bold mb-1">Applicable Level</label>
+                          <select
+                            value={newHeadInstType}
+                            onChange={(e) => setNewHeadInstType(e.target.value as any)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                          >
+                            <option value="School">School Only</option>
+                            <option value="PU College">PU College Only</option>
+                            <option value="Degree College">Degree College Only</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-300 font-bold mb-1">Refundable Caution?</label>
+                          <div className="flex items-center gap-2 mt-2">
+                            <input
+                              type="checkbox"
+                              id="refToggle"
+                              checked={newHeadRefundable}
+                              onChange={(e) => setNewHeadRefundable(e.target.checked)}
+                              className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                            />
+                            <label htmlFor="refToggle" className="text-slate-300">Yes (Security Deposit)</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddHeadModal(false)}
+                        className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newHeadTitle.trim()) {
+                            setNewHeadFeedback('Please provide a valid fee head name.');
+                            return;
+                          }
+                          const finalCode = newHeadCode.trim() || newHeadTitle.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+                          const res = addCustomFeeHead({
+                            head_code: finalCode,
+                            title: newHeadTitle,
+                            category: newHeadCategory,
+                            default_amount: newHeadAmount,
+                            is_refundable: newHeadRefundable,
+                            institution_type: newHeadInstType
+                          });
+                          setNewHeadFeedback(res.message);
+                          if (res.success) {
+                            setMultiSelectedHeadCodes(prev => [...prev, finalCode]);
+                            setMultiHeadAmounts(prev => ({
+                              ...prev,
+                              [finalCode]: { collected: newHeadAmount, concession: 0 }
+                            }));
+                            setTimeout(() => {
+                              setShowAddHeadModal(false);
+                              setNewHeadFeedback(null);
+                              setNewHeadTitle('');
+                              setNewHeadCode('');
+                            }, 1200);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer"
+                      >
+                        Save Fee Head
+                      </button>
                     </div>
                   </div>
                 </div>

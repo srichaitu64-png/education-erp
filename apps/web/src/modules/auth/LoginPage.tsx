@@ -34,6 +34,8 @@ const INSTITUTION_ROLES: RoleOption[] = [
   { code: 'STUDENT', label: 'Enrolled Student', icon: '🎒', badge: 'Portal' },
   { code: 'TRANSPORT_MANAGER', label: 'Transport Manager', icon: '🚌', badge: 'Logistics' },
   { code: 'SUPER_ADMIN', label: 'Platform Super Admin', icon: '🌐', badge: 'Platform' },
+  { code: 'BACKUP_SUPER_ADMIN', label: 'Backup Super Admin', icon: '🛡️', badge: 'Security' },
+  { code: 'DEVELOPER', label: 'Developer / Technical Support', icon: '💻', badge: 'DevOps' },
 ];
 
 interface UserSuggestion {
@@ -72,6 +74,12 @@ const PRESET_ACCOUNTS: Record<string, UserSuggestion[]> = {
   ],
   SUPER_ADMIN: [
     { id: 'u-sa-1', displayName: 'Platform Super Administrator', identifier: 'PLATFORM-ROOT', email: 'admin@platform.erp.in', roleCode: 'SUPER_ADMIN' }
+  ],
+  BACKUP_SUPER_ADMIN: [
+    { id: 'u-bsa-1', displayName: 'Secondary Platform Administrator', identifier: 'PLATFORM-BACKUP-01', email: 'backup_admin@platform.erp.in', roleCode: 'BACKUP_SUPER_ADMIN' }
+  ],
+  DEVELOPER: [
+    { id: 'u-dev-1', displayName: 'Lead Platform Engineer / Support', identifier: 'DEV-ENG-42', email: 'developer@platform.erp.in', roleCode: 'DEVELOPER' }
   ]
 };
 
@@ -104,7 +112,7 @@ export const LoginPage: React.FC = () => {
       setSelectedUserLabel(`${first.displayName} (${first.identifier})`);
       setSearchTerm('');
       setSuggestions([]);
-      if (roleCode === 'SUPER_ADMIN') {
+      if (roleCode === 'SUPER_ADMIN' || roleCode === 'BACKUP_SUPER_ADMIN' || roleCode === 'DEVELOPER') {
         setPassword('AdminSecurePassword2026!');
         setSchoolCode('');
       } else {
@@ -180,42 +188,33 @@ export const LoginPage: React.FC = () => {
 
       <div className="max-w-xl w-full bg-slate-900/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 text-slate-100">
         
-        {/* Step 1: Login Role Selection */}
-        <div className="mb-6">
+        {/* Step 1: Login Role Dropdown */}
+        <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <span>1. Select Login Role</span>
             </label>
-            <span className="text-[11px] text-amber-400 font-semibold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">
-              Selected: {selectedRole}
+            <span className="text-[11px] text-blue-400 font-semibold bg-blue-950/60 px-2.5 py-0.5 rounded border border-blue-800/50">
+              Role: {selectedRole}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {INSTITUTION_ROLES.map((r) => {
-              const isSelected = selectedRole === r.code;
-              return (
-                <button
-                  key={r.code}
-                  type="button"
-                  onClick={() => handleRoleSelect(r.code)}
-                  className={`flex items-center gap-2 p-2.5 rounded-xl text-left border text-xs transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20 font-bold'
-                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 border-slate-700/80 font-medium'
-                  }`}
-                >
-                  <span className="text-base">{r.icon}</span>
-                  <div className="truncate">
-                    <p className="truncate text-xs leading-snug">{r.label.split(' / ')[0]}</p>
-                    <span className={`text-[9px] uppercase tracking-wider block ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                      {r.badge}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="relative">
+            <select
+              value={selectedRole}
+              onChange={(e) => handleRoleSelect(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-xs font-semibold text-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+            >
+              {INSTITUTION_ROLES.map((r) => (
+                <option key={r.code} value={r.code} className="bg-slate-900 text-white">
+                  {r.icon} {r.label} ({r.badge})
+                </option>
+              ))}
+            </select>
           </div>
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            Role selection scopes autocomplete users and target dashboard. Privileges are strictly verified by the backend.
+          </p>
         </div>
 
         {error && (
@@ -340,6 +339,17 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          <div className="flex items-center justify-between text-xs py-1">
+            <button
+              type="button"
+              onClick={() => alert("Password Recovery Notice:\n\nPlease contact your Platform Super Admin (admin@platform.erp.in) or Institution IT Desk to obtain an OTP reset link.")}
+              className="text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+            >
+              Forgot password?
+            </button>
+            <span className="text-[11px] text-slate-400">Zero-Trust Protected</span>
+          </div>
 
           <button
             type="submit"

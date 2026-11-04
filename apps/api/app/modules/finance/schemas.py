@@ -140,3 +140,4 @@ class DueReportItem(BaseModel):
     due_date: date
     overdue_days: int
     status: str
+

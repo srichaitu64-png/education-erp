@@ -174,3 +174,4 @@ class ExamApprovalAudit(TenantBaseModel):
     comments: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     examination: Mapped["Examination"] = relationship("Examination", back_populates="audit_logs")
+
