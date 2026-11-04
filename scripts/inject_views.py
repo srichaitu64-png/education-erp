@@ -948,3 +948,4 @@ content = content.replace(anchor_transport, migration_view_code + "\n          "
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("All views injected successfully into InteractiveDemoPage.")
+

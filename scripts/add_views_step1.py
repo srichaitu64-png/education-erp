@@ -48,3 +48,4 @@ content = content.replace(old_fee_state, new_fee_state)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("State updated in InteractiveDemoPage.")
+

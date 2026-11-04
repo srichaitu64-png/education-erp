@@ -542,3 +542,4 @@ content = content.replace(old_reset, actions_code + "\n" + old_reset)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("Step 6 done.")
+

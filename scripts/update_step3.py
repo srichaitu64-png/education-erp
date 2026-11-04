@@ -104,3 +104,4 @@ content = content.replace(old_init_perms_end, new_init_perms_end)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("Step 3 perms done.")
+

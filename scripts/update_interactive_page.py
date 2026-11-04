@@ -112,3 +112,4 @@ content = content.replace(old_super_check, new_super_check)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("InteractiveDemoPage navigation updated.")
+

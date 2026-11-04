@@ -1,5 +1,11 @@
+import { LaboratoryManagementView } from './views/LaboratoryManagementView';
+import { CommunicationHubView } from './views/CommunicationHubView';
+import { PlatformSuperAdminView } from './views/PlatformSuperAdminView';
 import React, { useState } from 'react';
 import {
+  FlaskConical,
+  MessageSquare,
+  ShieldAlert,
   GraduationCap,
   Users,
   CreditCard,
@@ -255,6 +261,9 @@ export const InteractiveDemoPage: React.FC = () => {
     { id: 'dashboard-designer', label: 'Dashboard & Access Designer', icon: Layout, isSuperAdminOnly: true },
     { id: 'examinations', label: 'Examinations Lifecycle', icon: Award, isSuperAdminOnly: false },
     { id: 'progress-cards', label: 'Student Progress Cards', icon: FileCheck, isSuperAdminOnly: false },
+    { id: 'laboratory', label: 'Laboratory & QR Inventory', icon: FlaskConical, isSuperAdminOnly: false },
+    { id: 'communication', label: 'Communication Hub (WhatsApp/Telegram)', icon: MessageSquare, isSuperAdminOnly: false },
+    { id: 'platform-superadmin', label: 'Platform SaaS Command (1,000+ Tenancies)', icon: ShieldAlert, isSuperAdminOnly: true },
     { id: 'fees', label: 'Fee Management & Statements', icon: CreditCard, isSuperAdminOnly: false },
     { id: 'data-migration', label: 'Data Migration Centre', icon: Upload, isSuperAdminOnly: false },
     { id: 'attendance', label: 'Daily Attendance', icon: CalendarCheck, isSuperAdminOnly: false },
@@ -4395,6 +4404,28 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          )}
+
+        
+          {/* ================================================================= */}
+          {/* TAB 9: LABORATORY MANAGEMENT & QR INVENTORY */}
+          {/* ================================================================= */}
+          {activeTab === 'laboratory' && (
+            <LaboratoryManagementView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 10: MULTI-CHANNEL COMMUNICATION HUB (WHATSAPP & TELEGRAM) */}
+          {/* ================================================================= */}
+          {activeTab === 'communication' && (
+            <CommunicationHubView />
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB 11: CENTRAL PLATFORM SUPER ADMIN (1,000+ TENANCIES) */}
+          {/* ================================================================= */}
+          {activeTab === 'platform-superadmin' && (
+            <PlatformSuperAdminView />
           )}
 
         </main>

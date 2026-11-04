@@ -49,3 +49,4 @@ content = content.replace(old_fee_pills, new_fee_pills)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("Fee pills updated.")
+

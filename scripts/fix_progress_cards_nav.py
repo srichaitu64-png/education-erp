@@ -88,3 +88,4 @@ content = content.replace(old_nav_principal, new_nav_principal)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("Allowed tabs and nav configs updated.")
+

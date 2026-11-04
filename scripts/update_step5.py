@@ -132,3 +132,4 @@ content = content.replace(old_nav_end, new_nav_end)
 with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
 print("Step 5 nav configs done.")
+
