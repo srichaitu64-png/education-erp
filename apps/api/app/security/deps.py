@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -8,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
 from app.database.session import get_db, set_current_tenant_id, get_current_tenant_id
-from app.modules.identity.models import User, UserRole, Role, Permission
+from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession
 from app.modules.subscriptions.service import EntitlementService, FeatureAccessResult
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -163,4 +164,48 @@ def require_feature(feature_id: str) -> Callable:
         return access
 
     return feature_guard
+
+
+async def verify_tenant_access_or_support(
+    tenant_id: uuid.UUID,
+    db: AsyncSession,
+    current_user: User
+) -> bool:
+    """
+    Ensure the user is authorized to access tenant data:
+    1. Member of tenant with active role, OR
+    2. Platform Super Admin with an active, approved, unexpired PlatformSupportAccessSession.
+    Direct silent superadmin access without an approved support session is strictly prohibited.
+    """
+    for ur in current_user.roles:
+        if ur.tenant_id == tenant_id:
+            return True
+
+    if current_user.is_superadmin:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            select(PlatformSupportAccessSession)
+            .where(
+                PlatformSupportAccessSession.tenant_id == tenant_id,
+                PlatformSupportAccessSession.requested_by_platform_user_id == current_user.id,
+                PlatformSupportAccessSession.status == "APPROVED",
+                PlatformSupportAccessSession.expires_at > now,
+                PlatformSupportAccessSession.revoked_at.is_(None)
+            )
+        )
+        res = await db.execute(stmt)
+        active_session = res.scalars().first()
+        if active_session:
+            return True
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform administrators require an active, approved consent-based support session to access private tenant records."
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Unauthorized cross-tenant access attempt."
+    )
+
 

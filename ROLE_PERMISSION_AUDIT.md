@@ -68,3 +68,4 @@ Every endpoint in `apps/api/app/api/v1/` verifies:
 2. `user_id` has valid active role in tenant.
 3. Explicit duty assignment matches target `course_id`, `section_id`, and `subject_id` where applicable.
 4. Deny-by-default on all unrecognized or unassigned actions.
+

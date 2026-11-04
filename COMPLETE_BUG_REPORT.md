@@ -120,3 +120,4 @@
   Added `ConsolidatedFeeReportSnapshot` data structure and submission/approval actions in demo store and view.
 - **Regression Test & Result:**
   Tested submission by Accountant and approval by Chairman; verified snapshot figures remain frozen even if simulated new payments are collected later.
+

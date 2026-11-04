@@ -62,3 +62,4 @@ tests/tenant-isolation/test_tenant_isolation.py ..                       [100%]
 ### Hall Ticket Generation:
 - `test_bulk_hall_ticket_generation`: Verifies generation of hall tickets with timetable, photo, and room assignment.
 - `test_hall_ticket_qr_verification`: Verifies QR code payload decodes to valid tenant-safe verification signature.
+

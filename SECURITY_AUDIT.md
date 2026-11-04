@@ -43,3 +43,4 @@ The automated test suite in `tests/security/test_permission_governance_and_exams
 - Cross-tenant queries return 0 records (`test_cross_tenant_isolation_enforced`).
 - Non-superadmin permission modification attempts return HTTP 403 Forbidden.
 - Unauthorized exam marks updates return HTTP 403 Forbidden.
+

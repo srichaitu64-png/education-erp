@@ -49,3 +49,4 @@
 5. **Implement EXAM-04 (MISSING -> WORKING):** Implement `HallTicketManagementView` with eligibility engine, QR verification, and PDF/ZIP generation.
 6. **Complete FEE-04 (PARTIAL -> WORKING):** Implement Accountant snapshot generation and Chairman review workflow.
 7. **Complete EXAM-05 (PARTIAL -> WORKING):** Implement `ResultNoticeBoardView` with section analytics and student privacy controls.
+

@@ -423,3 +423,4 @@ export const HallTicketManagementView: React.FC = () => {
     </div>
   );
 };
+

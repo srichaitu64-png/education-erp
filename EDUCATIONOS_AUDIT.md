@@ -85,3 +85,4 @@ Replace the monolithic dashboard block with a dynamic **Role Workspace Dispatche
 - Frontend Build: `✓ built in 6.83s`
 - Production URL: `https://education-erp-nine.vercel.app`
 - Database RLS Policy: Zero-trust tenant isolation active on all tenant-specific tables.
+

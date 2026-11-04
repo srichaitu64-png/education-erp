@@ -983,3 +983,4 @@ export const LaboratoryManagementView: React.FC = () => {
     </div>
   );
 };
+

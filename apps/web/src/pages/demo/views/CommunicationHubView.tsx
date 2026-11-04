@@ -630,3 +630,4 @@ export const CommunicationHubView: React.FC = () => {
     </div>
   );
 };
+

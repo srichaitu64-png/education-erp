@@ -8,6 +8,7 @@ import { HallTicketManagementView } from './views/HallTicketManagementView';
 import { ConsolidatedFeeReportReviewView } from './views/ConsolidatedFeeReportReviewView';
 import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
 import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
+import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
 import React, { useState } from 'react';
 import {
   FlaskConical,
@@ -502,106 +503,15 @@ export const InteractiveDemoPage: React.FC = () => {
 
       {/* Main Sandbox Layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Dynamic Sidebar with Presentation States (Visible / Locked / Hidden) */}
-        <aside className="w-full md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto">
-          <div className="p-4 border-b border-slate-800 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md">
-              A
-            </div>
-            <div>
-              <h2 className="text-xs font-black text-white uppercase tracking-wider">Akshara Global ERP</h2>
-              <span className="text-[10px] text-slate-400">School & College Campus</span>
-            </div>
-          </div>
-
-          <nav className="p-3 space-y-1">
-            {allNavItems.map((item) => {
-              const Icon = item.icon;
-              const lockInfo = isTabLocked(item.id);
-              const allowed = isTabAllowed(item.id);
-
-              // Check if tab is completely hidden
-              const designerItems = designerNavConfigs[currentRole] || [];
-              const designerMatch = designerItems.find(it => it.id === item.id);
-              if (designerMatch && designerMatch.presentationState === 'COMPLETELY_HIDDEN') {
-                return null; // Omitted from DOM
-              }
-
-              // Institution Control Centre is only visible for leadership
-              if (item.id === 'institution-control-centre' && currentRole !== 'CHAIRMAN_DIRECTOR' && currentRole !== 'DIRECTOR' && currentRole !== 'MANAGING_DIRECTOR' && currentRole !== 'SUPER_ADMIN') {
-                return null;
-              }
-
-              // Super Admin permission matrix & dashboard designer are restricted to Super Admin & Chairman
-              if (item.isSuperAdminOnly && currentRole !== 'SUPER_ADMIN' && currentRole !== 'BACKUP_SUPER_ADMIN' && currentRole !== 'CHAIRMAN_DIRECTOR') {
-                return null; // Omitted completely from DOM & navigation for Principal and other staff
-              }
-
-              if (lockInfo.locked) {
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      alert(`🔒 Locked Module:\n\n${lockInfo.reason}`);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-400 bg-slate-900/60 border border-slate-800/80 hover:bg-slate-850 transition-all cursor-not-allowed"
-                    title={lockInfo.reason}
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <Icon className="w-4 h-4 text-slate-500 shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </div>
-                    <span className="text-[10px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  </button>
-                );
-              }
-
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-black'
-                      : 'text-slate-300 hover:bg-slate-850 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                    <span className="truncate">{item.label}</span>
-                  </div>
-                  {item.isSuperAdminOnly && (
-                    <span className="text-[9px] bg-purple-900 text-purple-200 px-1.5 py-0.5 rounded font-bold uppercase">
-                      Super Admin
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Institution Admin Permission Request Callout */}
-          {currentRole === 'INSTITUTION_ADMIN' && (
-            <div className="p-3 m-3 rounded-xl bg-indigo-950/60 border border-indigo-800/60 text-indigo-200 text-xs">
-              <p className="font-bold flex items-center gap-1.5 text-indigo-300 mb-1">
-                <Key className="w-3.5 h-3.5" />
-                Need More Privileges?
-              </p>
-              <p className="text-[11px] text-slate-400 mb-2">
-                Institution Admins cannot grant permissions directly. Submit requests to Super Admin.
-              </p>
-              <button
-                onClick={() => setShowChangeReqModal(true)}
-                className="w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-              >
-                Request Privileges
-              </button>
-            </div>
-          )}
-        </aside>
+        {/* Professional Restructured Navigation Sidebar with 7 Collapsible Groups */}
+        <ProfessionalSidebarNavigation
+          currentRole={currentRole}
+          activeTab={activeTab}
+          onSelectTab={(tabId) => setActiveTab(tabId)}
+          isTabLocked={isTabLocked}
+          isTabAllowed={isTabAllowed}
+          designerNavConfigs={designerNavConfigs}
+        />
 
         {/* Central Dynamic Content Screen */}
         <main className="flex-1 bg-slate-900 overflow-y-auto p-4 sm:p-6 text-slate-100">

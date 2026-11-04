@@ -492,3 +492,4 @@ export const AcademicStructureView: React.FC = () => {
     </div>
   );
 };
+

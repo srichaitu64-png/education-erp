@@ -20,6 +20,7 @@ import { BookDemoPage } from './pages/public/BookDemoPage';
 import { RegisterInstitutionPage } from './pages/public/RegisterInstitutionPage';
 import { AboutPage } from './pages/public/AboutPage';
 import { ContactPage } from './pages/public/ContactPage';
+import { PlatformAccessDeniedPage } from './pages/public/PlatformAccessDeniedPage';
 import { InteractiveDemoPage } from './pages/demo/InteractiveDemoPage';
 
 const queryClient = new QueryClient({
@@ -42,7 +43,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireSuperAdmin?: 
   }
 
   if (requireSuperAdmin && !user?.is_superadmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <PlatformAccessDeniedPage />;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -72,27 +73,9 @@ export const App: React.FC = () => {
           {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Authenticated Institution ERP Dashboard */}
+          {/* Dedicated /platform/* Private SaaS Platform Owner Route Group */}
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <InstitutionDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/*"
-            element={
-              <ProtectedRoute>
-                <InstitutionDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Super Admin Control Center */}
-          <Route
-            path="/superadmin"
+            path="/platform"
             element={
               <ProtectedRoute requireSuperAdmin>
                 <SuperAdminDashboard />
@@ -100,7 +83,7 @@ export const App: React.FC = () => {
             }
           />
           <Route
-            path="/superadmin/entitlements"
+            path="/platform/entitlements"
             element={
               <ProtectedRoute requireSuperAdmin>
                 <EntitlementsManager />
@@ -108,13 +91,37 @@ export const App: React.FC = () => {
             }
           />
           <Route
-            path="/superadmin/*"
+            path="/platform/*"
             element={
               <ProtectedRoute requireSuperAdmin>
                 <SuperAdminDashboard />
               </ProtectedRoute>
             }
           />
+
+          {/* Dedicated /app/* Authenticated Institution ERP Route Group */}
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <InstitutionDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/*"
+            element={
+              <ProtectedRoute>
+                <InstitutionDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Backward Compatibility Aliases */}
+          <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+          <Route path="/dashboard/*" element={<Navigate to="/app" replace />} />
+          <Route path="/superadmin" element={<Navigate to="/platform" replace />} />
+          <Route path="/superadmin/*" element={<Navigate to="/platform" replace />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

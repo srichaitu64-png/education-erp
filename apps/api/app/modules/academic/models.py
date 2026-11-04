@@ -197,3 +197,4 @@ class ConsolidatedFeeReportSnapshot(TenantBaseModel):
     reviewed_by_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     review_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+

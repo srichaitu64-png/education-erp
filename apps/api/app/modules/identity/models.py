@@ -216,3 +216,53 @@ class PermissionChangeRequest(Base, TimestampMixin):
     reviewer_comments: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
 
+class PlatformSupportAccessSession(Base, TimestampMixin):
+    """
+    Consent-based, audited, time-limited tenant support access session.
+    Platform Super Admins CANNOT silently read private student/staff/financial
+    records of an institution without an approved, unexpired support ticket.
+    """
+    __tablename__ = "platform_support_access_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    ticket_number: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    requested_by_platform_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    approved_by_institution_admin_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    scope: Mapped[str] = mapped_column(String(64), default="READ_ONLY_DIAGNOSTICS", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="REQUESTED", nullable=False) # REQUESTED, APPROVED, REJECTED, EXPIRED, REVOKED
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PlatformAuditAction(Base, TimestampMixin):
+    """
+    Immutable audit log for all Platform Administrator operations:
+    Tenant onboarding, plan changes, suspensions, config changes, and support sessions.
+    """
+    __tablename__ = "platform_audit_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    admin_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    action_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    target_tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    details: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+
+
+

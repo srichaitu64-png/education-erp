@@ -362,3 +362,4 @@ export const MarksEntryRegisterView: React.FC = () => {
     </div>
   );
 };
+

@@ -52,3 +52,4 @@ EducationOS uses PostgreSQL native Row-Level Security (RLS) as the primary secur
 - **Financial Transactions:** `fee_payment_transactions` cannot be updated or deleted. Corrections require issuing distinct debit/credit notes or approved refund transactions with dual authorization.
 - **Examination Marks:** Marks undergo a 4-stage workflow: `DRAFT` -> `SUBMITTED` -> `CONTROLLER_VERIFIED` -> `PRINCIPAL_APPROVED` -> `PUBLISHED`.
 - **Post-Publication Protection:** Once published, records cannot be silently rewritten; any modification creates an auditable result version with approval logs.
+

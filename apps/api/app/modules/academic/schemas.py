@@ -108,3 +108,4 @@ class FeeReportSnapshotSubmit(BaseModel):
 class FeeReportSnapshotReview(BaseModel):
     decision: str # APPROVED, RETURNED_FOR_REVISION
     remarks: Optional[str] = None
+

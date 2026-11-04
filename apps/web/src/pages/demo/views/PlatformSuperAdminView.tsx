@@ -596,3 +596,4 @@ export const PlatformSuperAdminView: React.FC = () => {
     </div>
   );
 };
+

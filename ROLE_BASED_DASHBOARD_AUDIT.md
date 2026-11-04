@@ -150,3 +150,4 @@ Each workspace is designed around the authentic daily responsibilities of that r
 - **Focus:** Multi-tenant SaaS command, tenant provisioning, subscription billing.
 - **Widgets:** Total Onboarded Institutions (1,248), Active Tenancies (1,180), MRR (₹48.5L / ARR ₹5.82 Cr), Active Students on Platform (4.82 Lakhs).
 - **Queues:** 1-Click Provision New Tenant with Chairman Claim Link, Review Consent-Based Support Requests, Monitor Global API Health.
+
