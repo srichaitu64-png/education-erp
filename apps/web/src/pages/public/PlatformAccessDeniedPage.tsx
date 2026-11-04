@@ -39,13 +39,14 @@ export const PlatformAccessDeniedPage: React.FC = () => {
             Return to Institution Demo
           </Link>
           <Link
-            to="/login"
-            className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition-all flex items-center justify-center"
+            to="/platform/login"
+            className="py-3 px-4 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold border border-purple-600 transition-all flex items-center justify-center shadow-md"
           >
-            Platform Login
+            Platform Login →
           </Link>
         </div>
       </div>
     </div>
   );
 };
+

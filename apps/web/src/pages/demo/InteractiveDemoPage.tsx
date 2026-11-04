@@ -1617,26 +1617,24 @@ export const InteractiveDemoPage: React.FC = () => {
                       else if (r === 'PARENT') setSelectedUserIdentity('Rajesh Sharma (Father of Aarav - Class 10)');
                       else if (r === 'STUDENT') setSelectedUserIdentity('Ananya Hegde (ADM-2026-092)');
                       else if (r === 'ACCOUNTANT') setSelectedUserIdentity('K. S. Narayana (EMP-ACC-09)');
+                      else if (r === 'CHAIRMAN_DIRECTOR') setSelectedUserIdentity('Dr. S. K. Narayana (EMP-CHAIR-01)');
                       else if (r === 'EXAM_CONTROLLER') setSelectedUserIdentity('Prof. S. Joshi (EMP-EC-02)');
                       else if (r === 'TRANSPORT_MANAGER') setSelectedUserIdentity('Suresh Gowda (Route 104 Fleet)');
-                      else if (r === 'SUPER_ADMIN') setSelectedUserIdentity('Platform Super Administrator (PLATFORM-ROOT)');
-                      else if (r === 'BACKUP_SUPER_ADMIN') setSelectedUserIdentity('Secondary Platform Administrator (PLATFORM-BACKUP-01)');
-                      else if (r === 'DEVELOPER') setSelectedUserIdentity('Lead Platform Engineer / Support (DEV-ENG-42)');
+                      else if (r === 'COMPUTER_OPERATOR') setSelectedUserIdentity('Suresh Gowda (Data Operator)');
                       else setSelectedUserIdentity('Dr. Ramesh Kumar (EMP-PRIN-01)');
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
-                    <option value="PRINCIPAL">👑 Principal / Director (Leadership)</option>
-                    <option value="INSTITUTION_ADMIN">🏛️ Institution Admin (Operations)</option>
+                    <option value="PRINCIPAL">👑 Principal (Academic Authority)</option>
+                    <option value="CHAIRMAN_DIRECTOR">🏛️ Chairman / Director (Institution Super Admin)</option>
+                    <option value="INSTITUTION_ADMIN">⚙️ Institution Admin (Operations)</option>
                     <option value="ACCOUNTANT">💰 Accountant / Finance Desk (Accounts)</option>
                     <option value="EXAM_CONTROLLER">📝 Examination Controller (Academics)</option>
                     <option value="TEACHER">👩‍🏫 Faculty / Lecturer (Academics)</option>
+                    <option value="COMPUTER_OPERATOR">📋 Computer Operator (Draft Entry)</option>
                     <option value="PARENT">👨‍👩‍👧 Parent / Guardian (Portal)</option>
                     <option value="STUDENT">🎒 Enrolled Student (Portal)</option>
                     <option value="TRANSPORT_MANAGER">🚌 Transport Manager (Fleet)</option>
-                    <option value="SUPER_ADMIN">🌐 Platform Super Admin (Root)</option>
-                    <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin (Security)</option>
-                    <option value="DEVELOPER">💻 Developer / Tech Support (DevOps)</option>
                   </select>
                   <p className="text-[10px] text-slate-400 mt-1">
                     Role selection filters accounts and loads assigned permissions.

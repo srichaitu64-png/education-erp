@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginPage } from './modules/auth/LoginPage';
+import { PlatformLoginPage } from './modules/auth/PlatformLoginPage';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { InstitutionDashboard } from './modules/dashboard/InstitutionDashboard';
 import { SuperAdminDashboard } from './modules/dashboard/SuperAdminDashboard';
@@ -39,7 +40,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireSuperAdmin?: 
   const { isAuthenticated, user } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={requireSuperAdmin ? '/platform/login' : '/login'} replace />;
   }
 
   if (requireSuperAdmin && !user?.is_superadmin) {
@@ -72,6 +73,7 @@ export const App: React.FC = () => {
 
           {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/platform/login" element={<PlatformLoginPage />} />
 
           {/* Dedicated /platform/* Private SaaS Platform Owner Route Group */}
           <Route

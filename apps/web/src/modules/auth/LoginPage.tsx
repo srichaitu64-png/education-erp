@@ -7,13 +7,11 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Shield,
   Building2,
-  CheckCircle2,
   AlertCircle,
   Sparkles,
   RotateCcw,
-  Key
+  ShieldCheck
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -24,7 +22,7 @@ interface RoleOption {
   label: string;
 }
 
-// Institution-level roles
+// Strictly Institutional Campus Roles (Platform Super Admin is completely isolated at /platform/login)
 const INSTITUTION_ROLES: RoleOption[] = [
   { code: 'CHAIRMAN_DIRECTOR', label: 'Chairman / Director' },
   { code: 'INSTITUTION_ADMIN', label: 'Institution Admin' },
@@ -41,7 +39,7 @@ const INSTITUTION_ROLES: RoleOption[] = [
   { code: 'STUDENT', label: 'Student' },
 ];
 
-export interface DemoAccount {
+export interface InstitutionalDemoAccount {
   role: string;
   label: string;
   shortLabel: string;
@@ -49,24 +47,12 @@ export interface DemoAccount {
   username: string;
   pass: string;
   fullName: string;
-  isSuperAdmin: boolean;
   canDo: string;
   badge: string;
 }
 
-export const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    role: 'SUPER_ADMIN',
-    label: 'Platform Super Admin',
-    shortLabel: '🌐 Super Admin',
-    email: 'admin@platform.erp.in',
-    username: 'superadmin',
-    pass: 'AdminSecurePassword2026!',
-    fullName: 'Global Platform Administrator',
-    isSuperAdmin: true,
-    badge: 'SaaS Platform Owner',
-    canDo: 'Global access to 1,000+ tenancies, subscription tiers, platform MRR, and system health',
-  },
+// Only verified institutional campus demo accounts
+export const INSTITUTIONAL_DEMO_ACCOUNTS: InstitutionalDemoAccount[] = [
   {
     role: 'CHAIRMAN_DIRECTOR',
     label: 'Chairman / Director',
@@ -75,7 +61,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'EMP-CHAIR-01',
     pass: 'ChairmanSecure2026!',
     fullName: 'Dr. S. K. Narayana (Chairman)',
-    isSuperAdmin: false,
     badge: 'Institution Super Admin',
     canDo: 'Campus governance, user roles, permission matrix, custom fee heads, and dashboard designer',
   },
@@ -87,7 +72,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'EMP-PRIN-01',
     pass: 'PrincipalSecurePassword2026!',
     fullName: 'Dr. Ramesh Kumar (Principal)',
-    isSuperAdmin: false,
     badge: 'Academic Authority',
     canDo: 'Approve examination results, assign staff duties, sign progress cards, academic oversight',
   },
@@ -99,7 +83,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'EMP-ACC-01',
     pass: 'AccountantSecure2026!',
     fullName: 'Venkatesh Iyer (Senior Accountant)',
-    isSuperAdmin: false,
     badge: 'Finance Counter',
     canDo: 'Collect multi-head fees, issue instant receipts, handle partial dues, bank reconciliation',
   },
@@ -111,7 +94,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'EMP-EXAM-01',
     pass: 'ExamController2026!',
     fullName: 'Prof. Ananth Murthy (Exam Controller)',
-    isSuperAdmin: false,
     badge: 'Examination Suite',
     canDo: 'Schedule exams, hall ticket batch printing, verify marks registers, publish notice board',
   },
@@ -123,7 +105,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'EMP-TCH-01',
     pass: 'TeacherPhysics2026!',
     fullName: 'Lakshmi Prasad (Physics Faculty)',
-    isSuperAdmin: false,
     badge: 'Teaching Faculty',
     canDo: 'Class roll call attendance, multi-component marks entry (Theory/Lab), lesson syllabus',
   },
@@ -135,7 +116,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'PAR-2026-001',
     pass: 'ParentRahul2026!',
     fullName: 'Ramesh Kumar (Rahul\'s Parent)',
-    isSuperAdmin: false,
     badge: 'Parent Portal',
     canDo: 'View linked child attendance, download fee receipts, view report cards, track bus GPS',
   },
@@ -147,7 +127,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     username: 'ADM-2026-001',
     pass: 'StudentRahul2026!',
     fullName: 'Rahul Kumar (Class I PUC Science)',
-    isSuperAdmin: false,
     badge: 'Student Self-Service',
     canDo: 'Check timetable, download hall ticket, view progress report, NEET mock analytics',
   },
@@ -158,9 +137,6 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const { switchRole } = useDemoStore();
 
-  // Mode: Institutional User vs SaaS Platform Admin
-  const [isPlatformAdminMode, setIsPlatformAdminMode] = useState(false);
-
   // Form Fields
   const [selectedRole, setSelectedRole] = useState('PRINCIPAL');
   const [usernameOrId, setUsernameOrId] = useState('');
@@ -168,7 +144,7 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   // Active account information for display
-  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(null);
+  const [activeAccount, setActiveAccount] = useState<InstitutionalDemoAccount | null>(null);
 
   // State
   const [loading, setLoading] = useState(false);
@@ -181,27 +157,29 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleAutofill = (acc: DemoAccount) => {
+  const handleAutofill = (acc: InstitutionalDemoAccount) => {
     setActiveAccount(acc);
     setUsernameOrId(acc.email);
     setPassword(acc.pass);
+    setSelectedRole(acc.role);
     setErrorMessage(null);
-
-    if (acc.isSuperAdmin) {
-      setIsPlatformAdminMode(true);
-      setSelectedRole('SUPER_ADMIN');
-    } else {
-      setIsPlatformAdminMode(false);
-      setSelectedRole(acc.role);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!usernameOrId.trim() || !password.trim()) {
+    const inputVal = usernameOrId.trim();
+    if (!inputVal || !password.trim()) {
       setErrorMessage('Please enter both your identifier and password.');
+      return;
+    }
+
+    // Explicit boundary check: Platform owner accounts are barred from institutional login
+    if (inputVal.toLowerCase().includes('platform.erp.in') || inputVal.toLowerCase() === 'superadmin') {
+      setErrorMessage(
+        'Platform Owner credentials cannot be used on this institutional campus portal. Please sign in via the dedicated Platform SaaS Control Portal at /platform/login.'
+      );
       return;
     }
 
@@ -209,9 +187,9 @@ export const LoginPage: React.FC = () => {
 
     try {
       const payload = {
-        email: usernameOrId.includes('@') ? usernameOrId : `${usernameOrId.toLowerCase()}@akshara.edu.in`,
+        email: inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@akshara.edu.in`,
         password,
-        role: isPlatformAdminMode ? 'SUPER_ADMIN' : selectedRole,
+        role: selectedRole,
       };
 
       try {
@@ -219,18 +197,13 @@ export const LoginPage: React.FC = () => {
         const { access_token, refresh_token, user } = res.data;
         await login(access_token, refresh_token, user);
 
-        if (user.is_superadmin || isPlatformAdminMode) {
-          navigate('/platform');
-          return;
-        } else {
-          switchRole(selectedRole as UserRoleType);
-          navigate(`/demo?role=${selectedRole}`);
-          return;
-        }
+        switchRole(selectedRole as UserRoleType);
+        navigate(`/demo?role=${selectedRole}`);
+        return;
       } catch (apiErr: any) {
         // Fallback for static hosting on Vercel or offline backend
-        const searchVal = usernameOrId.trim().toLowerCase();
-        const matched = DEMO_ACCOUNTS.find(
+        const searchVal = inputVal.toLowerCase();
+        const matched = INSTITUTIONAL_DEMO_ACCOUNTS.find(
           (acc) =>
             (acc.email.toLowerCase() === searchVal ||
               acc.username.toLowerCase() === searchVal ||
@@ -245,26 +218,21 @@ export const LoginPage: React.FC = () => {
             full_name: matched.fullName,
             phone: '+91 98450 12345',
             is_active: true,
-            is_superadmin: matched.isSuperAdmin,
+            is_superadmin: false,
             roles: [
               {
                 id: `role-${matched.role.toLowerCase()}`,
                 name: matched.label,
                 code: matched.role,
-                tenant_id: matched.isSuperAdmin ? null : 'tenant-akshara',
+                tenant_id: 'tenant-akshara',
                 permissions: ['*'],
               },
             ],
           };
 
-          await login('mock_jwt_access_token_demo', 'mock_jwt_refresh_token_demo', mockUser);
+          await login('mock_jwt_access_token_inst', 'mock_jwt_refresh_token_inst', mockUser);
           switchRole(matched.role as UserRoleType);
-
-          if (matched.isSuperAdmin) {
-            navigate('/platform');
-          } else {
-            navigate(`/demo?role=${matched.role}`);
-          }
+          navigate(`/demo?role=${matched.role}`);
           return;
         }
 
@@ -276,7 +244,7 @@ export const LoginPage: React.FC = () => {
         setErrorMessage(detail);
       } else {
         setErrorMessage(
-          'Invalid credentials or unassigned role. Use the Quick Demo Accounts below to test each role instantly.'
+          'Invalid credentials or unassigned role. Use the Quick Demo Accounts below to test each institutional role.'
         );
       }
     } finally {
@@ -291,7 +259,7 @@ export const LoginPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <RotateCcw className="w-4 h-4 text-blue-400 shrink-0" />
           <span>
-            <strong>Latest Release v2.4 Active:</strong> If your browser displays cached older screens, press <kbd className="px-1.5 py-0.5 bg-blue-900 border border-blue-700 rounded font-mono text-[11px] text-white">Ctrl + Shift + R</kbd> to refresh.
+            <strong>Institutional Release v2.5:</strong> If your browser displays cached older screens, press <kbd className="px-1.5 py-0.5 bg-blue-900 border border-blue-700 rounded font-mono text-[11px] text-white">Ctrl + Shift + R</kbd> to refresh.
           </span>
         </div>
       </div>
@@ -307,14 +275,12 @@ export const LoginPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-black text-white tracking-tight">Akshara Global ERP</h1>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              {isPlatformAdminMode 
-                ? 'Platform Super Admin Infrastructure Portal (SaaS Root)' 
-                : 'Sign in to access your institutional campus portal'}
+              Sign in to access your institutional School, PU College & Degree Campus Portal
             </p>
           </div>
         </div>
 
-        {/* Quick Demo Credentials Autofill Picker */}
+        {/* Quick Institutional Demo Credentials Autofill Picker */}
         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
@@ -325,7 +291,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {DEMO_ACCOUNTS.map((acc) => (
+            {INSTITUTIONAL_DEMO_ACCOUNTS.map((acc) => (
               <button
                 key={acc.role}
                 type="button"
@@ -354,7 +320,7 @@ export const LoginPage: React.FC = () => {
           )}
         </div>
 
-        {/* Real Error Banner */}
+        {/* Error Banner */}
         {errorMessage && (
           <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-800 text-xs text-red-200 font-medium flex items-center gap-2 animate-in fade-in duration-200">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
@@ -366,38 +332,36 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
           {/* 1. Role Dropdown */}
-          {!isPlatformAdminMode && (
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Designated Role
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => handleInputChange(setSelectedRole, e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-xs"
-                >
-                  {INSTITUTION_ROLES.map((r) => (
-                    <option key={r.code} value={r.code} className="bg-slate-900 text-white">
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              Designated Campus Role
+            </label>
+            <div className="relative">
+              <select
+                value={selectedRole}
+                onChange={(e) => handleInputChange(setSelectedRole, e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-xs"
+              >
+                {INSTITUTION_ROLES.map((r) => (
+                  <option key={r.code} value={r.code} className="bg-slate-900 text-white">
+                    {r.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+          </div>
 
           {/* 2. Identifier */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              {isPlatformAdminMode ? 'Root Administrator Email' : 'Email / Employee ID / Admission No.'}
+              Email / Employee ID / Admission No.
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="text"
                 required
-                placeholder={isPlatformAdminMode ? 'admin@platform.erp.in' : 'e.g. principal@akshara.edu.in or EMP-PRIN-01'}
+                placeholder="e.g. principal@akshara.edu.in or EMP-PRIN-01"
                 value={usernameOrId}
                 onChange={(e) => handleInputChange(setUsernameOrId, e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
@@ -440,54 +404,39 @@ export const LoginPage: React.FC = () => {
             className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
           >
             {loading ? (
-              <span>Authenticating Session...</span>
+              <span>Authenticating Institutional Session...</span>
             ) : (
               <>
-                <span>Sign In to {isPlatformAdminMode ? 'Platform SaaS Control' : 'Institutional Campus'}</span>
+                <span>Sign In to Institutional Campus</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Separator & Platform Super Admin / Demo Switch */}
-        <div className="pt-4 border-t border-slate-800/80 flex flex-col items-center justify-between gap-3 text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlatformAdminMode(!isPlatformAdminMode);
-              setErrorMessage(null);
-              if (!isPlatformAdminMode) {
-                setUsernameOrId('admin@platform.erp.in');
-                setPassword('AdminSecurePassword2026!');
-                setSelectedRole('SUPER_ADMIN');
-              } else {
-                setUsernameOrId('principal@akshara.edu.in');
-                setPassword('PrincipalSecurePassword2026!');
-                setSelectedRole('PRINCIPAL');
-              }
-            }}
-            className="text-[11px] text-slate-400 hover:text-purple-400 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
-          >
-            <Shield className="w-3.5 h-3.5 text-purple-400" />
-            <span>
-              {isPlatformAdminMode ? '← Back to School & College Sign In' : 'Platform Super Admin Access (SaaS Root)'}
-            </span>
-          </button>
-
+        {/* Footer Navigation */}
+        <div className="pt-4 border-t border-slate-800/80 flex flex-col items-center justify-between gap-2.5 text-xs">
           <Link
             to="/demo"
             className="text-[11px] text-blue-400 hover:text-blue-300 font-bold transition-colors"
           >
-            Looking for Interactive In-Browser Sandbox Demo with Instant Role Switcher? Click here →
+            Interactive In-Browser Sandbox Demo with Instant Role Switcher →
+          </Link>
+
+          <Link
+            to="/platform/login"
+            className="text-[11px] text-slate-500 hover:text-purple-400 transition-colors flex items-center gap-1.5 pt-1 font-medium"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span>EducationOS SaaS Platform Owner? Sign in to Platform Control Plane →</span>
           </Link>
         </div>
 
       </div>
 
-      {/* Footer Branding */}
+      {/* Footer Security Badges */}
       <p className="text-[11px] text-slate-500 mt-6 text-center font-medium">
-        EducationOS™ Multi-Tenant SaaS Platform • SOC2 & ISO 27001 Certified Campus Security
+        Akshara Global Educational Trust • Tenant-Isolated Database Security
       </p>
     </div>
   );
