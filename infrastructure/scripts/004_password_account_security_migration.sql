@@ -61,3 +61,4 @@ CREATE TABLE IF NOT EXISTS account_security_events (
 CREATE INDEX IF NOT EXISTS ix_account_security_events_user_id ON account_security_events(user_id);
 CREATE INDEX IF NOT EXISTS ix_account_security_events_event_type ON account_security_events(event_type);
 CREATE INDEX IF NOT EXISTS ix_account_security_events_tenant_id ON account_security_events(tenant_id);
+

@@ -7,9 +7,10 @@ import { useDemoStore, ConsolidatedFeeReportSnapshotModel } from '../../../store
 
 interface ConsolidatedFeeReportReviewViewProps {
   currentRole: string;
+  onOpenStudent360?: (studentOrId: any) => void;
 }
 
-export const ConsolidatedFeeReportReviewView: React.FC<ConsolidatedFeeReportReviewViewProps> = ({ currentRole }) => {
+export const ConsolidatedFeeReportReviewView: React.FC<ConsolidatedFeeReportReviewViewProps> = ({ currentRole, onOpenStudent360 }) => {
   const {
     students,
     feeSnapshots,
@@ -423,8 +424,23 @@ export const ConsolidatedFeeReportReviewView: React.FC<ConsolidatedFeeReportRevi
                 <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                   <td className="py-2 px-3 font-mono text-slate-700 font-semibold">{row.admissionNo}</td>
                   <td className="py-2 px-3">
-                    <div className="font-bold text-slate-900">{row.name}</div>
-                    <div className="text-[10px] text-slate-500">{row.className}</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const found = students.find(s => s.admission_number === row.admissionNo || `${s.first_name} ${s.last_name}` === row.name);
+                        onOpenStudent360?.(found || row.name);
+                      }}
+                      className="text-left group cursor-pointer inline-flex flex-col"
+                      title="Inspect Student 360° Profile"
+                    >
+                      <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                        {row.name}
+                        <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                          360°
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-slate-500">{row.className}</span>
+                    </button>
                   </td>
                   <td className="py-2 px-3 font-mono">₹{row.tuition.toLocaleString()}</td>
                   <td className="py-2 px-3 font-mono">₹{row.admissionFee.toLocaleString()}</td>

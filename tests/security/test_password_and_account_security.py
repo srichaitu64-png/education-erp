@@ -502,3 +502,110 @@ async def test_13_session_revocation_terminates_active_sessions(client, setup_se
     await db_session.refresh(session_2)
     assert session_1.is_revoked is True
     assert session_2.is_revoked is True
+
+
+@pytest.mark.asyncio
+async def test_14_unauthorized_tenant_selection_rejected(client, setup_security_fixture):
+    """14. Tenant A member attempting login with Tenant B code is rejected with 403 Forbidden."""
+    teacher_a = setup_security_fixture["tenant_a_teacher"]
+    tenant_b = setup_security_fixture["tenant_b"]
+
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": teacher_a.email,
+            "password": "Alpha#Teach2026",
+            "tenant_code": tenant_b.code
+        }
+    )
+    assert resp.status_code == 403
+    assert "unauthorized tenant selection" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_15_first_login_setup_rejected_when_not_flagged(client, setup_security_fixture, db_session: AsyncSession):
+    """15. Calling first-login setup on account with must_change_password=False is rejected (400)."""
+    teacher = setup_security_fixture["tenant_a_teacher"]
+    teacher.must_change_password = False
+    await db_session.commit()
+
+    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = await client.post(
+        "/api/v1/auth/password/first-login-setup",
+        headers=headers,
+        json={
+            "current_password": "Alpha#Teach2026",
+            "new_password": "NewStrong#Pass2026",
+            "confirm_password": "NewStrong#Pass2026"
+        }
+    )
+    assert resp.status_code == 400
+    assert "not flagged" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_16_revoked_session_jwt_rejected_at_endpoint(client, setup_security_fixture, db_session: AsyncSession):
+    """16. JWT carrying a revoked session ID is rejected immediately with 401 Unauthorized."""
+    teacher = setup_security_fixture["tenant_a_teacher"]
+    session_id = uuid.uuid4()
+
+    # Create active session in DB
+    user_sess = UserSession(
+        id=session_id,
+        user_id=teacher.id,
+        session_token_hash="dummy_token_hash",
+        ip_address="127.0.0.1",
+        last_active_at=datetime.now(timezone.utc),
+        is_revoked=False
+    )
+    db_session.add(user_sess)
+    await db_session.commit()
+
+    # Issue access token bound to session_id
+    token = create_access_token(
+        subject=str(teacher.id),
+        session_id=str(session_id),
+        is_superadmin=False
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Request succeeds while session is active
+    resp_valid = await client.get("/api/v1/auth/me", headers=headers)
+    assert resp_valid.status_code == 200
+
+    # Revoke the session
+    user_sess.is_revoked = True
+    await db_session.commit()
+
+    # Old JWT token must now be rejected with 401 Unauthorized
+    resp_revoked = await client.get("/api/v1/auth/me", headers=headers)
+    assert resp_revoked.status_code == 401
+    assert "revoked" in resp_revoked.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_17_first_login_gate_blocks_general_endpoints(client, setup_security_fixture, db_session: AsyncSession):
+    """17. User with must_change_password=True is blocked from general endpoints (403)."""
+    teacher = setup_security_fixture["tenant_a_teacher"]
+    tenant_a = setup_security_fixture["tenant_a"]
+    teacher.must_change_password = True
+    await db_session.commit()
+
+    token = create_access_token(
+        subject=str(teacher.id),
+        tenant_id=str(tenant_a.id),
+        is_superadmin=False
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Allowed endpoint: /api/v1/auth/me
+    resp_me = await client.get("/api/v1/auth/me", headers=headers)
+    assert resp_me.status_code == 200
+
+    # Blocked endpoint: /api/v1/academic/sections
+    resp_blocked = await client.get("/api/v1/academic/sections", headers=headers)
+    assert resp_blocked.status_code == 403
+    assert "password setup required" in resp_blocked.json()["detail"].lower()
+

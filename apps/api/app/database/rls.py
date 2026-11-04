@@ -19,6 +19,7 @@ TENANT_SCOPED_TABLES = [
     "fee_payments",
     "fee_receipts",
     "receipt_audit_logs",
+    "account_security_events",
 ]
 
 

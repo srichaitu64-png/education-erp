@@ -87,9 +87,10 @@ def create_access_token(
     subject: Union[str, Any],
     tenant_id: Optional[str] = None,
     is_superadmin: bool = False,
+    session_id: Optional[str] = None,
     expires_delta: Optional[timedelta] = None
 ) -> str:
-    """Create a signed JWT access token containing subject, tenant, and superadmin flag."""
+    """Create a signed JWT access token containing subject, tenant, superadmin, and session id claims."""
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
@@ -101,7 +102,8 @@ def create_access_token(
         "sub": str(subject),
         "type": "access",
         "tenant_id": str(tenant_id) if tenant_id else None,
-        "is_superadmin": is_superadmin
+        "is_superadmin": is_superadmin,
+        "sid": str(session_id) if session_id else None
     }
     encoded_jwt = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt

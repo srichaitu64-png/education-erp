@@ -5,7 +5,11 @@ import {
 } from 'lucide-react';
 import { useDemoStore } from '../../../store/demoStore';
 
-export const MarksEntryRegisterView: React.FC = () => {
+interface MarksEntryRegisterViewProps {
+  onOpenStudent360?: (studentOrId: any) => void;
+}
+
+export const MarksEntryRegisterView: React.FC<MarksEntryRegisterViewProps> = ({ onOpenStudent360 }) => {
   const { marks, students, updateComponentMarks, currentRole } = useDemoStore();
 
   const [selectedSubject, setSelectedSubject] = useState('Physics');
@@ -211,8 +215,20 @@ export const MarksEntryRegisterView: React.FC = () => {
                     <tr key={item.student_id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="p-3.5 font-mono font-bold text-slate-700">{item.roll_number}</td>
                       <td className="p-3.5 font-bold text-[#172B4D]">
-                        {item.student_name}
-                        <span className="block text-[10px] text-slate-400 font-normal">{student?.admission_number}</span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenStudent360?.(student || item.student_id)}
+                          className="text-left group cursor-pointer inline-flex flex-col"
+                          title="Click to inspect Student 360° Profile"
+                        >
+                          <span className="font-bold text-[#172B4D] group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                            {item.student_name}
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                              360°
+                            </span>
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-normal">{student?.admission_number}</span>
+                        </button>
                       </td>
                       <td className="p-3.5">
                         <select

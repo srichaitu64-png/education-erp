@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -127,7 +128,7 @@ async def login(
     user.failed_login_attempts = 0
     user.locked_until = None
 
-    # Determine tenant context
+    # Determine tenant context with strict authorization verification
     tenant_id = None
     if req.tenant_code:
         stmt_t = select(Tenant).where(Tenant.code == req.tenant_code.lower().strip())
@@ -135,6 +136,14 @@ async def login(
         tenant = res_t.scalars().first()
         if not tenant:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
+        
+        # Enforce that user holds active assignment in requested institution
+        user_tenant_ids = {str(ur.tenant_id) for ur in user.roles if ur.tenant_id}
+        if not user.is_superadmin and str(tenant.id) not in user_tenant_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized tenant selection: User does not hold an active role assignment in this institution."
+            )
         tenant_id = str(tenant.id)
     elif user.roles:
         for ur in user.roles:
@@ -142,10 +151,12 @@ async def login(
                 tenant_id = str(ur.tenant_id)
                 break
 
+    session_id = uuid.uuid4()
     access_token = create_access_token(
         subject=str(user.id),
         tenant_id=tenant_id,
         is_superadmin=user.is_superadmin,
+        session_id=str(session_id),
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     refresh_token = create_refresh_token(
@@ -154,8 +165,9 @@ async def login(
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
 
-    # Track active session
+    # Track active session bound to unique session_id
     sess = UserSession(
+        id=session_id,
         user_id=user.id,
         session_token_hash=hash_token(access_token[-16:]),
         ip_address=ip_addr,
@@ -366,6 +378,13 @@ async def first_login_password_setup(
     Mandatory password change for accounts flagged with must_change_password.
     Prevents standard system access until completed.
     """
+    # Validate account is actually flagged for first login setup
+    if not current_user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not flagged for mandatory first-login password setup."
+        )
+
     if not verify_password(req.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -461,13 +480,11 @@ async def forgot_password_request(
             await db.commit()
 
     # Generic response: NEVER reveals whether an account exists to prevent harvesting
-    response = {
+    # In accordance with NIST SP 800-63B, tokens are dispatched via registered channel, never returned in API responses
+    return {
         "message": "If an account matching those credentials exists, secure recovery instructions and a one-time verification token have been dispatched to the registered contact.",
         "portal_type": portal_type
     }
-    if raw_token:
-        response["reset_token"] = raw_token
-    return response
 
 
 @router.post("/password/reset-confirm")

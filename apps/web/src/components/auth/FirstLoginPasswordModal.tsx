@@ -167,3 +167,4 @@ export const FirstLoginPasswordModal: React.FC<FirstLoginPasswordModalProps> = (
     </div>
   );
 };
+

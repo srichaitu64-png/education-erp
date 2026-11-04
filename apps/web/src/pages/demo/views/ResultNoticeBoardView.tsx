@@ -7,9 +7,10 @@ import { useDemoStore } from '../../../store/demoStore';
 
 interface ResultNoticeBoardViewProps {
   currentRole: string;
+  onOpenStudent360?: (studentOrId: any) => void;
 }
 
-export const ResultNoticeBoardView: React.FC<ResultNoticeBoardViewProps> = ({ currentRole }) => {
+export const ResultNoticeBoardView: React.FC<ResultNoticeBoardViewProps> = ({ currentRole, onOpenStudent360 }) => {
   const { exams, marks, students } = useDemoStore();
 
   const [selectedExamId, setSelectedExamId] = useState(exams[0]?.id || 'exam-001');
@@ -324,7 +325,24 @@ export const ResultNoticeBoardView: React.FC<ResultNoticeBoardViewProps> = ({ cu
               {filteredResults.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                   <td className="py-2.5 px-3 font-mono font-semibold text-slate-700">{row.admissionNo}</td>
-                  <td className="py-2.5 px-3 font-bold text-slate-900">{row.name}</td>
+                  <td className="py-2.5 px-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const found = students.find(s => s.admission_number === row.admissionNo || `${s.first_name} ${s.last_name}` === row.name || s.id === row.studentId);
+                        onOpenStudent360?.(found || row.studentId || row.name);
+                      }}
+                      className="text-left group cursor-pointer inline-flex items-center gap-1.5"
+                      title="Inspect Student 360° Profile"
+                    >
+                      <span className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {row.name}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-blue-50 text-blue-700 border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        360°
+                      </span>
+                    </button>
+                  </td>
                   <td className="py-2.5 px-3 text-slate-600">{row.className}</td>
                   <td className="py-2.5 px-3 font-mono">{row.theory}</td>
                   <td className="py-2.5 px-3 font-mono">{row.practical}</td>

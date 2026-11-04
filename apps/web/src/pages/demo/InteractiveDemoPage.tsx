@@ -10,6 +10,7 @@ import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
 import { SecurityAndPasswordView } from './views/SecurityAndPasswordView';
 import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
+import { Student360Drawer } from '../../components/student/Student360Drawer';
 import React, { useState, useEffect } from 'react';
 import {
   FlaskConical,
@@ -246,6 +247,35 @@ export const InteractiveDemoPage: React.FC = () => {
   const [newHeadRefundable, setNewHeadRefundable] = useState<boolean>(false);
   const [newHeadInstType, setNewHeadInstType] = useState<'School' | 'PU College' | 'Degree College'>('School');
   const [newHeadFeedback, setNewHeadFeedback] = useState<string | null>(null);
+
+  // Student 360 Intelligence Drawer State
+  const [selected360Student, setSelected360Student] = useState<any | null>(null);
+  const [is360DrawerOpen, setIs360DrawerOpen] = useState<boolean>(false);
+
+  // Universal Student 360 Cross-Module Opener
+  const handleOpenStudent360 = (studentOrIdOrAdmission: any) => {
+    if (!studentOrIdOrAdmission) return;
+    let target = null;
+    if (typeof studentOrIdOrAdmission === 'string') {
+      target = students.find(
+        s => s.id === studentOrIdOrAdmission ||
+             s.admission_number === studentOrIdOrAdmission ||
+             `${s.first_name} ${s.last_name}`.toLowerCase() === studentOrIdOrAdmission.toLowerCase()
+      );
+    } else if (typeof studentOrIdOrAdmission === 'object' && studentOrIdOrAdmission !== null) {
+      if (studentOrIdOrAdmission.admission_number) {
+        target = students.find(s => s.admission_number === studentOrIdOrAdmission.admission_number) || studentOrIdOrAdmission;
+      } else if (studentOrIdOrAdmission.id) {
+        target = students.find(s => s.id === studentOrIdOrAdmission.id) || studentOrIdOrAdmission;
+      } else {
+        target = studentOrIdOrAdmission;
+      }
+    }
+    if (target) {
+      setSelected360Student(target);
+      setIs360DrawerOpen(true);
+    }
+  };
 
   // Current Role Privileges
   const currentPrivilege = ROLE_PRIVILEGES[currentRole] || ROLE_PRIVILEGES.PRINCIPAL;
@@ -1382,6 +1412,14 @@ export const InteractiveDemoPage: React.FC = () => {
                         <span className="text-xs text-slate-400 block font-medium">Student: <strong className="text-white">{indCard.studentName}</strong></span>
                         <span className="text-xs text-slate-400 block font-mono">Admission #: {indCard.admissionNumber}</span>
                         <span className="text-xs text-emerald-400 font-bold block">Class Attendance: {indCard.attendancePct}%</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenStudent360(indCard.studentId || indCard.admissionNumber)}
+                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 hover:bg-indigo-600 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <span>Inspect Student 360° Profile</span>
+                          <span>&rarr;</span>
+                        </button>
                       </div>
                     </div>
 
@@ -2254,7 +2292,16 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                       {/* 1. Student Selector */}
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">1. Select Enrolled Student</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-slate-300 font-bold uppercase text-[10px]">1. Select Enrolled Student</label>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenStudent360(multiStudentId)}
+                            className="text-[10px] text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            Inspect 360° Profile &rarr;
+                          </button>
+                        </div>
                         <select
                           value={multiStudentId}
                           onChange={(e) => {
@@ -2908,8 +2955,20 @@ export const InteractiveDemoPage: React.FC = () => {
                                   {rcp.receipt_number}
                                 </td>
                                 <td className="p-3">
-                                  <span className="font-bold text-white block">{rcp.student_name}</span>
-                                  <span className="text-[10px] text-slate-400 font-mono">{rcp.admission_number} • {rcp.class_name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenStudent360(rcp.student_id || rcp.admission_number || rcp.student_name)}
+                                    className="text-left group cursor-pointer inline-flex flex-col"
+                                    title="Click to inspect Student 360° Profile"
+                                  >
+                                    <span className="font-bold text-white group-hover:text-teal-300 transition-colors flex items-center gap-1.5">
+                                      {rcp.student_name}
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-teal-950/70 text-teal-300 border border-teal-800/60 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                                        360°
+                                      </span>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-mono">{rcp.admission_number} • {rcp.class_name}</span>
+                                  </button>
                                 </td>
                                 <td className="p-3 font-mono text-slate-300 text-[11px]">{rcp.payment_date}</td>
                                 <td className="p-3">
@@ -3199,7 +3258,21 @@ export const InteractiveDemoPage: React.FC = () => {
                                 const overdueDays = Math.max(0, Math.floor((today.getTime() - d.getTime()) / (1000 * 3600 * 24)));
                                 return (
                                   <tr key={inv.id} className="hover:bg-slate-900/60">
-                                    <td className="p-3 font-bold text-white">{inv.student_name}</td>
+                                    <td className="p-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenStudent360(inv.admission_number || inv.student_name)}
+                                        className="text-left group cursor-pointer inline-flex items-center gap-1.5"
+                                        title="Click to inspect Student 360° Profile"
+                                      >
+                                        <span className="font-bold text-white group-hover:text-rose-400 transition-colors">
+                                          {inv.student_name}
+                                        </span>
+                                        <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-rose-950/70 text-rose-300 border border-rose-800/60 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                                          360°
+                                        </span>
+                                      </button>
+                                    </td>
                                     <td className="p-3 font-mono text-slate-300">{inv.admission_number}</td>
                                     <td className="p-3 text-slate-300">{inv.class_name}</td>
                                     <td className="p-3">
@@ -4117,7 +4190,21 @@ export const InteractiveDemoPage: React.FC = () => {
                     {attendance.map((rec) => (
                       <tr key={rec.student_id} className="hover:bg-slate-900/60">
                         <td className="p-3 font-mono text-slate-300">{rec.roll_number}</td>
-                        <td className="p-3 font-bold text-white">{rec.student_name}</td>
+                        <td className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenStudent360(rec.student_id)}
+                            className="text-left group cursor-pointer inline-flex items-center gap-2"
+                            title="Inspect Student 360° Profile"
+                          >
+                            <span className="font-bold text-white group-hover:text-teal-400 transition-colors">
+                              {rec.student_name}
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-teal-950/70 text-teal-300 border border-teal-800/60 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                              360°
+                            </span>
+                          </button>
+                        </td>
                         <td className="p-3 text-slate-400">{rec.class_name}</td>
                         <td className="p-3 text-center">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
@@ -4211,11 +4298,18 @@ export const InteractiveDemoPage: React.FC = () => {
               <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
                 <div>
                   <h1 className="text-2xl font-black text-white">Student Information System (SIS)</h1>
-                  <p className="text-xs text-slate-400 mt-1">Enrolled Directory across School, PU College & Degree College</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Enrolled Directory across School, PU College & Degree College • Click any student to launch full 360° Profile
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3 py-1.5 rounded-xl">
+                    {students.length} Enrolled Students
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+              <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
@@ -4225,22 +4319,52 @@ export const InteractiveDemoPage: React.FC = () => {
                       <th className="p-3">Section / Stream</th>
                       <th className="p-3">Guardian Contact</th>
                       <th className="p-3">Attendance</th>
+                      <th className="p-3">Fee Dues</th>
                       <th className="p-3">Status</th>
+                      <th className="p-3 text-right">360° Drilldown</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-850">
                     {students.map((st) => (
-                      <tr key={st.id} className="hover:bg-slate-900/60">
-                        <td className="p-3 font-mono text-slate-300 font-bold">{st.admission_number}</td>
-                        <td className="p-3 font-bold text-white">{st.first_name} {st.last_name}</td>
+                      <tr
+                        key={st.id}
+                        onClick={() => {
+                          setSelected360Student(st);
+                          setIs360DrawerOpen(true);
+                        }}
+                        className="hover:bg-slate-900/90 cursor-pointer transition-colors group"
+                      >
+                        <td className="p-3 font-mono text-indigo-300 font-bold group-hover:text-indigo-200">
+                          {st.admission_number}
+                        </td>
+                        <td className="p-3 font-bold text-white group-hover:text-teal-300">
+                          {st.first_name} {st.last_name}
+                        </td>
                         <td className="p-3 text-slate-300">{st.institution_level} - {st.class_name}</td>
                         <td className="p-3 text-slate-400">{st.section_or_stream}</td>
                         <td className="p-3 text-slate-300">{st.guardian_name} ({st.guardian_phone})</td>
                         <td className="p-3 font-mono text-emerald-400 font-bold">{st.attendance_pct}%</td>
+                        <td className="p-3 font-mono font-bold text-amber-400">
+                          ₹{st.fee_balance.toLocaleString('en-IN')}
+                        </td>
                         <td className="p-3">
-                          <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold">
+                          <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-800/50">
                             {st.status}
                           </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelected360Student(st);
+                              setIs360DrawerOpen(true);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                          >
+                            <span>Inspect 360°</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -4369,28 +4493,28 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* TAB 14: MULTI-COMPONENT MARKS ENTRY REGISTER (THEORY/PRACTICAL/INTERNAL) */}
           {/* ================================================================= */}
           {activeTab === 'marks-register' && (
-            <MarksEntryRegisterView />
+            <MarksEntryRegisterView onOpenStudent360={handleOpenStudent360} />
           )}
 
           {/* ================================================================= */}
           {/* TAB 15: HALL TICKET MANAGEMENT & ELIGIBILITY VERIFICATION */}
           {/* ================================================================= */}
           {activeTab === 'hall-tickets' && (
-            <HallTicketManagementView />
+            <HallTicketManagementView onOpenStudent360={handleOpenStudent360} />
           )}
 
           {/* ================================================================= */}
           {/* TAB 16: CONSOLIDATED STUDENT FEE LEDGER & CHAIRMAN REVIEW */}
           {/* ================================================================= */}
           {activeTab === 'fee-review' && (
-            <ConsolidatedFeeReportReviewView currentRole={currentRole} />
+            <ConsolidatedFeeReportReviewView currentRole={currentRole} onOpenStudent360={handleOpenStudent360} />
           )}
 
           {/* ================================================================= */}
           {/* TAB 17: OFFICIAL RESULT NOTICE BOARD & PROGRESS CARDS */}
           {/* ================================================================= */}
           {activeTab === 'notice-board' && (
-            <ResultNoticeBoardView currentRole={currentRole} />
+            <ResultNoticeBoardView currentRole={currentRole} onOpenStudent360={handleOpenStudent360} />
           )}
 
           {/* ================================================================= */}
@@ -4566,6 +4690,16 @@ export const InteractiveDemoPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Student 360 Intelligence Profile Drawer */}
+      <Student360Drawer
+        student={selected360Student}
+        isOpen={is360DrawerOpen}
+        onClose={() => setIs360DrawerOpen(false)}
+        currentRole={currentRole}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+        onSelectStudentForProgress={(id) => setSelectedProgressStudentId(id)}
+        onSelectStudentForFee={(id) => setMultiStudentId(id)}
+      />
     </div>
   );
 };

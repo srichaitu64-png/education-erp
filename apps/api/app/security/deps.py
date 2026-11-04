@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
 from app.database.session import get_db, set_current_tenant_id, get_current_tenant_id
-from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession
+from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession, UserSession
 from app.modules.subscriptions.service import EntitlementService, FeatureAccessResult
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -36,10 +36,14 @@ async def get_current_user_payload(
 
 
 async def get_current_user(
+    request: Request,
     payload: dict = Depends(get_current_user_payload),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """Retrieve the authenticated User model and verify active status."""
+    """
+    Retrieve authenticated User model with active status, session revocation,
+    and first-login password enforcement gate verification.
+    """
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
@@ -48,6 +52,24 @@ async def get_current_user(
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
+
+    # Verify session revocation if session ID (sid) is present in token
+    sid = payload.get("sid")
+    if sid:
+        try:
+            sid_uuid = uuid.UUID(sid)
+            stmt_sess = select(UserSession).where(UserSession.id == sid_uuid)
+            res_sess = await db.execute(stmt_sess)
+            active_session = res_sess.scalars().first()
+            if not active_session or active_session.is_revoked:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session has been revoked or invalidated. Please sign in again.",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            active_session.last_active_at = datetime.now(timezone.utc)
+        except ValueError:
+            pass
 
     stmt = (
         select(User)
@@ -65,6 +87,22 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+
+    # Mandatory first-login password enforcement gate
+    if user.must_change_password:
+        path = request.url.path if request else ""
+        allowed_first_login_paths = {
+            "/api/v1/auth/password/first-login-setup",
+            "/api/v1/auth/password/change",
+            "/api/v1/auth/me",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/security/overview"
+        }
+        if not any(path.startswith(p) for p in allowed_first_login_paths):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Password setup required: You must establish a permanent password before accessing application workspace."
+            )
 
     # Set tenant context if token has an authenticated tenant
     token_tenant = payload.get("tenant_id")

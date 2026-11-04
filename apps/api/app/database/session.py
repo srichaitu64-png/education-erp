@@ -44,9 +44,12 @@ AsyncSessionLocal = async_sessionmaker(
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     FastAPI dependency yielding a tenant-aware async database session.
-    Configures PostgreSQL RLS session setting when tenant context is active.
+    Configures PostgreSQL RLS session setting when tenant context is active,
+    and sanitizes pooled connection state on every acquisition.
     """
     async with AsyncSessionLocal() as session:
+        # Sanitize pooled connection state to prevent cross-request leakage
+        await session.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
         tenant_id = get_current_tenant_id()
         if tenant_id:
             # Set PostgreSQL session variable for Row-Level Security safely using set_config
@@ -54,6 +57,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
                 text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
                 {"tenant_id": str(tenant_id)}
             )
+        else:
+            await session.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
         try:
             yield session
             await session.commit()

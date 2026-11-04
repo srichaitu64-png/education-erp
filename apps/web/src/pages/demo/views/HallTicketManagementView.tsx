@@ -5,7 +5,11 @@ import {
 } from 'lucide-react';
 import { useDemoStore, HallTicketModel } from '../../../store/demoStore';
 
-export const HallTicketManagementView: React.FC = () => {
+interface HallTicketManagementViewProps {
+  onOpenStudent360?: (studentOrId: any) => void;
+}
+
+export const HallTicketManagementView: React.FC<HallTicketManagementViewProps> = ({ onOpenStudent360 }) => {
   const { hallTickets, students, generateHallTicketsForClass, currentRole } = useDemoStore();
 
   const [activeTab, setActiveTab] = useState<'ISSUED_TICKETS' | 'GENERATE_WIZARD' | 'PREVIEW_CARD'>('ISSUED_TICKETS');
@@ -176,8 +180,23 @@ export const HallTicketManagementView: React.FC = () => {
                     <tr key={t.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3.5 font-mono font-bold text-blue-600">{t.ticket_number}</td>
                       <td className="p-3.5 font-bold text-[#172B4D]">
-                        {t.student_name}
-                        <span className="block text-[10px] text-slate-400 font-normal">{t.admission_number}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const found = students.find(s => s.admission_number === t.admission_number || `${s.first_name} ${s.last_name}` === t.student_name);
+                            onOpenStudent360?.(found || t.student_name);
+                          }}
+                          className="text-left group cursor-pointer inline-flex flex-col"
+                          title="Click to inspect Student 360° Profile"
+                        >
+                          <span className="font-bold text-[#172B4D] group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                            {t.student_name}
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-blue-50 text-blue-700 border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                              360°
+                            </span>
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-normal">{t.admission_number}</span>
+                        </button>
                       </td>
                       <td className="p-3.5 font-bold text-[#172B4D]">
                         {t.class_name} - Section {t.section_code}

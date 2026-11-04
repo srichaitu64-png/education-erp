@@ -197,9 +197,9 @@ export const PricingPage: React.FC = () => {
       <div className="text-center pt-4">
         <Link
           to="/pricing/compare"
-          className="inline-flex items-center gap-2 text-sm font-black text-blue-600 hover:text-blue-800"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-bold shadow-sm transition-all"
         >
-          Compare All 28 Features Side-by-Side &rarr;
+          Compare All 28 Capabilities in Feature Entitlement Matrix &rarr;
         </Link>
       </div>
     </div>
