@@ -9,7 +9,7 @@ import { ConsolidatedFeeReportReviewView } from './views/ConsolidatedFeeReportRe
 import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
 import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FlaskConical,
   MessageSquare,
@@ -148,6 +148,19 @@ export const InteractiveDemoPage: React.FC = () => {
   } = useDemoStore();
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+
+  // Sync role and tab from URL search parameters on initial load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get('role');
+    if (roleParam && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
+      switchRole(roleParam as UserRoleType);
+    }
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, []);
   const [examCategoryFilter, setExamCategoryFilter] = useState<string>('ALL');
   const [examModeFilter, setExamModeFilter] = useState<string>('ALL');
   const [feeCategoryFilter, setFeeCategoryFilter] = useState<string>('ALL');
