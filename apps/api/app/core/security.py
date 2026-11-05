@@ -88,7 +88,8 @@ def create_access_token(
     tenant_id: Optional[str] = None,
     is_superadmin: bool = False,
     session_id: Optional[str] = None,
-    expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None,
+    extra_claims: Optional[Dict[str, Any]] = None
 ) -> str:
     """Create a signed JWT access token containing subject, tenant, superadmin, and session id claims."""
     if expires_delta:
@@ -105,6 +106,8 @@ def create_access_token(
         "is_superadmin": is_superadmin,
         "sid": str(session_id) if session_id else None
     }
+    if extra_claims:
+        payload.update(extra_claims)
     encoded_jwt = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 

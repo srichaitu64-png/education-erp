@@ -1,5 +1,5 @@
-from typing import List, Optional
-from pydantic import AnyHttpUrl, field_validator
+from typing import List, Optional, Union
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,10 +12,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Database URLs
-    DATABASE_URL: str = "postgresql+asyncpg://postgres@127.0.0.1:5433/education_erp_dev"
-    SYNC_DATABASE_URL: str = "postgresql+psycopg2://postgres@127.0.0.1:5433/education_erp_dev"
-    TEST_DATABASE_URL: str = "postgresql+asyncpg://postgres@127.0.0.1:5433/education_erp_test"
+    # Database URLs (Strictly non-superuser, NOBYPASSRLS application role)
+    DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
+    SYNC_DATABASE_URL: str = "postgresql+psycopg2://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
+    TEST_DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_test"
 
     # Domain routing
     BASE_DOMAIN: str = "erp.local"
@@ -25,10 +25,33 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
+        "https://education-erp-nine.vercel.app",
     ]
 
     # Redis
     REDIS_URL: Optional[str] = "redis://127.0.0.1:6379/0"
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key(cls, v: str, info: ValidationInfo) -> str:
+        env = info.data.get("ENVIRONMENT", "development")
+        if env == "production":
+            if (
+                len(v) < 32
+                or "change-this" in v.lower()
+                or v in ("secret", "password", "default")
+            ):
+                raise ValueError(
+                    "Insecure SECRET_KEY: In production, SECRET_KEY must be a cryptographically secure string of at least 32 characters and cannot use placeholder values."
+                )
+        return v
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -39,4 +62,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

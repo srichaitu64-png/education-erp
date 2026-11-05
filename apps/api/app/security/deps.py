@@ -204,6 +204,71 @@ def require_feature(feature_id: str) -> Callable:
     return feature_guard
 
 
+def require_module_access(module_name: str, permission_code: Optional[str] = None) -> Callable:
+    """
+    Composite Dependency: Enforces both Subscription Module Entitlement
+    AND Granular User Permission.
+    Effective Access = Subscription Entitlements ∩ User Assigned Permissions.
+    """
+    async def module_guard(
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+    ) -> User:
+        if current_user.is_superadmin:
+            return current_user
+
+        tenant_id = get_current_tenant_id()
+        if not tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tenant context required to evaluate module access"
+            )
+
+        entitlement_svc = EntitlementService(db)
+        tenant_entitlements = await entitlement_svc.get_tenant_entitlements(tenant_id)
+
+        sub_status = tenant_entitlements.get("subscription_status", "inactive")
+        if sub_status in ("suspended", "deactivated"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Institution subscription is suspended. Access to module '{module_name}' is disabled."
+            )
+
+        module_features = [
+            f for f in tenant_entitlements.get("features", [])
+            if f.get("module") == module_name
+        ]
+        is_module_entitled = any(f.get("is_enabled") for f in module_features)
+
+        if not is_module_entitled and module_features:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error_code": "MODULE_NOT_ENTITLED",
+                    "module": module_name,
+                    "current_plan": tenant_entitlements.get("current_plan", "None"),
+                    "message": f"Module '{module_name}' is not enabled under your institution's subscription plan. Please contact your platform administrator to upgrade."
+                }
+            )
+
+        if permission_code:
+            user_permissions = set()
+            for ur in current_user.roles:
+                if ur.tenant_id == tenant_id or ur.tenant_id is None:
+                    for perm in ur.role.permissions:
+                        user_permissions.add(perm.code)
+
+            if permission_code not in user_permissions:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Missing required permission: '{permission_code}'"
+                )
+
+        return current_user
+
+    return module_guard
+
+
 async def verify_tenant_access_or_support(
     tenant_id: uuid.UUID,
     db: AsyncSession,

@@ -141,3 +141,32 @@ class DueReportItem(BaseModel):
     overdue_days: int
     status: str
 
+
+class GSTCalculateRequest(BaseModel):
+    amount: float = Field(..., gt=0)
+    customer_state: str = Field(default="Karnataka")
+    hsn_code: str = Field(default="9992")
+
+
+class GSTCalculateResponse(BaseModel):
+    taxable_amount: float
+    hsn_code: str
+    supply_type: str # INTRA_STATE or INTER_STATE
+    cgst_rate: float
+    cgst_amount: float
+    sgst_rate: float
+    sgst_amount: float
+    igst_rate: float
+    igst_amount: float
+    total_tax: float
+    total_payable: float
+
+
+class PaymentWebhookPayload(BaseModel):
+    event: str # subscription.charged, payment.captured, invoice.paid
+    tenant_id: uuid.UUID
+    amount: float
+    transaction_id: str
+    signature: Optional[str] = None
+
+

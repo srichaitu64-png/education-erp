@@ -10,7 +10,12 @@ import { ResultNoticeBoardView } from './views/ResultNoticeBoardView';
 import { SecurityAndPasswordView } from './views/SecurityAndPasswordView';
 import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
+import { ConfigurableAttendanceView } from './views/ConfigurableAttendanceView';
+import { SharedImportWizardModal, MigrationTargetModule } from '../../components/migration/SharedImportWizardModal';
+import { CommandPaletteModal } from '../../components/ui/CommandPaletteModal';
 import { Student360Drawer } from '../../components/student/Student360Drawer';
+import { api } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 import React, { useState, useEffect } from 'react';
 import {
   FlaskConical,
@@ -149,19 +154,106 @@ export const InteractiveDemoPage: React.FC = () => {
     resetDemoData,
   } = useDemoStore();
 
+  const { user, isAuthenticated, entitlements } = useAuthStore();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Sync role and tab from URL search parameters on initial load
+  // Sync role and tab from URL search parameters with authenticated session enforcement
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
-    if (roleParam && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
+
+    // Rule: Resolve and enforce actual role permissions using the authenticated backend session.
+    // Never trust URL role parameters as unverified authority.
+    if (isAuthenticated && user && !user.is_superadmin) {
+      const userRoleCodes = (user.roles || []).map((r: any) => r.code);
+      if (roleParam && userRoleCodes.includes(roleParam) && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
+        switchRole(roleParam as UserRoleType);
+      } else {
+        // Enforce user's actual assigned primary institutional role
+        const primaryRole = (userRoleCodes[0] as UserRoleType) || 'TEACHER';
+        if (ROLE_PRIVILEGES[primaryRole]) {
+          switchRole(primaryRole);
+        }
+      }
+    } else if (roleParam && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
       switchRole(roleParam as UserRoleType);
     }
+
     const tabParam = params.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
     }
+  }, [isAuthenticated, user]);
+
+  // Real ERP API Synchronization Hook (Phase D)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const syncRealData = async () => {
+      try {
+        const [studentsRes, admissionsRes, sectionsRes, dutiesRes, ticketsRes] = await Promise.allSettled([
+          api.get('/academic/students?page_size=100'),
+          api.get('/academic/admissions'),
+          api.get('/academic/sections'),
+          api.get('/academic/duty-assignments'),
+          api.get('/academic/hall-tickets'),
+        ]);
+
+        if (studentsRes.status === 'fulfilled' && studentsRes.value.data?.items?.length) {
+          useDemoStore.setState({
+            students: studentsRes.value.data.items.map((s: any) => ({
+              id: s.id,
+              admission_number: s.admission_number,
+              roll_number: s.roll_number || '',
+              first_name: s.first_name,
+              last_name: s.last_name,
+              institution_level: s.institution_level,
+              class_name: s.class_name,
+              section_or_stream: s.section_or_stream,
+              guardian_name: s.guardian_name || s.father_name || 'Guardian',
+              guardian_phone: s.guardian_phone || s.father_mobile || '',
+              fee_balance: s.fee_balance || 0,
+              attendance_pct: s.attendance_pct || 100,
+              status: s.status || 'ACTIVE',
+            })),
+          });
+        }
+
+        if (admissionsRes.status === 'fulfilled' && admissionsRes.value.data?.length) {
+          useDemoStore.setState({
+            admissions: admissionsRes.value.data.map((a: any) => ({
+              id: a.id,
+              application_number: a.application_number,
+              applicant_name: a.applicant_name,
+              level: a.level,
+              target_class: a.target_class,
+              parent_name: a.parent_name,
+              parent_phone: a.parent_phone,
+              parent_email: a.parent_email || '',
+              submission_date: a.submission_date,
+              status: a.status,
+            })),
+          });
+        }
+
+        if (sectionsRes.status === 'fulfilled' && sectionsRes.value.data?.length) {
+          useDemoStore.setState({ academicSections: sectionsRes.value.data });
+        }
+
+        if (dutiesRes.status === 'fulfilled' && dutiesRes.value.data?.length) {
+          useDemoStore.setState({ staffDuties: dutiesRes.value.data });
+        }
+
+        if (ticketsRes.status === 'fulfilled' && ticketsRes.value.data?.length) {
+          useDemoStore.setState({ hallTickets: ticketsRes.value.data });
+        }
+      } catch (err) {
+        console.warn('Real ERP backend sync fallback:', err);
+      }
+    };
+
+    syncRealData();
   }, []);
   const [examCategoryFilter, setExamCategoryFilter] = useState<string>('ALL');
   const [examModeFilter, setExamModeFilter] = useState<string>('ALL');
@@ -277,6 +369,32 @@ export const InteractiveDemoPage: React.FC = () => {
     }
   };
 
+  // Shared Migration Engine Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importModalModule, setImportModalModule] = useState<MigrationTargetModule>('STUDENTS');
+  const [importModalType, setImportModalType] = useState<string | undefined>(undefined);
+  const [moduleImportToast, setModuleImportToast] = useState<string | null>(null);
+
+  // Command Palette Quick Search (Cmd + K)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleOpenImportModal = (module: MigrationTargetModule, importType?: string) => {
+    setImportModalModule(module);
+    setImportModalType(importType);
+    setIsImportModalOpen(true);
+  };
+
   // Current Role Privileges
   const currentPrivilege = ROLE_PRIVILEGES[currentRole] || ROLE_PRIVILEGES.PRINCIPAL;
 
@@ -294,6 +412,21 @@ export const InteractiveDemoPage: React.FC = () => {
 
   const isTabLocked = (tabId: string): { locked: boolean; reason?: string } => {
     if (currentRole === 'SUPER_ADMIN') return { locked: false };
+
+    // Check subscription plan entitlements if configured for this tenant
+    const MODULE_ENTITLEMENT_MAP: Record<string, string> = {
+      'transport': 'transport',
+      'laboratory': 'laboratory',
+      'communication': 'communication',
+    };
+    const mappedFeature = MODULE_ENTITLEMENT_MAP[tabId];
+    if (mappedFeature && entitlements && entitlements[mappedFeature] && !entitlements[mappedFeature].is_enabled) {
+      return {
+        locked: true,
+        reason: `Feature locked under current subscription plan. Requires ${entitlements[mappedFeature].required_plan} tier.`,
+      };
+    }
+
     const designerItems = designerNavConfigs[currentRole] || [];
     const designerMatch = designerItems.find(it => it.id === tabId);
     if (designerMatch && designerMatch.presentationState === 'VISIBLE_LOCKED') {
@@ -485,6 +618,18 @@ export const InteractiveDemoPage: React.FC = () => {
               <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin</option>
               <option value="DEVELOPER">💻 Developer / Tech Support</option>
             </select>
+
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer group"
+              title="Open Fast Command Navigator (⌘K)"
+            >
+              <Search className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-300" />
+              <span className="hidden sm:inline">Search...</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-400">
+                ⌘K
+              </kbd>
+            </button>
 
             <button
               onClick={resetDemoData}
@@ -1079,6 +1224,13 @@ export const InteractiveDemoPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleOpenImportModal('EXAMINATIONS', 'Exam Schedules & Timetable')}
+                    className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Import Schedules
+                  </button>
                   <button
                     onClick={() => setActiveTab('marks-register')}
                     className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
@@ -1874,6 +2026,13 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Sub-Tab Navigation Pills */}
                 <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs">
+                  <button
+                    onClick={() => handleOpenImportModal('FEES', 'Fee Master & Student Demands')}
+                    className="px-3 py-1.5 rounded-lg bg-teal-600/90 hover:bg-teal-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer mr-1"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Import Fees
+                  </button>
                   <button
                     onClick={() => setFeeSubTab('statement')}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -4164,87 +4323,13 @@ export const InteractiveDemoPage: React.FC = () => {
           )}
 
           {/* ================================================================= */}
-          {/* TAB 9: ATTENDANCE */}
+          {/* TAB 9: CONFIGURABLE MULTI-INSTITUTION ATTENDANCE SYSTEM */}
           {/* ================================================================= */}
           {activeTab === 'attendance' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
-                <div>
-                  <h1 className="text-2xl font-black text-white">Daily & Period-Wise Attendance</h1>
-                  <p className="text-xs text-slate-400 mt-1">Classroom Attendance • Biometric Device Synchronization</p>
-                </div>
-              </div>
-
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
-                      <th className="p-3">Roll #</th>
-                      <th className="p-3">Student Name</th>
-                      <th className="p-3">Class</th>
-                      <th className="p-3 text-center">Status</th>
-                      <th className="p-3 text-center">Mark Attendance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-850">
-                    {attendance.map((rec) => (
-                      <tr key={rec.student_id} className="hover:bg-slate-900/60">
-                        <td className="p-3 font-mono text-slate-300">{rec.roll_number}</td>
-                        <td className="p-3">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenStudent360(rec.student_id)}
-                            className="text-left group cursor-pointer inline-flex items-center gap-2"
-                            title="Inspect Student 360° Profile"
-                          >
-                            <span className="font-bold text-white group-hover:text-teal-400 transition-colors">
-                              {rec.student_name}
-                            </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-teal-950/70 text-teal-300 border border-teal-800/60 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                              360°
-                            </span>
-                          </button>
-                        </td>
-                        <td className="p-3 text-slate-400">{rec.class_name}</td>
-                        <td className="p-3 text-center">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            rec.status === 'PRESENT'
-                              ? 'bg-emerald-950 text-emerald-300'
-                              : rec.status === 'LATE'
-                              ? 'bg-amber-950 text-amber-300'
-                              : 'bg-rose-950 text-rose-300'
-                          }`}>
-                            {rec.status}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="inline-flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                            <button
-                              onClick={() => updateAttendance(rec.student_id, 'PRESENT')}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer ${rec.status === 'PRESENT' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                            >
-                              Present
-                            </button>
-                            <button
-                              onClick={() => updateAttendance(rec.student_id, 'ABSENT')}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer ${rec.status === 'ABSENT' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                            >
-                              Absent
-                            </button>
-                            <button
-                              onClick={() => updateAttendance(rec.student_id, 'LATE')}
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer ${rec.status === 'LATE' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'}`}
-                            >
-                              Late
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ConfigurableAttendanceView
+              onOpenStudent360={handleOpenStudent360}
+              onOpenImportModal={(mod, type) => handleOpenImportModal(mod, type)}
+            />
           )}
 
           {/* ================================================================= */}
@@ -4303,6 +4388,13 @@ export const InteractiveDemoPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenImportModal('STUDENTS', 'Admissions / Student Roster')}
+                    className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Import Students
+                  </button>
                   <span className="text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3 py-1.5 rounded-xl">
                     {students.length} Enrolled Students
                   </span>
@@ -4384,6 +4476,13 @@ export const InteractiveDemoPage: React.FC = () => {
                   <h1 className="text-2xl font-black text-white">Faculty & Staff Directory</h1>
                   <p className="text-xs text-slate-400 mt-1">Teaching and Operational Staff Profiles</p>
                 </div>
+                <button
+                  onClick={() => handleOpenImportModal('STAFF', 'Faculty & Staff Directory')}
+                  className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Import Staff
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4493,7 +4592,10 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* TAB 14: MULTI-COMPONENT MARKS ENTRY REGISTER (THEORY/PRACTICAL/INTERNAL) */}
           {/* ================================================================= */}
           {activeTab === 'marks-register' && (
-            <MarksEntryRegisterView onOpenStudent360={handleOpenStudent360} />
+            <MarksEntryRegisterView
+              onOpenStudent360={handleOpenStudent360}
+              onOpenImportModal={(mod, type) => handleOpenImportModal(mod, type)}
+            />
           )}
 
           {/* ================================================================= */}
@@ -4690,6 +4792,26 @@ export const InteractiveDemoPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Shared Import Wizard Modal */}
+      <SharedImportWizardModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        preselectedModule={importModalModule}
+        preselectedImportType={importModalType}
+        onImportComplete={(count: number, message: string) => {
+          setModuleImportToast(`Import Complete: ${count} records processed (${message})`);
+          setTimeout(() => setModuleImportToast(null), 5000);
+        }}
+      />
+
+      {/* Success Toast for Imports */}
+      {moduleImportToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-950 border border-emerald-700 text-emerald-200 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <p className="text-xs font-semibold">{moduleImportToast}</p>
+        </div>
+      )}
+
       {/* Student 360 Intelligence Profile Drawer */}
       <Student360Drawer
         student={selected360Student}
@@ -4699,6 +4821,13 @@ export const InteractiveDemoPage: React.FC = () => {
         onNavigateTab={(tab) => setActiveTab(tab)}
         onSelectStudentForProgress={(id) => setSelectedProgressStudentId(id)}
         onSelectStudentForFee={(id) => setMultiStudentId(id)}
+      />
+
+      {/* Fast Command Navigator Palette (⌘K) */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onSelectTab={(tabId) => setActiveTab(tabId)}
       />
     </div>
   );

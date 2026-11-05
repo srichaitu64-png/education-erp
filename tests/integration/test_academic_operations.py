@@ -17,7 +17,7 @@ from app.modules.academic.models import (
 
 
 async def get_test_auth_headers(db_session: AsyncSession):
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     pilot_tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert pilot_tenant is not None
 

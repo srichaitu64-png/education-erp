@@ -21,7 +21,7 @@ async def test_two_institutions_flexible_fee_structures(client: httpx.AsyncClien
     Verify both configure their fee schedules independently without hardcoded amounts.
     """
     # 1. Fetch pilot tenant & Superadmin
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     pilot_tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert pilot_tenant is not None
 
@@ -95,7 +95,7 @@ async def test_fee_collection_and_automatic_receipt_generation(client: httpx.Asy
     institution branding, fee-head allocations, and QR verification hash.
     Verify idempotency prevents duplicate receipts on retry.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
@@ -156,7 +156,7 @@ async def test_reopen_and_reprint_historical_receipt(client: httpx.AsyncClient, 
     - reprint_count increments.
     - reprint audit log entry is recorded.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
@@ -194,7 +194,7 @@ async def test_consolidated_and_due_reports(client: httpx.AsyncClient, db_sessio
     Acceptance Test 4:
     Consolidated collection report and due reports calculation.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
@@ -230,7 +230,7 @@ async def test_unauthorized_user_cannot_configure_fee_structures(client: httpx.A
     Unauthorised users (e.g. standard teacher without fees.configure) cannot modify fee structures.
     Must return 403 Forbidden.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code == "akshara")
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
 
     # Create a plain teacher user with only teaching role

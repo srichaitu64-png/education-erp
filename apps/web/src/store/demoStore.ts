@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { api } from '../services/api';
 
 // ---------------------------------------------------------------------------
 // Role-Based Access Control (RBAC) & Governance Types
@@ -927,6 +928,8 @@ export interface MigrationBatch {
   probableMatchesCount: number;
   cleanNewRecordsCount: number;
   status: 'ANALYZED' | 'VALIDATED' | 'MIGRATED';
+  targetModule?: 'STUDENTS' | 'FEES' | 'EXAMINATIONS' | 'MARKS' | 'ATTENDANCE' | 'STAFF' | 'GENERAL';
+  importType?: string;
   columnMappings: {
     sourceHeader: string;
     targetField: string;
@@ -1024,6 +1027,54 @@ export interface DemoAttendanceRecord {
   roll_number: string;
   class_name: string;
   status: 'PRESENT' | 'ABSENT' | 'LATE';
+}
+
+export type AttendanceMode = 'DAILY_ONLY' | 'PERIOD_WISE_ONLY' | 'BOTH';
+
+export interface AttendanceInstitutionConfig {
+  attendance_mode: AttendanceMode;
+  enable_biometric_sync: boolean;
+  enable_parent_leave_requests: boolean;
+  enable_absence_reasons: boolean;
+  enable_late_tracking: boolean;
+  enable_attendance_correction: boolean;
+  minimum_attendance_pct: number;
+  academic_year: string;
+}
+
+export interface DemoPeriodAttendanceRecord {
+  id: string;
+  period_number: number;
+  period_time: string;
+  subject_code: string;
+  subject_name: string;
+  class_name: string;
+  section_code: string;
+  teacher_name: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE';
+  remarks?: string;
+  attendance_date: string;
+}
+
+export interface DemoDailyAttendanceDetail {
+  id: string;
+  student_id: string;
+  student_name: string;
+  admission_number: string;
+  roll_number: string;
+  class_name: string;
+  section_code: string;
+  stream?: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'LEAVE';
+  late_minutes?: number;
+  absence_reason?: string;
+  leave_request_status?: string;
+  guardian_name?: string;
+  guardian_phone?: string;
+  attendance_date: string;
 }
 
 export interface DemoExamMarks {
@@ -1394,6 +1445,15 @@ interface DemoState {
   submitFeeReportSnapshot: (payload: Omit<ConsolidatedFeeReportSnapshotModel, 'id' | 'snapshot_code' | 'submitted_at' | 'status'>) => { success: boolean; snapshot: ConsolidatedFeeReportSnapshotModel };
   reviewFeeReportSnapshot: (snapshotId: string, decision: 'APPROVED' | 'RETURNED_FOR_REVISION', remarks: string) => void;
 
+  // Configurable Attendance Architecture
+  attendanceConfig: AttendanceInstitutionConfig;
+  detailedDailyAttendance: DemoDailyAttendanceDetail[];
+  periodAttendance: DemoPeriodAttendanceRecord[];
+  updateAttendanceConfig: (updates: Partial<AttendanceInstitutionConfig>) => void;
+  updatePeriodAttendanceStatus: (id: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => void;
+  updateDailyAttendanceStatus: (id: string, status: 'PRESENT' | 'ABSENT' | 'LATE' | 'LEAVE', reason?: string) => void;
+  batchMarkDailyAttendance: (sectionId: string, date: string, records: { student_id: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'LEAVE'; late_minutes?: number; reason?: string }[]) => void;
+  addMigrationJob: (job: MigrationBatch) => void;
 
   resetDemoData: () => void;
 }
@@ -2360,6 +2420,205 @@ const initialAttendance: DemoAttendanceRecord[] = [
   { student_id: 'st-5', student_name: 'Aditya Patil', roll_number: '105', class_name: 'II PUC Commerce', status: 'LATE' },
 ];
 
+export const initialAttendanceConfig: AttendanceInstitutionConfig = {
+  attendance_mode: 'BOTH',
+  enable_biometric_sync: false,
+  enable_parent_leave_requests: true,
+  enable_absence_reasons: true,
+  enable_late_tracking: true,
+  enable_attendance_correction: true,
+  minimum_attendance_pct: 75.0,
+  academic_year: '2026-2027'
+};
+
+export const initialDetailedDailyAttendance: DemoDailyAttendanceDetail[] = [
+  {
+    id: 'att-d-001',
+    student_id: 'st-1',
+    student_name: 'Aarav Sharma',
+    admission_number: 'ADM-2026-001',
+    roll_number: '101',
+    class_name: 'Class 10',
+    section_code: 'A',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-002',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    roll_number: '102',
+    class_name: 'I PUC',
+    section_code: 'A',
+    stream: 'PCMB',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-003',
+    student_id: 'st-3',
+    student_name: 'Rohan Verma',
+    admission_number: 'ADM-2026-003',
+    roll_number: '103',
+    class_name: 'B.Sc CS',
+    section_code: 'Sem 3',
+    stream: 'Computer Science',
+    status: 'ABSENT',
+    absence_reason: 'Severe Viral Fever (Medical Certificate Submitted)',
+    leave_request_status: 'APPROVED_BY_PRINCIPAL',
+    guardian_name: 'Sunil Verma',
+    guardian_phone: '+91 98450 34567',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-004',
+    student_id: 'st-4',
+    student_name: 'Priya Nair',
+    admission_number: 'ADM-2026-004',
+    roll_number: '104',
+    class_name: 'Class 10',
+    section_code: 'A',
+    status: 'LATE',
+    late_minutes: 20,
+    absence_reason: 'School Bus Route 104 delayed in traffic',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-005',
+    student_id: 'st-5',
+    student_name: 'Kavya Deshmukh',
+    admission_number: 'ADM-2026-005',
+    roll_number: '105',
+    class_name: 'I PUC',
+    section_code: 'A',
+    stream: 'PCMB',
+    status: 'LEAVE',
+    absence_reason: 'Inter-College State Athletic Championship',
+    leave_request_status: 'OFFICIAL_SPORTS_EXCUSAL',
+    guardian_name: 'Ramesh Deshmukh',
+    guardian_phone: '+91 98450 56789',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-006',
+    student_id: 'st-6',
+    student_name: 'Aditya Patil',
+    admission_number: 'ADM-2026-006',
+    roll_number: '106',
+    class_name: 'I PUC',
+    section_code: 'B',
+    stream: 'PCMB',
+    status: 'ABSENT',
+    absence_reason: 'Family Event (Out of Town)',
+    leave_request_status: 'UNEXCUSED',
+    guardian_name: 'Sanjay Patil',
+    guardian_phone: '+91 98450 67890',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-007',
+    student_id: 'st-7',
+    student_name: 'Deepak Rao',
+    admission_number: 'ADM-2026-007',
+    roll_number: '107',
+    class_name: 'Class 6',
+    section_code: 'A',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'att-d-008',
+    student_id: 'st-8',
+    student_name: 'Sneha Kulkarni',
+    admission_number: 'ADM-2026-008',
+    roll_number: '108',
+    class_name: 'Class 6',
+    section_code: 'B',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  }
+];
+
+export const initialPeriodAttendance: DemoPeriodAttendanceRecord[] = [
+  {
+    id: 'p-att-001',
+    period_number: 1,
+    period_time: '09:00 - 09:50 AM',
+    subject_code: 'PHY-101',
+    subject_name: 'Physics (Theory)',
+    class_name: 'I PUC',
+    section_code: 'A',
+    teacher_name: 'Dr. Ananya Sharma',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'p-att-002',
+    period_number: 1,
+    period_time: '09:00 - 09:50 AM',
+    subject_code: 'PHY-101',
+    subject_name: 'Physics (Theory)',
+    class_name: 'I PUC',
+    section_code: 'A',
+    teacher_name: 'Dr. Ananya Sharma',
+    student_id: 'st-5',
+    student_name: 'Kavya Deshmukh',
+    admission_number: 'ADM-2026-005',
+    status: 'ABSENT',
+    remarks: 'Excused (Sports Meet)',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'p-att-003',
+    period_number: 2,
+    period_time: '10:00 - 10:50 AM',
+    subject_code: 'CHE-101',
+    subject_name: 'Chemistry (Lab)',
+    class_name: 'I PUC',
+    section_code: 'A',
+    teacher_name: 'Prof. Rajesh Iyer',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'p-att-004',
+    period_number: 3,
+    period_time: '11:10 - 12:00 PM',
+    subject_code: 'MAT-101',
+    subject_name: 'Mathematics',
+    class_name: 'I PUC',
+    section_code: 'A',
+    teacher_name: 'Dr. Suresh V.',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  },
+  {
+    id: 'p-att-005',
+    period_number: 4,
+    period_time: '12:00 - 12:50 PM',
+    subject_code: 'BIO-101',
+    subject_name: 'Biology (Botany)',
+    class_name: 'I PUC',
+    section_code: 'A',
+    teacher_name: 'Dr. Radhika Sen',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'ADM-2026-002',
+    status: 'PRESENT',
+    attendance_date: '2026-11-04'
+  }
+];
+
 const initialMarks: DemoExamMarks[] = [
   { student_id: 'st-1', student_name: 'Aarav Sharma', roll_number: '101', subject: 'Mathematics', max_marks: 100, obtained_marks: 94, grade: 'A+' },
   { student_id: 'st-1', student_name: 'Aarav Sharma', roll_number: '101', subject: 'Science (Theory + Practical)', max_marks: 100, obtained_marks: 91, grade: 'A+' },
@@ -3157,6 +3416,9 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   activeFeeInstitutionFilter: 'ALL',
   customFeeHeads: [],
   attendance: initialAttendance,
+  attendanceConfig: initialAttendanceConfig,
+  detailedDailyAttendance: initialDetailedDailyAttendance,
+  periodAttendance: initialPeriodAttendance,
   marks: initialMarks,
   exams: initialExams,
   subjects: initialSubjects,
@@ -3216,28 +3478,104 @@ export const useDemoStore = create<DemoState>((set, get) => ({
 
   // Actions
   addStudent: (data) => {
+    const localId = `st-${Date.now()}`;
     const newStudent: DemoStudent = {
-      id: `st-${Date.now()}`,
+      id: localId,
       ...data,
     };
     set((state) => ({ students: [newStudent, ...state.students] }));
+
+    // Real API integration
+    if (localStorage.getItem('access_token')) {
+      api.post('/academic/students', {
+        admission_number: data.admission_number,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        institution_level: data.institution_level,
+        class_name: data.class_name,
+        section_or_stream: data.section_or_stream,
+        roll_number: data.roll_number,
+        guardian_name: data.guardian_name,
+        guardian_phone: data.guardian_phone,
+        fee_balance: data.fee_balance,
+        attendance_pct: data.attendance_pct,
+        status: data.status,
+      }).then((res) => {
+        if (res.data?.id) {
+          set((state) => ({
+            students: state.students.map((s) => (s.id === localId ? { ...s, id: res.data.id } : s)),
+          }));
+        }
+      }).catch((e) => console.warn('Student API sync fallback:', e));
+    }
   },
 
   createAdmission: (appData) => {
+    const localId = `adm-${Date.now()}`;
     const newApp: DemoAdmission = {
-      id: `adm-${Date.now()}`,
+      id: localId,
       application_number: `APP-2026-${Math.floor(100 + Math.random() * 900)}`,
       submission_date: new Date().toISOString().split('T')[0],
       status: 'PENDING',
       ...appData,
     };
     set((state) => ({ admissions: [newApp, ...state.admissions] }));
+
+    // Real API integration
+    if (localStorage.getItem('access_token')) {
+      api.post('/academic/admissions', {
+        applicant_name: appData.applicant_name,
+        level: appData.level,
+        target_class: appData.target_class,
+        parent_name: appData.parent_name,
+        parent_phone: appData.parent_phone,
+        parent_email: appData.parent_email,
+      }).then((res) => {
+        if (res.data?.id) {
+          set((state) => ({
+            admissions: state.admissions.map((a) => (a.id === localId ? { ...a, id: res.data.id, application_number: res.data.application_number } : a)),
+          }));
+        }
+      }).catch((e) => console.warn('Admission API sync fallback:', e));
+    }
   },
 
   approveAdmission: (id) => {
     set((state) => ({
       admissions: state.admissions.map((a) => (a.id === id ? { ...a, status: 'APPROVED' } : a)),
     }));
+
+    // Real API integration
+    if (localStorage.getItem('access_token')) {
+      api.post(`/academic/admissions/${id}/approve`, {
+        section_code: 'A',
+        academic_year: '2026-2027',
+        review_notes: 'Approved via Institutional Admission Desk',
+      }).then(() => {
+        // Refresh live students roster
+        api.get('/academic/students?page_size=100').then((res) => {
+          if (res.data?.items?.length) {
+            set({
+              students: res.data.items.map((s: any) => ({
+                id: s.id,
+                admission_number: s.admission_number,
+                roll_number: s.roll_number || '',
+                first_name: s.first_name,
+                last_name: s.last_name,
+                institution_level: s.institution_level,
+                class_name: s.class_name,
+                section_or_stream: s.section_or_stream,
+                guardian_name: s.guardian_name || s.father_name || 'Guardian',
+                guardian_phone: s.guardian_phone || s.father_mobile || '',
+                fee_balance: s.fee_balance || 0,
+                attendance_pct: s.attendance_pct || 100,
+                status: s.status || 'ACTIVE',
+              })),
+            });
+          }
+        }).catch((e) => console.warn('Student roster refresh fallback:', e));
+      }).catch((e) => console.warn('Admission approval API sync fallback:', e));
+    }
   },
 
   collectFee: (invoiceId, amount) => {
@@ -3589,6 +3927,58 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       attendance: state.attendance.map((rec) =>
         rec.student_id === studentId ? { ...rec, status } : rec
       ),
+    }));
+  },
+
+  updateAttendanceConfig: (updates) => {
+    set((state) => {
+      if (updates.attendance_mode) {
+        const validModes = ['DAILY_ONLY', 'PERIOD_WISE_ONLY', 'BOTH'];
+        if (!validModes.includes(updates.attendance_mode)) return state;
+      }
+      return {
+        attendanceConfig: { ...state.attendanceConfig, ...updates }
+      };
+    });
+  },
+
+  updatePeriodAttendanceStatus: (id, status) => {
+    set((state) => ({
+      periodAttendance: state.periodAttendance.map((rec) =>
+        rec.id === id ? { ...rec, status } : rec
+      )
+    }));
+  },
+
+  updateDailyAttendanceStatus: (id, status, reason) => {
+    set((state) => ({
+      detailedDailyAttendance: state.detailedDailyAttendance.map((rec) =>
+        rec.id === id ? { ...rec, status, absence_reason: reason || rec.absence_reason } : rec
+      )
+    }));
+  },
+
+  batchMarkDailyAttendance: (sectionId, date, records) => {
+    set((state) => {
+      const updated = [...state.detailedDailyAttendance];
+      for (const item of records) {
+        const idx = updated.findIndex((r) => r.student_id === item.student_id && r.attendance_date === date);
+        if (idx >= 0) {
+          updated[idx] = {
+            ...updated[idx],
+            status: item.status,
+            late_minutes: item.late_minutes ?? updated[idx].late_minutes,
+            absence_reason: item.reason ?? updated[idx].absence_reason
+          };
+        }
+      }
+      return { detailedDailyAttendance: updated };
+    });
+  },
+
+  addMigrationJob: (job) => {
+    set((state) => ({
+      migrationBatches: [job, ...state.migrationBatches]
     }));
   },
 
@@ -4631,6 +5021,9 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       feeStructures: initialFeeStructures,
       activeFeeInstitutionFilter: 'ALL',
       attendance: initialAttendance,
+      attendanceConfig: initialAttendanceConfig,
+      detailedDailyAttendance: initialDetailedDailyAttendance,
+      periodAttendance: initialPeriodAttendance,
       marks: initialMarks,
       exams: initialExams,
       subjects: initialSubjects,

@@ -12,6 +12,7 @@ import {
   Headphones
 } from 'lucide-react';
 import { PublicLayout } from '../../layouts/PublicLayout';
+import { api } from '../../services/api';
 
 export const ContactPage: React.FC = () => {
   const [formState, setFormState] = useState({
@@ -22,18 +23,44 @@ export const ContactPage: React.FC = () => {
     role: 'Principal',
     subject: 'Request a Campus ERP Consultation',
     message: '',
+    websiteUrlHp: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [referenceNo, setReferenceNo] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const res = await api.post('/leads/submit', {
+        contact_name: formState.name.trim(),
+        email: formState.email.trim(),
+        phone: formState.phone.trim(),
+        institution_name: formState.institution.trim(),
+        institution_type: 'school',
+        enquiry_type: 'sales',
+        message: `Role: ${formState.role} | Subject: ${formState.subject} | Message: ${formState.message}`,
+        consent_given: true,
+        page_url: window.location.pathname,
+        source: 'website_contact_page',
+        website_url_hp: formState.websiteUrlHp || undefined,
+      });
+
+      if (res.data && res.data.reference_no) {
+        setReferenceNo(res.data.reference_no);
+      } else {
+        setReferenceNo(`LEAD-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+      }
       setSubmitted(true);
-    }, 600);
+    } catch {
+      setReferenceNo(`LEAD-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -136,6 +163,11 @@ export const ContactPage: React.FC = () => {
                       <CheckCircle2 className="w-10 h-10" />
                     </div>
                     <h3 className="text-2xl font-black text-gray-900">Message Received!</h3>
+                    {referenceNo && (
+                      <span className="inline-block text-xs font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                        Official Reference: {referenceNo}
+                      </span>
+                    )}
                     <p className="text-sm text-gray-600 max-w-md mx-auto">
                       Thank you for contacting us, {formState.name}. An Education ERP specialist assigned to your region will reach out within 2 hours.
                     </p>

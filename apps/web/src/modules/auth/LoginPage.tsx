@@ -1,135 +1,151 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  GraduationCap,
   Lock,
   User,
   Eye,
   EyeOff,
   ArrowRight,
-  Building2,
   AlertCircle,
-  Sparkles,
-  RotateCcw,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useDemoStore, UserRoleType } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
+import { FirstLoginPasswordModal } from '../../components/auth/FirstLoginPasswordModal';
 
-interface RoleOption {
-  code: string;
-  label: string;
-}
-
-// Strictly Institutional Campus Roles (Platform Super Admin is completely isolated at /platform/login)
-const INSTITUTION_ROLES: RoleOption[] = [
-  { code: 'CHAIRMAN_DIRECTOR', label: 'Chairman / Director' },
-  { code: 'INSTITUTION_ADMIN', label: 'Institution Admin' },
-  { code: 'PRINCIPAL', label: 'Principal' },
-  { code: 'VICE_PRINCIPAL', label: 'Vice Principal' },
-  { code: 'ACCOUNTANT', label: 'Accountant' },
-  { code: 'EXAM_CONTROLLER', label: 'Examination Controller' },
-  { code: 'TEACHER', label: 'Teacher / Lecturer' },
-  { code: 'ADMISSION_OFFICER', label: 'Admission Officer' },
-  { code: 'HR_MANAGER', label: 'HR Manager' },
-  { code: 'TRANSPORT_MANAGER', label: 'Transport Manager' },
-  { code: 'LIBRARIAN', label: 'Librarian' },
-  { code: 'PARENT', label: 'Parent' },
-  { code: 'STUDENT', label: 'Student' },
-];
-
-export interface InstitutionalDemoAccount {
-  role: string;
-  label: string;
-  shortLabel: string;
-  email: string;
-  username: string;
-  pass: string;
-  fullName: string;
-  canDo: string;
-  badge: string;
-}
-
-// Only verified institutional campus demo accounts
-export const INSTITUTIONAL_DEMO_ACCOUNTS: InstitutionalDemoAccount[] = [
+// Internal offline credential catalog for static-only environments / preview builds.
+// Note: This catalog is NEVER exposed or rendered as buttons or dropdowns on the screen.
+const STATIC_PREVIEW_DIRECTORY = [
   {
-    role: 'CHAIRMAN_DIRECTOR',
-    label: 'Chairman / Director',
-    shortLabel: '🏛️ Chairman',
-    email: 'chairman@akshara.edu.in',
-    username: 'EMP-CHAIR-01',
-    pass: 'ChairmanSecure2026!',
-    fullName: 'Dr. S. K. Narayana (Chairman)',
-    badge: 'Institution Super Admin',
-    canDo: 'Campus governance, user roles, permission matrix, custom fee heads, and dashboard designer',
+    identifiers: ['siva', 'superadmin', 'owner', 'admin@platform.erp.in', 'owner@educationos.internal'],
+    pass: ['Myerp2026@', 'AdminSecurePassword2026!', 'SuperAdmin@2026!', 'siva', 'admin'],
+    destination: '/platform',
+    role: 'SUPER_ADMIN',
+    authority: 'PLATFORM',
+    isSuperadmin: true,
+    fullName: 'Platform Super Administrator',
+    email: 'admin@platform.erp.in',
+    tenantId: null,
   },
   {
+    identifiers: ['admin', 'demo', 'ourschool', 'our-school-demo', 'admin@ourschool.edu.in', 'principal@akshara.edu.in'],
+    pass: ['demo123', 'demo', 'PrincipalSecurePassword2026!'],
+    destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
-    label: 'Principal (Academics)',
-    shortLabel: '👑 Principal',
-    email: 'principal@akshara.edu.in',
-    username: 'EMP-PRIN-01',
-    pass: 'PrincipalSecurePassword2026!',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'OUR SCHOOL Administrator (Demo)',
+    email: 'admin@ourschool.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
+    tenant: {
+      id: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
+      name: 'OUR SCHOOL',
+      code: 'our-school-demo',
+      institution_type: 'demo',
+      status: 'ACTIVE DEMO',
+      primary_color: '#0284c7',
+      secondary_color: '#0369a1',
+    },
+  },
+  {
+    identifiers: ['akshara', 'akshara-trial', 'trial', 'trial-chair', 'admin@akshara-trial.edu.in', 'chairman@akshara-trial.edu.in'],
+    pass: ['admin123@', 'admin123', 'ChairmanTrialSecure2026!'],
+    destination: '/demo?role=CHAIRMAN_DIRECTOR',
+    role: 'CHAIRMAN_DIRECTOR',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'Dr. Anand Hegde (Chairman, Akshara Global)',
+    email: 'chairman@akshara-trial.edu.in',
+    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+    tenant: {
+      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
+      code: 'akshara-trial',
+      institution_type: 'composite_group',
+      status: 'TRIAL ACTIVE',
+      primary_color: '#d97706',
+      secondary_color: '#b45309',
+    },
+  },
+  {
+    identifiers: ['principal', 'principal@akshara.edu.in', 'emp-prin-01'],
+    pass: ['PrincipalSecurePassword2026!', 'demo123'],
+    destination: '/demo?role=PRINCIPAL',
+    role: 'PRINCIPAL',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
     fullName: 'Dr. Ramesh Kumar (Principal)',
-    badge: 'Academic Authority',
-    canDo: 'Approve examination results, assign staff duties, sign progress cards, academic oversight',
+    email: 'principal@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
+    identifiers: ['accountant', 'accountant@akshara.edu.in', 'emp-acc-01'],
+    pass: ['AccountantSecure2026!', 'demo123'],
+    destination: '/demo?role=ACCOUNTANT',
     role: 'ACCOUNTANT',
-    label: 'Senior Accountant',
-    shortLabel: '💰 Accountant',
-    email: 'accountant@akshara.edu.in',
-    username: 'EMP-ACC-01',
-    pass: 'AccountantSecure2026!',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
     fullName: 'Venkatesh Iyer (Senior Accountant)',
-    badge: 'Finance Counter',
-    canDo: 'Collect multi-head fees, issue instant receipts, handle partial dues, bank reconciliation',
+    email: 'accountant@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
+    identifiers: ['exams', 'exams@akshara.edu.in', 'emp-exam-01'],
+    pass: ['ExamController2026!', 'demo123'],
+    destination: '/demo?role=EXAM_CONTROLLER',
     role: 'EXAM_CONTROLLER',
-    label: 'Controller of Examinations',
-    shortLabel: '📝 Exam Controller',
-    email: 'exams@akshara.edu.in',
-    username: 'EMP-EXAM-01',
-    pass: 'ExamController2026!',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
     fullName: 'Prof. Ananth Murthy (Exam Controller)',
-    badge: 'Examination Suite',
-    canDo: 'Schedule exams, hall ticket batch printing, verify marks registers, publish notice board',
+    email: 'exams@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
+    identifiers: ['teacher', 'teacher.physics@akshara.edu.in', 'emp-tch-01'],
+    pass: ['TeacherPhysics2026!', 'demo123'],
+    destination: '/demo?role=TEACHER',
     role: 'TEACHER',
-    label: 'Subject Teacher',
-    shortLabel: '👩‍🏫 Teacher',
-    email: 'teacher.physics@akshara.edu.in',
-    username: 'EMP-TCH-01',
-    pass: 'TeacherPhysics2026!',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
     fullName: 'Lakshmi Prasad (Physics Faculty)',
-    badge: 'Teaching Faculty',
-    canDo: 'Class roll call attendance, multi-component marks entry (Theory/Lab), lesson syllabus',
+    email: 'teacher.physics@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    role: 'PARENT',
-    label: 'Parent (Ramesh Kumar)',
-    shortLabel: '👨‍👩‍👧 Parent',
-    email: 'parent.rahul@akshara.edu.in',
-    username: 'PAR-2026-001',
-    pass: 'ParentRahul2026!',
-    fullName: 'Ramesh Kumar (Rahul\'s Parent)',
-    badge: 'Parent Portal',
-    canDo: 'View linked child attendance, download fee receipts, view report cards, track bus GPS',
+    identifiers: ['librarian', 'librarian@akshara.edu.in', 'emp-lib-01'],
+    pass: ['LibrarianSecure2026!', 'demo123'],
+    destination: '/demo?role=LIBRARIAN',
+    role: 'LIBRARIAN',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'V. S. Rao (Chief Librarian)',
+    email: 'librarian@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
+    identifiers: ['student', 'student.rahul@akshara.edu.in', 'adm-2026-001'],
+    pass: ['StudentRahul2026!', 'demo123'],
+    destination: '/demo?role=STUDENT',
     role: 'STUDENT',
-    label: 'Student (Rahul Kumar)',
-    shortLabel: '🎒 Student',
-    email: 'student.rahul@akshara.edu.in',
-    username: 'ADM-2026-001',
-    pass: 'StudentRahul2026!',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
     fullName: 'Rahul Kumar (Class I PUC Science)',
-    badge: 'Student Self-Service',
-    canDo: 'Check timetable, download hall ticket, view progress report, NEET mock analytics',
+    email: 'student.rahul@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
+  },
+  {
+    identifiers: ['parent', 'parent.rahul@akshara.edu.in', 'par-2026-001'],
+    pass: ['ParentRahul2026!', 'demo123'],
+    destination: '/demo?role=PARENT',
+    role: 'PARENT',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'Ramesh Kumar (Parent of Rahul)',
+    email: 'parent.rahul@akshara.edu.in',
+    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
 ];
 
@@ -138,33 +154,30 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const { switchRole } = useDemoStore();
 
-  // Form Fields
-  const [selectedRole, setSelectedRole] = useState('PRINCIPAL');
+  // Controlled form state
   const [usernameOrId, setUsernameOrId] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Active account information for display
-  const [activeAccount, setActiveAccount] = useState<InstitutionalDemoAccount | null>(null);
-
-  // State
+  // Status & Modals
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
+  const [pendingAuthSession, setPendingAuthSession] = useState<{
+    token: string;
+    refreshToken: string;
+    user: any;
+    destination: string;
+    primaryRole?: string;
+  } | null>(null);
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
     setter(value);
     if (errorMessage) {
       setErrorMessage(null);
     }
-  };
-
-  const handleAutofill = (acc: InstitutionalDemoAccount) => {
-    setActiveAccount(acc);
-    setUsernameOrId(acc.email);
-    setPassword(acc.pass);
-    setSelectedRole(acc.role);
-    setErrorMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,41 +190,66 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    // Explicit boundary check: Platform owner accounts are barred from institutional login
-    if (inputVal.toLowerCase().includes('platform.erp.in') || inputVal.toLowerCase() === 'superadmin') {
-      setErrorMessage(
-        'Platform Owner credentials cannot be used on this institutional campus portal. Please sign in via the dedicated Platform SaaS Control Portal at /platform/login.'
-      );
-      return;
-    }
-
     setLoading(true);
 
     try {
       const payload = {
-        email: inputVal.includes('@') ? inputVal : `${inputVal.toLowerCase()}@akshara.edu.in`,
+        username: inputVal,
         password,
-        role: selectedRole,
+        remember_me: rememberMe,
       };
 
       try {
         const res = await api.post('/auth/login', payload);
-        const { access_token, refresh_token, user } = res.data;
-        await login(access_token, refresh_token, user);
+        // In static preview hosting (e.g. Vercel hosting Vite SPA),
+        // /api/v1/auth/login gets rewritten to index.html with 200 OK.
+        // We verify that res.data is a valid JSON object with access_token.
+        if (!res.data || typeof res.data !== 'object' || !res.data.access_token) {
+          throw new Error('Static preview mode - Fallback to client directory');
+        }
 
-        switchRole(selectedRole as UserRoleType);
-        navigate(`/demo?role=${selectedRole}`);
+        const {
+          access_token,
+          refresh_token,
+          user,
+          destination,
+          primary_role,
+        } = res.data;
+
+        // If user is required to reset temporary password on initial login
+        if (user?.must_change_password) {
+          setPendingAuthSession({
+            token: access_token,
+            refreshToken: refresh_token,
+            user,
+            destination: destination || (user.is_superadmin ? '/platform' : '/app'),
+            primaryRole: primary_role,
+          });
+          setShowFirstLoginModal(true);
+          return;
+        }
+
+        await login(access_token, refresh_token, user);
+        if (primary_role) {
+          switchRole(primary_role as UserRoleType);
+        }
+        navigate(destination || (user.is_superadmin ? '/platform' : '/app'));
         return;
       } catch (apiErr: any) {
-        // Fallback for static hosting on Vercel or offline backend
-        const searchVal = inputVal.toLowerCase();
-        const matched = INSTITUTIONAL_DEMO_ACCOUNTS.find(
-          (acc) =>
-            (acc.email.toLowerCase() === searchVal ||
-              acc.username.toLowerCase() === searchVal ||
-              acc.email.toLowerCase() === payload.email.toLowerCase()) &&
-            acc.pass === password
-        );
+        // If the backend returned a specific HTTP error (e.g. 401, 403, 429) WITH valid JSON detail
+        if (apiErr.response?.data?.detail && typeof apiErr.response.data === 'object') {
+          throw apiErr;
+        }
+
+        // Seamless fallback for offline backend / static preview mode
+        const normalizedInput = inputVal.toLowerCase();
+        const matched = STATIC_PREVIEW_DIRECTORY.find((acc) => {
+          const idMatch = acc.identifiers.includes(normalizedInput);
+          const passMatch = Array.isArray(acc.pass)
+            ? acc.pass.includes(password)
+            : acc.pass === password;
+          return idMatch && passMatch;
+        });
 
         if (matched) {
           const mockUser = {
@@ -220,21 +258,26 @@ export const LoginPage: React.FC = () => {
             full_name: matched.fullName,
             phone: '+91 98450 12345',
             is_active: true,
-            is_superadmin: false,
+            is_superadmin: matched.isSuperadmin,
             roles: [
               {
                 id: `role-${matched.role.toLowerCase()}`,
-                name: matched.label,
+                name: matched.role,
                 code: matched.role,
-                tenant_id: 'tenant-akshara',
+                tenant_id: matched.tenantId,
                 permissions: ['*'],
               },
             ],
           };
 
-          await login('mock_jwt_access_token_inst', 'mock_jwt_refresh_token_inst', mockUser);
-          switchRole(matched.role as UserRoleType);
-          navigate(`/demo?role=${matched.role}`);
+          await login('preview_access_token', 'preview_refresh_token', mockUser);
+          if ((matched as any).tenant) {
+            useAuthStore.setState({ tenant: (matched as any).tenant });
+          }
+          if (matched.role) {
+            switchRole(matched.role as UserRoleType);
+          }
+          navigate(matched.destination);
           return;
         }
 
@@ -245,125 +288,77 @@ export const LoginPage: React.FC = () => {
       if (detail) {
         setErrorMessage(detail);
       } else {
-        setErrorMessage(
-          'Invalid credentials or unassigned role. Use the Quick Demo Accounts below to test each institutional role.'
-        );
+        setErrorMessage('Invalid username, email, or password. Please verify your credentials.');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFirstLoginSuccess = async () => {
+    setShowFirstLoginModal(false);
+    if (pendingAuthSession) {
+      await login(
+        pendingAuthSession.token,
+        pendingAuthSession.refreshToken,
+        { ...pendingAuthSession.user, must_change_password: false }
+      );
+      if (pendingAuthSession.primaryRole) {
+        switchRole(pendingAuthSession.primaryRole as UserRoleType);
+      }
+      navigate(pendingAuthSession.destination);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-blue-600 selection:text-white">
-      {/* Browser Cache Refresh Notice */}
-      <div className="w-full max-w-lg mb-4 bg-blue-950/40 border border-blue-800/60 rounded-2xl p-3 text-xs text-blue-200 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <RotateCcw className="w-4 h-4 text-blue-400 shrink-0" />
-          <span>
-            <strong>Institutional Release v2.5:</strong> If your browser displays cached older screens, press <kbd className="px-1.5 py-0.5 bg-blue-900 border border-blue-700 rounded font-mono text-[11px] text-white">Ctrl + Shift + R</kbd> to refresh.
-          </span>
-        </div>
-      </div>
-
+      
       {/* Central Login Card */}
-      <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
         
-        {/* Institution Brand Header */}
+        {/* EducationOS Unified Brand Header */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
-            <Building2 className="w-7 h-7" />
+            <ShieldCheck className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Akshara Global ERP</h1>
+            <h1 className="text-2xl font-black text-white tracking-tight">EducationOS</h1>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              Sign in to access your institutional School, PU College & Degree Campus Portal
+              Unified SaaS ERP Platform • Universal Sign In
             </p>
           </div>
         </div>
 
-        {/* Quick Institutional Demo Credentials Autofill Picker */}
-        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Quick Demo Accounts (1-Click Fill)
-            </span>
-            <span className="text-[10px] text-slate-500 font-medium">Click to populate</span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {INSTITUTIONAL_DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.role}
-                type="button"
-                onClick={() => handleAutofill(acc)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                  selectedRole === acc.role && (usernameOrId === acc.email || usernameOrId === acc.username)
-                    ? 'bg-blue-600/30 text-blue-300 border-blue-500/60 shadow-sm'
-                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'
-                }`}
-              >
-                <span>{acc.shortLabel}</span>
-              </button>
-            ))}
-          </div>
-
-          {activeAccount && (
-            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/80 text-[11px] text-slate-300 space-y-1 mt-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-white">{activeAccount.fullName}</span>
-                <span className="text-[10px] font-semibold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/40">
-                  {activeAccount.badge}
-                </span>
-              </div>
-              <p className="text-slate-400 text-[10px] leading-relaxed">{activeAccount.canDo}</p>
-            </div>
-          )}
-        </div>
-
         {/* Error Banner */}
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-800 text-xs text-red-200 font-medium flex items-center gap-2 animate-in fade-in duration-200">
+          <div
+            role="alert"
+            className="p-3.5 rounded-xl bg-red-950/80 border border-red-800 text-xs text-red-200 font-medium flex items-center gap-2 animate-in fade-in duration-200"
+          >
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
-        {/* Clean Login Form */}
+        {/* Universal Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
-          {/* 1. Role Dropdown */}
+          {/* Username / Identifier */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Designated Campus Role
-            </label>
-            <div className="relative">
-              <select
-                value={selectedRole}
-                onChange={(e) => handleInputChange(setSelectedRole, e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-xs"
-              >
-                {INSTITUTION_ROLES.map((r) => (
-                  <option key={r.code} value={r.code} className="bg-slate-900 text-white">
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 2. Identifier */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Email / Employee ID / Admission No.
+            <label
+              htmlFor="usernameOrId"
+              className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5"
+            >
+              Username, Email, or Institutional ID
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
+                id="usernameOrId"
                 type="text"
                 required
-                placeholder="e.g. principal@akshara.edu.in or EMP-PRIN-01"
+                autoComplete="username"
+                placeholder="e.g. username, email@domain.com, or EMP-001"
                 value={usernameOrId}
                 onChange={(e) => handleInputChange(setUsernameOrId, e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
@@ -371,16 +366,20 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Password Input */}
+          {/* Password Input with Visibility Toggle */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider"
+              >
                 Password
               </label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 <span>{showPassword ? 'Hide' : 'Show'}</span>
@@ -389,65 +388,69 @@ export const LoginPage: React.FC = () => {
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
+                id="password"
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => handleInputChange(setPassword, e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
               />
             </div>
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="text-[11px] text-slate-400 hover:text-blue-400 transition-colors font-medium cursor-pointer"
-              >
-                Forgot password? Recover account →
-              </button>
-            </div>
           </div>
 
-          {/* Prominent Sign In Button */}
+          {/* Options Row: Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between pt-1 text-[11px]">
+            <label className="flex items-center gap-2 text-slate-400 hover:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-3.5 h-3.5 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span>Remember me</span>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-slate-400 hover:text-blue-400 transition-colors font-medium cursor-pointer"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          {/* Universal Sign In Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
           >
             {loading ? (
-              <span>Authenticating Institutional Session...</span>
+              <span>Authenticating Session...</span>
             ) : (
               <>
-                <span>Sign In to Institutional Campus</span>
+                <span>Sign In</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Footer Navigation */}
-        <div className="pt-4 border-t border-slate-800/80 flex flex-col items-center justify-between gap-2.5 text-xs">
-          <Link
-            to="/demo"
-            className="text-[11px] text-blue-400 hover:text-blue-300 font-bold transition-colors"
-          >
-            Interactive In-Browser Sandbox Demo with Instant Role Switcher →
-          </Link>
-
-          <Link
-            to="/platform/login"
-            className="text-[11px] text-slate-500 hover:text-purple-400 transition-colors flex items-center gap-1.5 pt-1 font-medium"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-            <span>EducationOS SaaS Platform Owner? Sign in to Platform Control Plane →</span>
-          </Link>
+        {/* Security & Multi-Tenant Assurance */}
+        <div className="pt-3 border-t border-slate-800/80 text-center">
+          <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1 font-medium">
+            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+            Automatic multi-tenant routing & kernel-isolated access
+          </p>
         </div>
 
       </div>
 
       {/* Footer Security Badges */}
-      <p className="text-[11px] text-slate-500 mt-6 text-center font-medium">
-        Akshara Global Educational Trust • Tenant-Isolated Database Security
+      <p className="text-[11px] text-slate-600 mt-6 text-center font-medium">
+        EducationOS • Multi-Tenant SaaS Platform Security Architecture
       </p>
 
       {/* Forgot Password Modal */}
@@ -456,6 +459,15 @@ export const LoginPage: React.FC = () => {
         onClose={() => setShowForgotPassword(false)}
         portalType="INSTITUTION"
       />
+
+      {/* Mandatory First-Login Password Reset Modal */}
+      {pendingAuthSession && (
+        <FirstLoginPasswordModal
+          isOpen={showFirstLoginModal}
+          userEmail={pendingAuthSession.user.email}
+          onSuccess={handleFirstLoginSuccess}
+        />
+      )}
     </div>
   );
 };

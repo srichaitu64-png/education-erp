@@ -7,9 +7,10 @@ import { useDemoStore } from '../../../store/demoStore';
 
 interface MarksEntryRegisterViewProps {
   onOpenStudent360?: (studentOrId: any) => void;
+  onOpenImportModal?: (module: 'MARKS', type: string) => void;
 }
 
-export const MarksEntryRegisterView: React.FC<MarksEntryRegisterViewProps> = ({ onOpenStudent360 }) => {
+export const MarksEntryRegisterView: React.FC<MarksEntryRegisterViewProps> = ({ onOpenStudent360, onOpenImportModal }) => {
   const { marks, students, updateComponentMarks, currentRole } = useDemoStore();
 
   const [selectedSubject, setSelectedSubject] = useState('Physics');
@@ -58,7 +59,11 @@ export const MarksEntryRegisterView: React.FC<MarksEntryRegisterViewProps> = ({ 
   };
 
   const handleImportExcel = () => {
-    alert(`Imported pre-validated Excel file for Section ${selectedSection} ${selectedSubject}. All entries loaded into draft register.`);
+    if (onOpenImportModal) {
+      onOpenImportModal('MARKS', 'THEORY_PRACTICAL_MARKS');
+    } else {
+      alert(`Imported pre-validated Excel file for Section ${selectedSection} ${selectedSubject}. All entries loaded into draft register.`);
+    }
   };
 
   return (

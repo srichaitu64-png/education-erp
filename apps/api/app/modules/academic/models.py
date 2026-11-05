@@ -198,3 +198,89 @@ class ConsolidatedFeeReportSnapshot(TenantBaseModel):
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     review_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+
+class Student(TenantBaseModel):
+    """
+    Authoritative Canonical Student Master for EducationOS.
+    Consolidated SIS record connecting personal identity, guardian contacts,
+    address, national academic identifier (PEN/Aadhaar masked), section enrolment,
+    attendance metrics, and live financial ledger.
+    """
+    __tablename__ = "students"
+
+    admission_number: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    pen_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    registration_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    
+    first_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    middle_name: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    last_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    
+    date_of_birth: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    gender: Mapped[Optional[str]] = mapped_column(String(16), nullable=True) # MALE, FEMALE, OTHER
+    blood_group: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
+    
+    father_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    mother_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    guardian_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    father_mobile: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    mother_mobile: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    guardian_phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    parent_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    emergency_contact: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    
+    door_street: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    city_town: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    district_state: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    pincode: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    
+    academic_year: Mapped[str] = mapped_column(String(32), nullable=False, default="2026-2027", index=True)
+    institution_level: Mapped[str] = mapped_column(String(64), nullable=False, default="School") # School, PU College, Degree College
+    class_name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    section_or_stream: Mapped[str] = mapped_column(String(64), nullable=False, default="A")
+    roll_number: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    admission_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE", index=True) # ACTIVE, WITHDRAWN, TRANSFERRED, ALUMNI
+    
+    masked_aadhaar: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    fee_balance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    attendance_pct: Mapped[float] = mapped_column(Float, nullable=False, default=100.0)
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "admission_number", name="uq_tenant_student_admission_number"),
+        Index("idx_student_tenant_class", "tenant_id", "class_name"),
+        Index("idx_student_tenant_status", "tenant_id", "status"),
+    )
+
+
+class AdmissionApplication(TenantBaseModel):
+    """
+    Prospective student admission enquiry and application workflow.
+    Tracks review lifecycle from PENDING -> VERIFIED -> APPROVED -> ENROLLED.
+    """
+    __tablename__ = "admission_applications"
+
+    application_number: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    applicant_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    level: Mapped[str] = mapped_column(String(64), nullable=False) # School, PU College, Degree College
+    target_class: Mapped[str] = mapped_column(String(64), nullable=False)
+    
+    parent_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_phone: Mapped[str] = mapped_column(String(32), nullable=False)
+    parent_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    
+    date_of_birth: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    gender: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    submission_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING", index=True) # PENDING, VERIFIED, APPROVED, REJECTED
+    reviewed_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    enrolled_student_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "application_number", name="uq_tenant_admission_app_no"),
+        Index("idx_admission_tenant_status", "tenant_id", "status"),
+    )
+

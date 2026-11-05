@@ -20,7 +20,7 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
     # Create Institution Principal / Admin (non-superadmin)
-    stmt_t = select(Tenant).where(Tenant.code == "akshara")
+    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
@@ -104,7 +104,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     """
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
-    stmt_t = select(Tenant).where(Tenant.code == "akshara")
+    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
@@ -191,7 +191,7 @@ async def test_external_exam_provider_credentials_not_leaked(client, db_session:
     """
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
-    stmt_t = select(Tenant).where(Tenant.code == "akshara")
+    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
@@ -236,7 +236,7 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
     """
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
-    stmt_t = select(Tenant).where(Tenant.code == "akshara")
+    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 

@@ -54,3 +54,4 @@ dist/
 *.swo
 
 .playwright-mcp/
+infrastructure/backup/

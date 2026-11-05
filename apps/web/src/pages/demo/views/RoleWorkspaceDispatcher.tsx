@@ -1,11 +1,13 @@
 import React from 'react';
 import {
-  Shield, Users, Award, DollarSign, Bus, BookOpen, Clock, Calendar,
+  Shield, Users, Award, DollarSign, Bus, BookOpen, Clock, Calendar, CalendarCheck,
   CheckCircle2, AlertTriangle, ArrowRight, FileText, Lock, PlusCircle,
   HelpCircle, UserCheck, Activity, BarChart3, TrendingUp, Layers,
-  Phone, AlertCircle, Building2, Flame, Wrench, RefreshCw
+  Phone, AlertCircle, Building2, Flame, Wrench, RefreshCw, Sparkles, GraduationCap,
+  CreditCard, ShieldCheck, FileSpreadsheet
 } from 'lucide-react';
 import { useDemoStore } from '../../../store/demoStore';
+import { VibrantStatCard } from '../../../components/ui/VibrantStatCard';
 
 interface RoleWorkspaceDispatcherProps {
   currentRole: string;
@@ -18,9 +20,9 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
 }) => {
   const { academicSections, staffDuties, exams, feeSnapshots } = useDemoStore();
 
-  // Unified Design Token Classes
-  const cardCls = "bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4";
-  const headerCls = "bg-[#172B4D] rounded-2xl p-6 text-white border border-slate-700 shadow-md";
+  // Unified Vibrant Enterprise Token Classes
+  const cardCls = "bg-slate-950/80 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4 text-slate-100 backdrop-blur-sm";
+  const headerCls = "bg-gradient-to-r from-[#172B4D] via-slate-900 to-[#172B4D] rounded-2xl p-6 text-white border border-slate-700/80 shadow-2xl";
 
   switch (currentRole) {
     // =========================================================================
@@ -54,41 +56,60 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Total Enrolled</span>
-                <p className="text-lg font-black text-white">3,420</p>
-                <span className="text-[10px] text-emerald-400">98.2% capacity</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Fee Realization</span>
-                <p className="text-lg font-black text-emerald-400">88.4%</p>
-                <span className="text-[10px] text-slate-400">₹4.82 Cr collected</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Academic Pass %</span>
-                <p className="text-lg font-black text-blue-400">96.8%</p>
-                <span className="text-[10px] text-slate-400">State rank #4</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Faculty Strength</span>
-                <p className="text-lg font-black text-white">164</p>
-                <span className="text-[10px] text-emerald-400">94.5% present today</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Active Bus Fleet</span>
-                <p className="text-lg font-black text-white">18 / 18</p>
-                <span className="text-[10px] text-emerald-400">Live GPS tracking</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Hostel Occupancy</span>
-                <p className="text-lg font-black text-white">284 / 300</p>
-                <span className="text-[10px] text-slate-400">94.6% beds full</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Pending Approvals</span>
-                <p className="text-lg font-black text-amber-400">3</p>
-                <span className="text-[10px] text-amber-400">Requires signoff</span>
-              </div>
+              <VibrantStatCard
+                title="Total Enrolled"
+                numericValue={3420}
+                icon={Users}
+                theme="blue"
+                trend="98.2% Cap."
+              />
+              <VibrantStatCard
+                title="Fee Realization"
+                numericValue={88.4}
+                suffix="%"
+                decimalPlaces={1}
+                icon={DollarSign}
+                theme="emerald"
+                trend="₹4.82 Cr Rec."
+              />
+              <VibrantStatCard
+                title="Academic Pass"
+                numericValue={96.8}
+                suffix="%"
+                decimalPlaces={1}
+                icon={Award}
+                theme="purple"
+                trend="State Rank #4"
+              />
+              <VibrantStatCard
+                title="Faculty Strength"
+                numericValue={164}
+                icon={UserCheck}
+                theme="teal"
+                trend="94.5% Pres."
+              />
+              <VibrantStatCard
+                title="Active Bus Fleet"
+                value="18 / 18"
+                icon={Bus}
+                theme="indigo"
+                trend="Live GPS"
+              />
+              <VibrantStatCard
+                title="Hostel Occupancy"
+                value="284 / 300"
+                icon={Building2}
+                theme="rose"
+                trend="94.6% Full"
+              />
+              <VibrantStatCard
+                title="Pending Approvals"
+                numericValue={3}
+                icon={Shield}
+                theme="amber"
+                trend="Sign-off Req."
+                onClick={() => onNavigateTab('fee-review')}
+              />
             </div>
           </div>
 
@@ -217,26 +238,40 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Configured Sections</span>
-                <p className="text-xl font-black text-white">{academicSections.length}</p>
-                <span className="text-[10px] text-blue-400">Class 6 (A-D), I PUC (A-F)</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Staff Duties Assigned</span>
-                <p className="text-xl font-black text-emerald-400">{staffDuties.length}</p>
-                <span className="text-[10px] text-slate-400">Class teachers & operators</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Student Attendance</span>
-                <p className="text-xl font-black text-emerald-400">96.4%</p>
-                <span className="text-[10px] text-emerald-400">Today's morning roll</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Pending Approvals</span>
-                <p className="text-xl font-black text-amber-400">2</p>
-                <span className="text-[10px] text-amber-400">Exam results verification</span>
-              </div>
+              <VibrantStatCard
+                title="Configured Sections"
+                numericValue={academicSections.length}
+                icon={BookOpen}
+                theme="blue"
+                trend="Class 6 & I PUC"
+                onClick={() => onNavigateTab('academic-structure')}
+              />
+              <VibrantStatCard
+                title="Staff Duties Assigned"
+                numericValue={staffDuties.length}
+                icon={UserCheck}
+                theme="teal"
+                trend="Active Roster"
+                onClick={() => onNavigateTab('staff-duties')}
+              />
+              <VibrantStatCard
+                title="Student Attendance"
+                numericValue={96.4}
+                suffix="%"
+                decimalPlaces={1}
+                icon={CalendarCheck}
+                theme="emerald"
+                trend="Morning Roll"
+                onClick={() => onNavigateTab('attendance')}
+              />
+              <VibrantStatCard
+                title="Pending Approvals"
+                numericValue={2}
+                icon={Award}
+                theme="amber"
+                trend="Results Verify"
+                onClick={() => onNavigateTab('examinations')}
+              />
             </div>
           </div>
 
@@ -325,26 +360,37 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Assigned Classes</span>
-                <p className="text-xl font-black text-white">2 Sections</p>
-                <span className="text-[10px] text-blue-400">I PUC PCMB (A & B)</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Total Students</span>
-                <p className="text-xl font-black text-white">118</p>
-                <span className="text-[10px] text-slate-400">Under instruction</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Today's Lectures</span>
-                <p className="text-xl font-black text-emerald-400">3 Sessions</p>
-                <span className="text-[10px] text-emerald-400">Physics Lab scheduled</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Pending Marks Entry</span>
-                <p className="text-xl font-black text-amber-400">1 Assessment</p>
-                <span className="text-[10px] text-amber-400">Half-Yearly Physics</span>
-              </div>
+              <VibrantStatCard
+                title="Assigned Classes"
+                value="2 Sections"
+                icon={BookOpen}
+                theme="blue"
+                trend="I PUC (A & B)"
+              />
+              <VibrantStatCard
+                title="Total Students"
+                numericValue={118}
+                icon={Users}
+                theme="teal"
+                trend="Under Instruction"
+                onClick={() => onNavigateTab('students')}
+              />
+              <VibrantStatCard
+                title="Today's Lectures"
+                value="3 Sessions"
+                icon={Clock}
+                theme="emerald"
+                trend="Physics Lab Sched."
+                onClick={() => onNavigateTab('timetable')}
+              />
+              <VibrantStatCard
+                title="Pending Marks Entry"
+                value="1 Assessment"
+                icon={Award}
+                theme="amber"
+                trend="Half-Yearly Physics"
+                onClick={() => onNavigateTab('marks-register')}
+              />
             </div>
           </div>
 
@@ -436,26 +482,37 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Assigned Queues</span>
-                <p className="text-xl font-black text-white">4 Registers</p>
-                <span className="text-[10px] text-blue-400">Class 6 (A, B, C, D)</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Saved Drafts</span>
-                <p className="text-xl font-black text-emerald-400">128 Records</p>
-                <span className="text-[10px] text-emerald-400">Auto-saved to cloud</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Pending Entries</span>
-                <p className="text-xl font-black text-amber-400">32 Missing</p>
-                <span className="text-[10px] text-amber-400">Absentees to verify</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Approval Rights</span>
-                <p className="text-xl font-black text-rose-400">LOCKED</p>
-                <span className="text-[10px] text-slate-400">Requires Teacher/Principal</span>
-              </div>
+              <VibrantStatCard
+                title="Assigned Queues"
+                value="4 Registers"
+                icon={FileSpreadsheet}
+                theme="blue"
+                trend="Class 6 (A-D)"
+                onClick={() => onNavigateTab('marks-register')}
+              />
+              <VibrantStatCard
+                title="Saved Drafts"
+                numericValue={128}
+                icon={CheckCircle2}
+                theme="emerald"
+                trend="Auto-saved to Cloud"
+                onClick={() => onNavigateTab('marks-register')}
+              />
+              <VibrantStatCard
+                title="Pending Entries"
+                numericValue={32}
+                icon={AlertTriangle}
+                theme="amber"
+                trend="Absentees to Verify"
+                onClick={() => onNavigateTab('marks-register')}
+              />
+              <VibrantStatCard
+                title="Approval Rights"
+                value="LOCKED"
+                icon={Lock}
+                theme="rose"
+                trend="Principal Protected"
+              />
             </div>
           </div>
 
@@ -550,26 +607,40 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Today's Counter Cash</span>
-                <p className="text-xl font-black text-emerald-400">₹1,84,500</p>
-                <span className="text-[10px] text-emerald-400">24 Receipts issued</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Online Payments</span>
-                <p className="text-xl font-black text-blue-400">₹3,42,000</p>
-                <span className="text-[10px] text-slate-400">Razorpay / UPI settled</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Aging Dues (&gt;30 Days)</span>
-                <p className="text-xl font-black text-rose-400">₹14.8L</p>
-                <span className="text-[10px] text-rose-400">38 Student notices sent</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Chairman Snapshots</span>
-                <p className="text-xl font-black text-white">{feeSnapshots.length}</p>
-                <span className="text-[10px] text-emerald-400">Audited & frozen</span>
-              </div>
+              <VibrantStatCard
+                title="Counter Collections"
+                numericValue={184500}
+                prefix="₹"
+                icon={DollarSign}
+                theme="emerald"
+                trend="24 Receipts Today"
+                onClick={() => onNavigateTab('fees')}
+              />
+              <VibrantStatCard
+                title="Online Gateways"
+                numericValue={342000}
+                prefix="₹"
+                icon={CreditCard}
+                theme="blue"
+                trend="Razorpay/UPI Settled"
+                onClick={() => onNavigateTab('fees')}
+              />
+              <VibrantStatCard
+                title="Aging Dues (>30 Days)"
+                value="₹14.8 Lakh"
+                icon={AlertCircle}
+                theme="rose"
+                trend="38 Notices Sent"
+                onClick={() => onNavigateTab('fee-review')}
+              />
+              <VibrantStatCard
+                title="Audited Snapshots"
+                numericValue={feeSnapshots.length}
+                icon={ShieldCheck}
+                theme="purple"
+                trend="Frozen Ledgers"
+                onClick={() => onNavigateTab('fee-review')}
+              />
             </div>
           </div>
 
@@ -654,26 +725,41 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Attendance Rate</span>
-                <p className="text-xl font-black text-emerald-400">94.5%</p>
-                <span className="text-[10px] text-emerald-400">Present in 142/150 days</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Term 1 Grade</span>
-                <p className="text-xl font-black text-blue-400">A+ (89.0%)</p>
-                <span className="text-[10px] text-blue-400">Rank #2 in Section A</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Pending Fee Dues</span>
-                <p className="text-xl font-black text-amber-400">₹4,500</p>
-                <span className="text-[10px] text-amber-400">Term 2 Labs due Nov 15</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Bus Live Tracking</span>
-                <p className="text-xl font-black text-emerald-400">Route #4</p>
-                <span className="text-[10px] text-slate-400">Driver: Manjunath (On Time)</span>
-              </div>
+              <VibrantStatCard
+                title="Attendance Rate"
+                numericValue={94.5}
+                suffix="%"
+                decimalPlaces={1}
+                icon={CalendarCheck}
+                theme="emerald"
+                trend="142/150 Days Pres."
+                onClick={() => onNavigateTab('attendance')}
+              />
+              <VibrantStatCard
+                title="Term 1 Performance"
+                value="A+ (89.0%)"
+                icon={Award}
+                theme="blue"
+                trend="Rank #2 Section A"
+                onClick={() => onNavigateTab('notice-board')}
+              />
+              <VibrantStatCard
+                title="Pending Fee Dues"
+                numericValue={4500}
+                prefix="₹"
+                icon={DollarSign}
+                theme="amber"
+                trend="Due in 11 Days"
+                onClick={() => onNavigateTab('fees')}
+              />
+              <VibrantStatCard
+                title="Bus Live GPS"
+                value="Route #4"
+                icon={Bus}
+                theme="teal"
+                trend="Driver On Time"
+                onClick={() => onNavigateTab('transport')}
+              />
             </div>
           </div>
 
@@ -773,26 +859,39 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">My Attendance</span>
-                <p className="text-xl font-black text-emerald-400">94.5%</p>
-                <span className="text-[10px] text-emerald-400">Eligible for Exams (&gt;75%)</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Latest Term Grade</span>
-                <p className="text-xl font-black text-blue-400">A+ (89%)</p>
-                <span className="text-[10px] text-blue-400">Rank #2 in Section</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Next Examination</span>
-                <p className="text-xl font-black text-white">Nov 12</p>
-                <span className="text-[10px] text-slate-400">Mathematics Paper I</span>
-              </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Library Books</span>
-                <p className="text-xl font-black text-white">2 Issued</p>
-                <span className="text-[10px] text-slate-400">Return due Nov 18</span>
-              </div>
+              <VibrantStatCard
+                title="My Attendance"
+                numericValue={94.5}
+                suffix="%"
+                decimalPlaces={1}
+                icon={CalendarCheck}
+                theme="emerald"
+                trend="Eligible for Exams"
+                onClick={() => onNavigateTab('attendance')}
+              />
+              <VibrantStatCard
+                title="Latest Term Grade"
+                value="A+ (89%)"
+                icon={Award}
+                theme="blue"
+                trend="Rank #2 Section"
+                onClick={() => onNavigateTab('notice-board')}
+              />
+              <VibrantStatCard
+                title="Next Examination"
+                value="Nov 12"
+                icon={Clock}
+                theme="purple"
+                trend="Maths Paper I"
+                onClick={() => onNavigateTab('examinations')}
+              />
+              <VibrantStatCard
+                title="Library Books"
+                value="2 Issued"
+                icon={BookOpen}
+                theme="teal"
+                trend="Return Nov 18"
+              />
             </div>
           </div>
 

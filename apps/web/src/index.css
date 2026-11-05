@@ -22,3 +22,95 @@
   border-color: var(--brand-primary);
 }
 
+/* ==========================================================================
+   Commercial SaaS Print Optimization (@media print)
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+
+  /* Hide navigation, sidebars, command palettes, footers, and floating controls */
+  header,
+  nav,
+  aside,
+  footer,
+  button,
+  .no-print,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* Reset body styling for crisp paper output */
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Fee Receipt A4 Layout */
+  .receipt-print-a4 {
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 20mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    page-break-after: always;
+  }
+
+  /* Thermal POS 80mm Roll */
+  .receipt-print-80mm {
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    font-family: monospace !important;
+    font-size: 9pt !important;
+    line-height: 1.2 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Thermal POS 58mm Roll */
+  .receipt-print-58mm {
+    width: 48mm !important;
+    max-width: 48mm !important;
+    margin: 0 auto !important;
+    padding: 1mm !important;
+    font-family: monospace !important;
+    font-size: 8pt !important;
+    line-height: 1.1 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Examination Hall Ticket */
+  .hall-ticket-print {
+    width: 100% !important;
+    max-width: 210mm !important;
+    border: 2px solid #000000 !important;
+    padding: 15mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-after: always;
+  }
+
+  /* Marksheet & Progress Card */
+  .marksheet-print {
+    width: 100% !important;
+    max-width: 210mm !important;
+    border: 2px solid #0f172a !important;
+    padding: 15mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-after: always;
+  }
+}
+
+

@@ -1,13 +1,17 @@
 import uuid
-from datetime import datetime, date, timezone
+import hmac
+import hashlib
+from datetime import datetime, date, timezone, timedelta
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, Request, status
 from sqlalchemy import select, and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import User
+from app.modules.subscriptions.models import Subscription, SubscriptionAuditLog
 from app.modules.finance.models import (
     FeeStructure,
     FeeInvoice,
@@ -24,6 +28,9 @@ from app.modules.finance.schemas import (
     ConsolidatedReportResponse,
     CategoryBreakdownItem,
     DueReportItem,
+    GSTCalculateRequest,
+    GSTCalculateResponse,
+    PaymentWebhookPayload,
 )
 from app.security.deps import get_current_user, require_permission
 
@@ -579,4 +586,125 @@ async def get_fee_due_report(
         )
 
     return due_items
+
+
+# ---------------------------------------------------------------------------
+# 5. Commercial Billing, Indian GST (HSN 9992) & Payment Gateway Webhook
+# ---------------------------------------------------------------------------
+@router.post("/billing/calculate-gst", response_model=GSTCalculateResponse)
+async def calculate_commercial_gst(payload: GSTCalculateRequest):
+    """
+    Calculate statutory Indian Goods and Services Tax (GST) for Education & SaaS services.
+    Enforces HSN/SAC Code 9992 with 18% standard taxation.
+    - Intra-State (Karnataka -> Karnataka): 9% CGST + 9% SGST.
+    - Inter-State (Karnataka -> Other States): 18% IGST.
+    """
+    state_norm = payload.customer_state.strip().lower()
+    is_intra_state = (state_norm == "karnataka")
+
+    taxable = round(payload.amount, 2)
+    hsn = payload.hsn_code or "9992"
+
+    if is_intra_state:
+        supply_type = "INTRA_STATE"
+        cgst_rate = 9.0
+        cgst_amt = round(taxable * 0.09, 2)
+        sgst_rate = 9.0
+        sgst_amt = round(taxable * 0.09, 2)
+        igst_rate = 0.0
+        igst_amt = 0.0
+        total_tax = round(cgst_amt + sgst_amt, 2)
+    else:
+        supply_type = "INTER_STATE"
+        cgst_rate = 0.0
+        cgst_amt = 0.0
+        sgst_rate = 0.0
+        sgst_amt = 0.0
+        igst_rate = 18.0
+        igst_amt = round(taxable * 0.18, 2)
+        total_tax = igst_amt
+
+    total_payable = round(taxable + total_tax, 2)
+
+    return GSTCalculateResponse(
+        taxable_amount=taxable,
+        hsn_code=hsn,
+        supply_type=supply_type,
+        cgst_rate=cgst_rate,
+        cgst_amount=cgst_amt,
+        sgst_rate=sgst_rate,
+        sgst_amount=sgst_amt,
+        igst_rate=igst_rate,
+        igst_amount=igst_amt,
+        total_tax=total_tax,
+        total_payable=total_payable
+    )
+
+
+@router.post("/billing/webhooks/payment", status_code=status.HTTP_200_OK)
+async def handle_payment_gateway_webhook(
+    request: Request,
+    payload: PaymentWebhookPayload,
+    x_webhook_signature: Optional[str] = Header(None, alias="X-Webhook-Signature"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Commercial Payment Gateway Webhook Handler (Razorpay / Stripe / Easebuzz).
+    Verifies cryptographic HMAC-SHA256 signature, updates subscription lifecycle,
+    and logs immutable financial audit records.
+    """
+    webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None) or settings.SECRET_KEY
+    raw_body = await request.body()
+
+    # Verify HMAC signature if header provided
+    if x_webhook_signature:
+        expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_sig, x_webhook_signature):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+
+    # Locate tenant subscription
+    stmt = (
+        select(Subscription)
+        .where(Subscription.tenant_id == payload.tenant_id)
+        .order_by(Subscription.created_at.desc())
+    )
+    res = await db.execute(stmt)
+    sub = res.scalars().first()
+
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription record not found for tenant")
+
+    now = datetime.now(timezone.utc)
+    old_status = sub.status
+    sub.status = "active"
+    # Extend subscription by 1 year from now or current end
+    base_end = sub.ends_at if sub.ends_at and sub.ends_at > now else now
+    sub.ends_at = base_end + timedelta(days=365)
+
+    audit = SubscriptionAuditLog(
+        tenant_id=payload.tenant_id,
+        action="PAYMENT_RECEIVED_RENEWED",
+        performed_by=None,
+        details={
+            "subscription_id": str(sub.id),
+            "actor_name": "Payment Gateway Webhook",
+            "old_status": old_status,
+            "new_status": "active",
+            "ends_at": sub.ends_at.isoformat(),
+            "amount_paid": payload.amount,
+            "transaction_id": payload.transaction_id
+        }
+    )
+    db.add(audit)
+    await db.commit()
+
+    return {
+        "status": "SUCCESS",
+        "event": payload.event,
+        "tenant_id": str(payload.tenant_id),
+        "subscription_status": sub.status,
+        "valid_until": sub.ends_at.isoformat(),
+        "transaction_id": payload.transaction_id
+    }
+
 

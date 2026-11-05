@@ -40,7 +40,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireSuperAdmin?: 
   const { isAuthenticated, user } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to={requireSuperAdmin ? '/platform/login' : '/login'} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (requireSuperAdmin && !user?.is_superadmin) {
@@ -71,9 +71,9 @@ export const App: React.FC = () => {
           {/* Interactive In-Browser Demo Sandbox */}
           <Route path="/demo" element={<InteractiveDemoPage />} />
 
-          {/* Authentication */}
+          {/* Authentication — Single Universal Login */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/platform/login" element={<PlatformLoginPage />} />
+          <Route path="/platform/login" element={<Navigate to="/login" replace />} />
 
           {/* Dedicated /platform/* Private SaaS Platform Owner Route Group */}
           <Route

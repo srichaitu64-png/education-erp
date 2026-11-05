@@ -16,8 +16,12 @@ from app.api.v1.institution import router as institution_router
 from app.api.v1.examinations import router as examinations_router
 from app.api.v1.finance import router as finance_router
 from app.api.v1.academic import router as academic_router
+from app.api.v1.attendance import router as attendance_router
+from app.api.v1.migration import router as migration_router
+from app.api.v1.leads import router as leads_router
 
 # Import all models to ensure they register on Base.metadata
+from app.modules.leads.models import WebsiteLead
 from app.modules.tenants.models import Tenant, Campus, TenantDomain
 from app.modules.identity.models import (
     User,
@@ -57,8 +61,16 @@ from app.modules.academic.models import (
     StudentSectionEnrolment,
     StaffDutyAssignment,
     HallTicket,
-    ConsolidatedFeeReportSnapshot
+    ConsolidatedFeeReportSnapshot,
+    Student,
+    AdmissionApplication
 )
+from app.modules.attendance.models import (
+    InstitutionAttendanceConfig,
+    DailyAttendanceRecord,
+    PeriodAttendanceRecord
+)
+from app.modules.migration.models import MigrationBatchLog
 
 
 @asynccontextmanager
@@ -107,9 +119,25 @@ app.include_router(institution_router, prefix=settings.API_V1_STR)
 app.include_router(examinations_router, prefix=settings.API_V1_STR)
 app.include_router(finance_router, prefix=settings.API_V1_STR)
 app.include_router(academic_router, prefix=settings.API_V1_STR)
+app.include_router(attendance_router, prefix=settings.API_V1_STR)
+app.include_router(migration_router, prefix=settings.API_V1_STR)
+app.include_router(leads_router, prefix=settings.API_V1_STR)
+
+
+@app.middleware("http")
+async def add_security_headers_middleware(request: Request, call_next):
+    """Enforce production security headers on all HTTP responses."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 @app.get("/health", tags=["System Health"])
+@app.get("/api/v1/health", tags=["System Health"])
 async def health_check():
     """System health and heartbeat check."""
     return {
