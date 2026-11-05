@@ -12,3 +12,4 @@ This document specifies the exact mapping between legacy eSkooly PHP pages and t
 | `/bb/allemployees.php` | Staff & Teacher Directory | `apps/web/src/pages/demo/InteractiveDemoPage.tsx` (Tab `staff`) | Faculty directory, designation, academic unit assignments, invigilation and subject duty rosters. |
 | `/bb/allexams.php` | Exam Management | `apps/web/src/pages/demo/InteractiveDemoPage.tsx` (Tab `examinations`) | 4-stage examination lifecycle (Draft, Scheduled, Conducted, Published), QR hall tickets, and theory/practical marks registers. |
 | `/bb/setting.php` | Institute Profile & Setup | `InstitutionDashboard.tsx` & `PlatformSuperAdminView.tsx` | Institution profile, multi-campus governance, custom fee heads, RBAC permissions, and white-label branding. |
+

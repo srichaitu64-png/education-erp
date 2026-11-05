@@ -45,3 +45,4 @@
 ### 1.5 Universal Authentication & Quick Credentials
 - Built tolerant login fallback matching known demo and administrative accounts.
 - Added 1-click **"⚡ Quick Demo Credentials"** pill bar (`[🌐 Super Admin]`, `[🏫 Demo School]`, `[🎓 Trial Pilot]`) on the login screen to prevent typing errors and browser autofill mismatches.
+

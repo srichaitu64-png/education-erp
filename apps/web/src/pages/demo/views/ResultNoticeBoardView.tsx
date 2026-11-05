@@ -240,24 +240,24 @@ export const ResultNoticeBoardView: React.FC<ResultNoticeBoardViewProps> = ({ cu
         {!isStudentOrParent && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">Pass Rate</span>
-              <p className="text-xl font-black text-emerald-400">{classAnalytics.passRate.toFixed(1)}%</p>
-              <span className="text-[10px] text-slate-400">Class threshold 40%</span>
+              <span className="text-[10px] text-slate-200 font-bold uppercase">Pass Rate</span>
+              <p className="text-xl font-black text-emerald-300">{classAnalytics.passRate.toFixed(1)}%</p>
+              <span className="text-[10px] text-slate-300 font-medium">Class threshold 40%</span>
             </div>
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">Class Average</span>
+              <span className="text-[10px] text-slate-200 font-bold uppercase">Class Average</span>
               <p className="text-xl font-black text-white">{classAnalytics.avgMarks.toFixed(1)}%</p>
-              <span className="text-[10px] text-slate-400">Weighted cohort avg</span>
+              <span className="text-[10px] text-slate-300 font-medium">Weighted cohort avg</span>
             </div>
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">Highest Score</span>
-              <p className="text-xl font-black text-blue-400">{classAnalytics.highest.toFixed(1)}%</p>
-              <span className="text-[10px] text-slate-400">Cohort topper</span>
+              <span className="text-[10px] text-slate-200 font-bold uppercase">Highest Score</span>
+              <p className="text-xl font-black text-blue-300">{classAnalytics.highest.toFixed(1)}%</p>
+              <span className="text-[10px] text-slate-300 font-medium">Cohort topper</span>
             </div>
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">Evaluated Students</span>
-              <p className="text-xl font-black text-purple-300">{filteredResults.length}</p>
-              <span className="text-[10px] text-slate-400">Verified by Controller</span>
+              <span className="text-[10px] text-slate-200 font-bold uppercase">Evaluated Students</span>
+              <p className="text-xl font-black text-purple-200">{filteredResults.length}</p>
+              <span className="text-[10px] text-slate-300 font-medium">Verified by Controller</span>
             </div>
           </div>
         )}
@@ -384,7 +384,7 @@ export const ResultNoticeBoardView: React.FC<ResultNoticeBoardViewProps> = ({ cu
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
                 Official Institutional Academic Transcript
               </span>
-              <h2 className="text-xl font-black text-slate-900 mt-0.5">AKSHARA GLOBAL CAMPUS</h2>
+              <h2 className="text-xl font-black text-slate-900 mt-0.5">OUR SCHOOL DEMO CAMPUS</h2>
               <p className="text-xs text-slate-500">Affiliated to State Board & Pre-University Education Board • Academic Year 2026-2027</p>
             </div>
 

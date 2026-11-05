@@ -46,3 +46,4 @@ eSkooly organizes school management into 7 primary domains accessible via the le
    - Faculty roster, designations, department assignments.
 7. **Examinations (`allexams.php`, `marksentry.php`, `resultcard.php`)**:
    - Term examinations, grading structures, report card generator.
+

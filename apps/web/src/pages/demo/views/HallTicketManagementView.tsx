@@ -256,7 +256,7 @@ export const HallTicketManagementView: React.FC<HallTicketManagementViewProps> =
                   A
                 </div>
                 <div>
-                  <h2 className="text-lg font-black tracking-wide uppercase">Akshara Global Composite Group</h2>
+                  <h2 className="text-lg font-black tracking-wide uppercase">OUR SCHOOL Composite Group</h2>
                   <p className="text-xs text-slate-600 font-semibold">Affiliated to Karnataka Pre-University Examination Board & CBSE</p>
                   <p className="text-[11px] text-slate-500">School & College Campus • Institutional Exam Hall Ticket</p>
                 </div>

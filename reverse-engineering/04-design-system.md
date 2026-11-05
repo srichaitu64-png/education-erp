@@ -36,3 +36,4 @@ Through optical analysis of eSkooly (`https://eskooly.com/bb/dashboard.php`), th
    - Header row: `bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]`.
    - Zebra/hover row: `hover:bg-slate-50/80 transition-colors`.
    - Monospace font for numerical identifiers (`ADM-2026-XXXX`, `RCP-OS-2026-XXXX`).
+

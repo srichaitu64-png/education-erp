@@ -297,7 +297,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -306,12 +306,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -539,7 +539,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -548,12 +548,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -776,7 +776,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -785,12 +785,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -1010,7 +1010,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -1019,12 +1019,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -1376,7 +1376,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -1385,12 +1385,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -1611,7 +1611,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -1620,12 +1620,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>
@@ -1654,24 +1654,24 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
               <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Security Tier</span>
+                <span className="text-[10px] text-slate-200 font-bold uppercase">Security Tier</span>
                 <p className="text-lg font-black text-white">{currentRole}</p>
-                <span className="text-[10px] text-blue-400">RBAC Enforced</span>
+                <span className="text-[10px] text-blue-300 font-medium">RBAC Enforced</span>
               </div>
               <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Assigned Scope</span>
-                <p className="text-lg font-black text-emerald-400">Active</p>
-                <span className="text-[10px] text-slate-400">Akshara Campus</span>
+                <span className="text-[10px] text-slate-200 font-bold uppercase">Assigned Scope</span>
+                <p className="text-lg font-black text-emerald-300">Active</p>
+                <span className="text-[10px] text-slate-300 font-medium">OUR SCHOOL Campus</span>
               </div>
               <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">Duty Status</span>
+                <span className="text-[10px] text-slate-200 font-bold uppercase">Duty Status</span>
                 <p className="text-lg font-black text-white">On Duty</p>
-                <span className="text-[10px] text-emerald-400">Authenticated</span>
+                <span className="text-[10px] text-emerald-300 font-medium">Authenticated</span>
               </div>
               <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-bold uppercase">System Health</span>
-                <p className="text-lg font-black text-emerald-400">100%</p>
-                <span className="text-[10px] text-slate-400">Zero errors</span>
+                <span className="text-[10px] text-slate-200 font-bold uppercase">System Health</span>
+                <p className="text-lg font-black text-emerald-300">100%</p>
+                <span className="text-[10px] text-slate-300 font-medium">Zero errors</span>
               </div>
             </div>
           </div>
@@ -1819,7 +1819,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               <div className="space-y-3 text-xs pt-1">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Total Issued Receipts</span>
                     <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
@@ -1828,12 +1828,12 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-600 block">Collections Realized</span>
                     <span className="font-bold text-emerald-700 text-sm font-mono">
                       ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                  <span className="text-[10px] text-slate-600 font-medium">Cash, UPI, Cheque</span>
                 </div>
               </div>
             </div>

@@ -743,7 +743,7 @@ export const InteractiveDemoPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
                 <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Quick Actions</span>
-                <span className="text-[11px] text-slate-400 hidden md:inline">• Fast Operational Workflows</span>
+                <span className="text-[11px] text-slate-600 hidden md:inline">• Fast Operational Workflows</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -882,22 +882,22 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                       <p className="text-slate-500 font-medium">Class Attendance Today</p>
                       <p className="text-lg font-bold text-emerald-600 mt-1">96.5%</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">1,348 of 1,396 students present</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">1,348 of 1,396 students present</p>
                     </div>
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                       <p className="text-slate-500 font-medium">Term 1 Fee Realisation</p>
                       <p className="text-lg font-bold text-blue-600 mt-1">₹85.4 Lakhs</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
                     </div>
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                       <p className="text-slate-500 font-medium">Ongoing Exam Cycles</p>
                       <p className="text-lg font-bold text-amber-600 mt-1">4 Batches Active</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">NEET Foundation & Term Tests</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">NEET Foundation & Term Tests</p>
                     </div>
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                       <p className="text-slate-500 font-medium">GPS Transport Tracking</p>
                       <p className="text-lg font-bold text-teal-600 mt-1">8 Buses on Route</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Live geo-telemetry broadcasting</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">Live geo-telemetry broadcasting</p>
                     </div>
                   </div>
                 </div>
@@ -1029,7 +1029,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <Key className="w-3 h-3" />
                     Platform Super Admin Only
                   </div>
-                  <h1 className="text-2xl font-black text-white">Central Permission Management Control Centre</h1>
+                  <h1 className="text-2xl font-black text-slate-900">Central Permission Management Control Centre</h1>
                   <p className="text-xs text-slate-300 mt-1">
                     Configure granular action-level privileges, scopes, temporary expiries, and review audit history.
                   </p>
@@ -1053,7 +1053,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     {changeRequests.map((req) => (
                       <div key={req.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                         <div>
-                          <p className="font-bold text-white flex items-center gap-2">
+                          <p className="font-bold text-slate-900 flex items-center gap-2">
                             <span>{req.requestedByName}</span>
                             <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
                               Target Role: {req.targetRole}
@@ -1062,7 +1062,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               Action: {req.action}
                             </span>
                           </p>
-                          <p className="text-slate-400 mt-1">{req.justification}</p>
+                          <p className="text-slate-600 mt-1">{req.justification}</p>
                           <span className="text-[10px] text-slate-500">Submitted: {req.submittedAt}</span>
                         </div>
                         {req.status === 'PENDING' ? (
@@ -1094,11 +1094,11 @@ export const InteractiveDemoPage: React.FC = () => {
               {/* Editable Action-Level Matrix */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <Key className="w-4 h-4 text-purple-400" />
                     Role × Fine-Grained Action Permission Matrix
                   </h3>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-600">
                     Click any checkbox to toggle live permission • Deny-by-default enforced
                   </span>
                 </div>
@@ -1120,13 +1120,13 @@ export const InteractiveDemoPage: React.FC = () => {
                         <th className="p-2.5 font-bold text-center">Collect</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-850">
+                    <tbody className="divide-y divide-slate-200">
                       {(Object.keys(rolePermissions) as UserRoleType[]).map((role) => {
                         const actions = rolePermissions[role];
                         const isSuper = role === 'SUPER_ADMIN';
                         return (
                           <tr key={role} className="hover:bg-slate-50/80">
-                            <td className="p-2.5 font-bold text-slate-200">
+                            <td className="p-2.5 font-bold text-slate-900">
                               <span>{role.replace('_', ' ')}</span>
                               {isSuper && <span className="ml-1.5 text-[9px] bg-purple-900 text-purple-200 px-1.5 py-0.5 rounded">Lockout Protected</span>}
                             </td>
@@ -1154,7 +1154,7 @@ export const InteractiveDemoPage: React.FC = () => {
               {/* Version History & Audited Rollback */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <History className="w-4 h-4 text-blue-400" />
                     Permission Version History & Audit Trail
                   </h3>
@@ -1165,7 +1165,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   {permissionAudits.map((audit) => (
                     <div key={audit.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                       <div>
-                        <div className="flex items-center gap-2 font-bold text-white">
+                        <div className="flex items-center gap-2 font-bold text-slate-900">
                           <span className="bg-purple-950 text-purple-300 px-2 py-0.5 rounded font-mono text-[10px]">
                             v{audit.version}
                           </span>
@@ -1201,7 +1201,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <Layout className="w-3 h-3" />
                     Super Admin Exclusive
                   </div>
-                  <h1 className="text-2xl font-black text-white">Institution Dashboard & Access Designer</h1>
+                  <h1 className="text-2xl font-black text-slate-900">Institution Dashboard & Access Designer</h1>
                   <p className="text-xs text-slate-300 mt-1">
                     Configure the 3 independent controls per role: Menu Visibility (Show/Hide), Module Access (Allowed/Blocked), and Presentation State (Visible / Locked / Hidden).
                   </p>
@@ -1238,14 +1238,14 @@ export const InteractiveDemoPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-slate-600">
                   <span>Simulating safe layout preview • Zero leakage of production credentials</span>
                 </div>
               </div>
 
               {/* Designer Config Table */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
                   Navigation Tab Controls for {designerRolePreview}
                 </h3>
 
@@ -1253,7 +1253,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   {(designerNavConfigs[designerRolePreview] || []).map((nav) => (
                     <div key={nav.id} className="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                       <div>
-                        <p className="font-bold text-white text-sm flex items-center gap-2">
+                        <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
                           <span>{nav.label}</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
                             nav.presentationState === 'VISIBLE_ACCESSIBLE'
@@ -1319,8 +1319,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Institutional Examination Management System</h1>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h1 className="text-2xl font-black text-slate-900">Institutional Examination Management System</h1>
+                  <p className="text-xs text-slate-600 mt-1">
                     Institutional Exam Schedules • Paper-based Offline & Online CBT • 4-Stage Approval Workflow
                   </p>
                 </div>
@@ -1415,10 +1415,10 @@ export const InteractiveDemoPage: React.FC = () => {
                   .map((exam) => (
                     <div key={exam.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
                       {/* Header */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-black text-white">{exam.title}</h3>
+                            <h3 className="text-base font-black text-slate-900">{exam.title}</h3>
                             <span className="text-[10px] bg-blue-950 text-blue-300 border border-blue-800 px-2 py-0.5 rounded font-mono font-bold">
                               {exam.category}
                             </span>
@@ -1426,7 +1426,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               {exam.exam_mode}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-slate-600 mt-1">
                             Target: {exam.class_name} • Academic Year {exam.academic_year}
                           </p>
                         </div>
@@ -1444,7 +1444,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* 4-Stage Approval Workflow Visualizer */}
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200 space-y-2">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                           Strict 4-Stage Academic Result Approval Workflow:
                         </p>
@@ -1537,17 +1537,17 @@ export const InteractiveDemoPage: React.FC = () => {
                               <th className="p-2.5">Pass Marks</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-850">
+                          <tbody className="divide-y divide-slate-200">
                             {exam.schedules.map((sch) => (
                               <tr key={sch.id} className="hover:bg-slate-50/50">
-                                <td className="p-2.5 font-mono text-slate-300">
+                                <td className="p-2.5 font-mono text-slate-800 font-medium">
                                   {sch.exam_date} <span className="text-[10px] text-slate-500">{sch.start_time} - {sch.end_time}</span>
                                 </td>
-                                <td className="p-2.5 font-bold text-white">{sch.subject}</td>
-                                <td className="p-2.5 text-slate-300">{sch.room}</td>
-                                <td className="p-2.5 text-slate-300">{sch.invigilator}</td>
-                                <td className="p-2.5 font-mono text-slate-300">{sch.theory_max}</td>
-                                <td className="p-2.5 font-mono text-slate-300">{sch.practical_max}</td>
+                                <td className="p-2.5 font-bold text-slate-900">{sch.subject}</td>
+                                <td className="p-2.5 text-slate-800 font-medium">{sch.room}</td>
+                                <td className="p-2.5 text-slate-800 font-medium">{sch.invigilator}</td>
+                                <td className="p-2.5 font-mono text-slate-800 font-bold">{sch.theory_max}</td>
+                                <td className="p-2.5 font-mono text-slate-800 font-bold">{sch.practical_max}</td>
                                 <td className="p-2.5 font-mono text-amber-400 font-bold">{sch.passing_marks}</td>
                               </tr>
                             ))}
@@ -1556,7 +1556,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* Offline Sync & Export Actions Bar */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-xs text-slate-400">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs text-slate-600">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleSyncOffline(exam.id)}
@@ -1603,20 +1603,20 @@ export const InteractiveDemoPage: React.FC = () => {
               <div className="space-y-6 max-w-6xl">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                   <div>
-                    <h1 className="text-2xl font-black text-white">Advanced Student Progress Cards & Academic Analytics</h1>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <h1 className="text-2xl font-black text-slate-900">Advanced Student Progress Cards & Academic Analytics</h1>
+                    <p className="text-xs text-slate-600 mt-1">
                       Multi-Exam Report Cards • Annual Consolidated Trajectory • NEET & JEE Foundation Analytics
                     </p>
                   </div>
 
                   {/* Sub-tab pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-200 text-xs">
                     <button
                       onClick={() => setProgressCardSubTab('individual')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'individual'
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <Award className="w-3.5 h-3.5" />
@@ -1627,7 +1627,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'consolidated'
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <TrendingUp className="w-3.5 h-3.5" />
@@ -1638,7 +1638,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'competitive'
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -1651,19 +1651,19 @@ export const InteractiveDemoPage: React.FC = () => {
                 {progressCardSubTab === 'individual' && indCard && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                     {/* Header Details */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                       <div>
                         <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
                           Official Term Assessment Report Card
                         </span>
-                        <h2 className="text-xl font-black text-white mt-0.5">{indCard.examName}</h2>
-                        <p className="text-xs text-slate-400">
+                        <h2 className="text-xl font-black text-slate-900 mt-0.5">{indCard.examName}</h2>
+                        <p className="text-xs text-slate-600">
                           Academic Session: {indCard.academicYear} • Class: {indCard.className}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-slate-400 block font-medium">Student: <strong className="text-white">{indCard.studentName}</strong></span>
-                        <span className="text-xs text-slate-400 block font-mono">Admission #: {indCard.admissionNumber}</span>
+                        <span className="text-xs text-slate-600 block font-medium">Student: <strong className="text-slate-900">{indCard.studentName}</strong></span>
+                        <span className="text-xs text-slate-600 block font-mono">Admission #: {indCard.admissionNumber}</span>
                         <span className="text-xs text-emerald-400 font-bold block">Class Attendance: {indCard.attendancePct}%</span>
                         <button
                           type="button"
@@ -1677,9 +1677,9 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Marks Breakdown Table */}
-                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-3">Subject</th>
                             <th className="px-4 py-3 text-right">Theory (Max)</th>
@@ -1689,12 +1689,12 @@ export const InteractiveDemoPage: React.FC = () => {
                             <th className="px-4 py-3">Teacher Remarks</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-200">
                           {indCard.subjects.map((sub, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80">
-                              <td className="px-4 py-3 font-bold text-white">{sub.subjectName}</td>
-                              <td className="px-4 py-3 text-right font-mono text-slate-300">{sub.theoryObtained} / {sub.theoryMax}</td>
-                              <td className="px-4 py-3 text-right font-mono text-slate-300">{sub.practicalMax > 0 ? `${sub.practicalObtained} / ${sub.practicalMax}` : '-'}</td>
+                              <td className="px-4 py-3 font-bold text-slate-900">{sub.subjectName}</td>
+                              <td className="px-4 py-3 text-right font-mono text-slate-800 font-medium">{sub.theoryObtained} / {sub.theoryMax}</td>
+                              <td className="px-4 py-3 text-right font-mono text-slate-800 font-medium">{sub.practicalMax > 0 ? `${sub.practicalObtained} / ${sub.practicalMax}` : '-'}</td>
                               <td className="px-4 py-3 text-right font-mono font-black text-emerald-400 text-sm">
                                 {sub.totalObtained} / {sub.totalMax}
                               </td>
@@ -1706,8 +1706,8 @@ export const InteractiveDemoPage: React.FC = () => {
                               <td className="px-4 py-3 text-slate-400 text-[11px]">{sub.remarks}</td>
                             </tr>
                           ))}
-                          <tr className="bg-slate-900 font-black border-t-2 border-slate-700">
-                            <td className="px-4 py-3 text-white uppercase tracking-wider">Grand Total</td>
+                          <tr className="bg-slate-50 font-black border-t-2 border-slate-300 text-slate-900">
+                            <td className="px-4 py-3 text-slate-900 font-bold uppercase tracking-wider">Grand Total</td>
                             <td colSpan={2} className="px-4 py-3 text-center text-slate-400 text-xs">Four Core Disciplines</td>
                             <td className="px-4 py-3 text-right font-mono text-emerald-400 text-base font-black">
                               {indCard.totalObtained} / {indCard.totalMax}
@@ -1732,7 +1732,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] uppercase font-bold text-slate-400 block">Exam Controller Verification:</span>
-                          <span className="text-xs font-bold text-white block mt-1">{indCard.controllerVerifiedBy}</span>
+                          <span className="text-xs font-bold text-slate-900 block mt-1">{indCard.controllerVerifiedBy}</span>
                           <span className="text-[10px] text-emerald-400 font-mono">Stage 2 Audit Passed</span>
                         </div>
                         <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
@@ -1740,7 +1740,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] uppercase font-bold text-slate-400 block">Principal Approval Seal:</span>
-                          <span className="text-xs font-bold text-white block mt-1">{indCard.principalApprovedBy}</span>
+                          <span className="text-xs font-bold text-slate-900 block mt-1">{indCard.principalApprovedBy}</span>
                           <span className="text-[10px] text-blue-400 font-mono">Stage 3 Officially Sealed</span>
                         </div>
                         <Award className="w-6 h-6 text-blue-400 shrink-0" />
@@ -1752,11 +1752,11 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Sub-tab 2: Annual Trajectory (+13% Gain) */}
                 {progressCardSubTab === 'consolidated' && consCard && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
-                        <h2 className="text-xl font-black text-white">Consolidated Annual Academic Trajectory</h2>
-                        <p className="text-xs text-slate-400">
-                          Student: <strong className="text-white">{consCard.studentName}</strong> • Class: {consCard.className} • Overall GPA: <strong className="text-emerald-400">{consCard.overallGpa}</strong>
+                        <h2 className="text-xl font-black text-slate-900">Consolidated Annual Academic Trajectory</h2>
+                        <p className="text-xs text-slate-600">
+                          Student: <strong className="text-slate-900">{consCard.studentName}</strong> • Class: {consCard.className} • Overall GPA: <strong className="text-emerald-400">{consCard.overallGpa}</strong>
                         </p>
                       </div>
                       <div className="px-3.5 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-300 font-bold text-xs flex items-center gap-1.5">
@@ -1770,7 +1770,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       {consCard.trajectoryTrend.map((t, idx) => (
                         <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
                           <span className="text-[10px] text-slate-400 uppercase font-bold block">{t.examName}</span>
-                          <p className="text-2xl font-black text-white mt-1">{t.percentage}%</p>
+                          <p className="text-2xl font-black text-slate-900 mt-1">{t.percentage}%</p>
                           <span className="text-[10px] text-slate-500 font-mono block mt-0.5">{t.date}</span>
                           <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
                             <div className="bg-blue-500 h-full rounded-full" style={{ width: `${t.percentage}%` }}></div>
@@ -1781,18 +1781,18 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Academic Indicators */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                        <span className="text-[11px] text-slate-400 uppercase font-bold">Class Attendance</span>
+                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                        <span className="text-[11px] text-slate-600 uppercase font-bold">Class Attendance</span>
                         <p className="text-xl font-black text-emerald-400 mt-1">{consCard.overallAttendancePct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Regularity benchmark achieved</p>
                       </div>
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                        <span className="text-[11px] text-slate-400 uppercase font-bold">Practical Lab Proficiency</span>
+                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                        <span className="text-[11px] text-slate-600 uppercase font-bold">Practical Lab Proficiency</span>
                         <p className="text-xl font-black text-blue-400 mt-1">{consCard.practicalProficiencyPct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Physics & Chemistry practical logbooks</p>
                       </div>
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                        <span className="text-[11px] text-slate-400 uppercase font-bold">Assignments & Homework</span>
+                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                        <span className="text-[11px] text-slate-600 uppercase font-bold">Assignments & Homework</span>
                         <p className="text-xl font-black text-purple-400 mt-1">{consCard.assignmentsScore}</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Continuous assessment record</p>
                       </div>
@@ -1803,19 +1803,19 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Sub-tab 3: NEET Foundation Analytics */}
                 {progressCardSubTab === 'competitive' && compRep && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 mb-1">
                           {compRep.programme}
                         </div>
-                        <h2 className="text-xl font-black text-white">{compRep.testName}</h2>
-                        <p className="text-xs text-slate-400">
-                          Student: <strong className="text-white">{compRep.studentName}</strong> ({compRep.admissionNumber})
+                        <h2 className="text-xl font-black text-slate-900">{compRep.testName}</h2>
+                        <p className="text-xs text-slate-600">
+                          Student: <strong className="text-slate-900">{compRep.studentName}</strong> ({compRep.admissionNumber})
                         </p>
                       </div>
                       <div className="text-right">
                         <span className="text-2xl font-black text-emerald-400 block">{compRep.netScore} / {compRep.totalMarks}</span>
-                        <span className="text-xs text-slate-400">Percentile: <strong className="text-white">{compRep.percentileEstimate}th %tile</strong></span>
+                        <span className="text-xs text-slate-600">Percentile: <strong className="text-slate-900">{compRep.percentileEstimate}th %tile</strong></span>
                       </div>
                     </div>
 
@@ -1823,7 +1823,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Questions</span>
-                        <p className="text-2xl font-black text-white mt-1">{compRep.totalQuestions}</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{compRep.totalQuestions}</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Physics, Chem, Botany, Zoo</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -1844,9 +1844,9 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Subject Breakdown Table */}
-                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-2.5">Subject Section</th>
                             <th className="px-4 py-2.5 text-center">Questions</th>
@@ -1856,10 +1856,10 @@ export const InteractiveDemoPage: React.FC = () => {
                             <th className="px-4 py-2.5 text-right">Accuracy</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-200">
                           {compRep.subjectBreakdown.map((s, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80">
-                              <td className="px-4 py-3 font-bold text-white">{s.subject}</td>
+                              <td className="px-4 py-3 font-bold text-slate-900">{s.subject}</td>
                               <td className="px-4 py-3 text-center text-slate-300">{s.questions}</td>
                               <td className="px-4 py-3 text-center text-emerald-400 font-bold">{s.correct}</td>
                               <td className="px-4 py-3 text-center text-rose-400 font-bold">{s.incorrect}</td>
@@ -1883,8 +1883,8 @@ export const InteractiveDemoPage: React.FC = () => {
                   <UserCheck className="w-3.5 h-3.5 text-blue-400" />
                   Institution-Branded Login Portal Experience
                 </div>
-                <h1 className="text-2xl font-black text-white">Role-Based Autocomplete & Secure Session</h1>
-                <p className="text-xs text-slate-400 mt-1">
+                <h1 className="text-2xl font-black text-slate-900">Role-Based Autocomplete & Secure Session</h1>
+                <p className="text-xs text-slate-600 mt-1">
                   Restricted user suggestion after 2-4 characters • Verified tenant isolation
                 </p>
               </div>
@@ -1928,7 +1928,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <option value="STUDENT">🎒 Enrolled Student (Portal)</option>
                     <option value="TRANSPORT_MANAGER">🚌 Transport Manager (Fleet)</option>
                   </select>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-600 mt-1">
                     Role selection filters accounts and loads assigned permissions.
                   </p>
                 </div>
@@ -1953,7 +1953,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       value={loginSearch}
                       onChange={(e) => setLoginSearch(e.target.value)}
                       placeholder={`Type 2+ characters to search ${loginRole}s...`}
-                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1977,7 +1977,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     type={showLoginPassword ? 'text' : 'password'}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -2007,8 +2007,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Academic Structure & Subject Management</h1>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h1 className="text-2xl font-black text-slate-900">Academic Structure & Subject Management</h1>
+                  <p className="text-xs text-slate-600 mt-1">
                     Schools, PU Colleges & Degree Colleges Curriculum • Visual Priority Reordering & Safe Archival
                   </p>
                 </div>
@@ -2022,10 +2022,10 @@ export const InteractiveDemoPage: React.FC = () => {
 
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
                     Configured Subjects ({subjects.filter(s => !s.is_archived).length} Active)
                   </h3>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-600">
                     Use Up/Down controls to reorder subjects in syllabus & timetable
                   </span>
                 </div>
@@ -2064,7 +2064,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               <span className="font-mono text-[10px] bg-slate-800 text-blue-300 px-2 py-0.5 rounded font-bold">
                                 {subj.code}
                               </span>
-                              <h4 className="font-bold text-white text-sm">{subj.name}</h4>
+                              <h4 className="font-bold text-slate-900 text-sm">{subj.name}</h4>
                               <span className="text-[10px] bg-blue-950 text-blue-300 px-2 py-0.5 rounded font-semibold">
                                 {subj.institution_level}
                               </span>
@@ -2074,7 +2074,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                 {subj.is_compulsory ? 'Compulsory' : 'Elective'}
                               </span>
                             </div>
-                            <p className="text-slate-400 text-xs mt-1">
+                            <p className="text-slate-600 text-xs mt-1">
                               Class: {subj.target_class} {subj.stream_or_comb ? `(${subj.stream_or_comb})` : ''} • Assigned Faculty: {subj.assigned_teacher}
                             </p>
                           </div>
@@ -2083,7 +2083,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <div className="flex items-center gap-3 shrink-0">
                           <div className="text-right font-mono">
                             <span className="text-slate-400 block text-[10px]">Marks Split</span>
-                            <span className="text-white font-bold">{subj.theory_marks} Theory / {subj.practical_marks} Pract.</span>
+                            <span className="text-slate-900 font-bold">{subj.theory_marks} Theory / {subj.practical_marks} Pract.</span>
                           </div>
 
                           <button
@@ -2147,7 +2147,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'statement'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -2158,7 +2158,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'collection'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5" />
@@ -2169,7 +2169,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'register'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <Receipt className="w-3.5 h-3.5" />
@@ -2180,7 +2180,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'consolidated'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -2191,7 +2191,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'dues'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <AlertTriangle className="w-3.5 h-3.5" />
@@ -2202,7 +2202,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       feeSubTab === 'structures'
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
@@ -2270,10 +2270,10 @@ export const InteractiveDemoPage: React.FC = () => {
                             <Sparkles className="w-3 h-3 text-blue-400" />
                             Official Architecture Acceptance Test Runner
                           </div>
-                          <h2 className="text-xl font-black text-white">
+                          <h2 className="text-xl font-black text-slate-900">
                             Two-Payment Dynamic Recalculation Acceptance Test (Rahul Kumar)
                           </h2>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p className="text-xs text-slate-600 mt-0.5">
                             Demonstrates individual payment receipts, persistent receipt preservation, and consolidated fee statement recalculation.
                           </p>
                         </div>
@@ -2316,7 +2316,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* 4 Accountant Operations Buttons */}
-                      <div className="border-t border-slate-800/80 pt-3">
+                      <div className="border-t border-slate-200 pt-3">
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
                           Mandatory Accountant Action Suite:
                         </span>
@@ -2363,9 +2363,9 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Student Selection Header & Details */}
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                         <div>
-                          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
                             Select Student for Consolidated Financial Statement:
                           </label>
                           <select
@@ -2381,34 +2381,34 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-4 text-xs">
                           <div>
-                            <span className="text-slate-400 block text-[10px] uppercase font-bold">Parent / Guardian:</span>
-                            <span className="text-white font-bold">{statement.parentName}</span>
+                            <span className="text-slate-600 block text-[10px] uppercase font-bold">Parent / Guardian:</span>
+                            <span className="text-slate-900 font-bold">{statement.parentName}</span>
                           </div>
                           <div>
-                            <span className="text-slate-400 block text-[10px] uppercase font-bold">Course & Stream:</span>
-                            <span className="text-white font-bold">{statement.courseClass} - {statement.sectionOrStream}</span>
+                            <span className="text-slate-600 block text-[10px] uppercase font-bold">Course & Stream:</span>
+                            <span className="text-slate-900 font-bold">{statement.courseClass} - {statement.sectionOrStream}</span>
                           </div>
                           <div>
-                            <span className="text-slate-400 block text-[10px] uppercase font-bold">Academic Session:</span>
-                            <span className="text-white font-bold">{statement.academicYear}</span>
+                            <span className="text-slate-600 block text-[10px] uppercase font-bold">Academic Session:</span>
+                            <span className="text-slate-900 font-bold">{statement.academicYear}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Financial KPI Summary Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                          <span className="text-[11px] text-slate-400 uppercase font-bold">Total Annual Fee</span>
-                          <p className="text-2xl font-black text-white mt-1">₹{statement.totalAnnualFee.toLocaleString('en-IN')}</p>
+                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold">Total Annual Fee</span>
+                          <p className="text-2xl font-black text-slate-900 mt-1">₹{statement.totalAnnualFee.toLocaleString('en-IN')}</p>
                           <p className="text-[10px] text-slate-500 mt-0.5">Approved annual institutional schedule</p>
                         </div>
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                          <span className="text-[11px] text-slate-400 uppercase font-bold">Total Amount Paid</span>
+                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold">Total Amount Paid</span>
                           <p className="text-2xl font-black text-emerald-400 mt-1">₹{statement.totalPaid.toLocaleString('en-IN')}</p>
                           <p className="text-[10px] text-slate-500 mt-0.5">Realised across {statement.receiptHistory.length} confirmed receipts</p>
                         </div>
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                          <span className="text-[11px] text-slate-400 uppercase font-bold">Outstanding Balance Due</span>
+                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold">Outstanding Balance Due</span>
                           <p className={`text-2xl font-black mt-1 ${statement.totalBalanceDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                             ₹{statement.totalBalanceDue.toLocaleString('en-IN')}
                           </p>
@@ -2417,9 +2417,9 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* Fee-Head Allocation Table */}
-                      <div className="overflow-x-auto rounded-xl border border-slate-800">
+                      <div className="overflow-x-auto rounded-xl border border-slate-200">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                          <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
                             <tr>
                               <th className="px-4 py-3">Fee Head / Description</th>
                               <th className="px-4 py-3">Category</th>
@@ -2431,14 +2431,14 @@ export const InteractiveDemoPage: React.FC = () => {
                               <th className="px-4 py-3 text-center">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-850">
+                          <tbody className="divide-y divide-slate-200">
                             {statement.feeHeads.map((head) => (
                               <tr key={head.feeHeadId} className="hover:bg-slate-50/80">
-                                <td className="px-4 py-3 font-bold text-white">{head.feeHeadName}</td>
-                                <td className="px-4 py-3 text-slate-400">{head.category}</td>
+                                <td className="px-4 py-3 font-bold text-slate-900">{head.feeHeadName}</td>
+                                <td className="px-4 py-3 text-slate-700 font-medium">{head.category}</td>
                                 <td className="px-4 py-3 text-right font-mono text-slate-200">₹{head.annualFee.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-slate-400">₹{head.term1Due.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-slate-400">₹{head.term2Due.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono text-slate-700 font-medium">₹{head.term1Due.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono text-slate-700 font-medium">₹{head.term2Due.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">₹{head.paidAmount.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3 text-right font-mono text-amber-400 font-bold">₹{head.balanceDue.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3 text-center">
@@ -2450,9 +2450,9 @@ export const InteractiveDemoPage: React.FC = () => {
                                 </td>
                               </tr>
                             ))}
-                            <tr className="bg-slate-900 font-black border-t-2 border-slate-700">
-                              <td colSpan={2} className="px-4 py-3.5 text-white uppercase tracking-wider text-xs">Total Consolidated Account</td>
-                              <td className="px-4 py-3.5 text-right font-mono text-white text-sm">₹{statement.totalAnnualFee.toLocaleString('en-IN')}</td>
+                            <tr className="bg-slate-50 font-black border-t-2 border-slate-300 text-slate-900">
+                              <td colSpan={2} className="px-4 py-3.5 text-slate-900 font-black uppercase tracking-wider text-xs">Total Consolidated Account</td>
+                              <td className="px-4 py-3.5 text-right font-mono text-slate-900 font-bold text-sm">₹{statement.totalAnnualFee.toLocaleString('en-IN')}</td>
                               <td colSpan={2} className="px-4 py-3.5 text-slate-400 text-center text-[10px]">Installments Active</td>
                               <td className="px-4 py-3.5 text-right font-mono text-emerald-400 text-sm">₹{statement.totalPaid.toLocaleString('en-IN')}</td>
                               <td className="px-4 py-3.5 text-right font-mono text-amber-400 text-sm">₹{statement.totalBalanceDue.toLocaleString('en-IN')}</td>
@@ -2468,13 +2468,13 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* Linked Payment Receipts History Table */}
                       <div className="space-y-3 pt-2">
-                        <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                           <Receipt className="w-3.5 h-3.5 text-blue-400" />
                           Permanent Payment Receipts Linked to this Student ({statement.receiptHistory.length})
                         </h4>
-                        <div className="overflow-x-auto rounded-xl border border-slate-800">
+                        <div className="overflow-x-auto rounded-xl border border-slate-200">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                            <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
                               <tr>
                                 <th className="px-4 py-2.5">Receipt #</th>
                                 <th className="px-4 py-2.5">Payment Date</th>
@@ -2484,13 +2484,13 @@ export const InteractiveDemoPage: React.FC = () => {
                                 <th className="px-4 py-2.5 text-center">Action</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-850">
+                            <tbody className="divide-y divide-slate-200">
                               {statement.receiptHistory.map((rcp) => (
                                 <tr key={rcp.id} className="hover:bg-slate-50/80">
                                   <td className="px-4 py-3 font-mono font-bold text-blue-400">{rcp.receipt_number}</td>
                                   <td className="px-4 py-3 text-slate-300">{rcp.payment_date}</td>
                                   <td className="px-4 py-3 text-slate-300">
-                                    <span className="font-semibold text-white">{rcp.payment_method}</span>
+                                    <span className="font-semibold text-slate-900">{rcp.payment_method}</span>
                                     <span className="block text-[10px] text-slate-500 font-mono">{rcp.transaction_reference}</span>
                                   </td>
                                   <td className="px-4 py-3 text-slate-300">
@@ -2534,13 +2534,13 @@ export const InteractiveDemoPage: React.FC = () => {
                 <div className="space-y-6">
                   {/* Searchable Multi-Head Fee Collection Counter */}
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5 shadow-xl">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
-                        <h2 className="text-base font-black text-white flex items-center gap-2">
+                        <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                           <CreditCard className="w-5 h-5 text-emerald-400" />
                           Multi-Head Cashier Fee Collection & Instant Receipt
                         </h2>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-slate-600 mt-0.5">
                           Search & select multiple fee heads in a single transaction • Auto-calculated dues, concessions & instant receipt emission
                         </p>
                       </div>
@@ -2634,7 +2634,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
                               multiStream === 'School'
                                 ? 'bg-blue-600 text-white'
-                                : 'text-slate-400 hover:text-white'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             }`}
                           >
                             School (21 Heads)
@@ -2648,7 +2648,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
                               multiStream === 'PU College'
                                 ? 'bg-blue-600 text-white'
-                                : 'text-slate-400 hover:text-white'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             }`}
                           >
                             PU College (18 Heads)
@@ -2664,7 +2664,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           <Search className="w-3.5 h-3.5 text-blue-400" />
                           Search & Select Fee Heads ({multiSelectedHeadCodes.length} Selected)
                         </label>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-600">
                           Searchable dropdown across {availableHeads.length} institution fee heads
                         </span>
                       </div>
@@ -2683,7 +2683,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* Active Selected Fee Heads Pills */}
                       {multiSelectedHeadCodes.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <div className="flex flex-wrap gap-1.5 mb-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-200">
                           <span className="text-[11px] font-bold text-slate-400 self-center mr-1">Active Heads:</span>
                           {multiSelectedHeadCodes.map(code => {
                             const hd = availableHeads.find(h => h.head_code === code) || { title: code.replace(/_/g, ' '), head_code: code };
@@ -2739,7 +2739,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Fee Head Breakdown & Collection Input Table */}
                     {multiSelectedHeadCodes.length > 0 ? (
-                      <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-900/60">
+                      <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-900/60">
                         <table className="w-full text-left text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
@@ -2751,7 +2751,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               <th className="p-3 text-right">Collect In This Receipt (₹)</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-850">
+                          <tbody className="divide-y divide-slate-200">
                             {multiSelectedHeadCodes.map(code => {
                               const headDef = availableHeads.find(h => h.head_code === code) || {
                                 head_code: code,
@@ -2767,7 +2767,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                               return (
                                 <tr key={code} className="hover:bg-slate-800/40 transition-colors">
-                                  <td className="p-3 font-semibold text-white">
+                                  <td className="p-3 font-semibold text-slate-900">
                                     {headDef.title}
                                     {headDef.is_refundable && (
                                       <span className="ml-1.5 text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded font-mono">Refundable</span>
@@ -2838,13 +2838,13 @@ export const InteractiveDemoPage: React.FC = () => {
                         </table>
                       </div>
                     ) : (
-                      <div className="p-6 rounded-xl border border-dashed border-slate-800 text-center text-slate-400 text-xs">
+                      <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
                         No fee heads selected. Choose from the catalog or search above to add heads to this collection.
                       </div>
                     )}
 
                     {/* Payment Mode, Reference & Instant Collect Action */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-800/80">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-200">
                       <div>
                         <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">Payment Method</label>
                         <select
@@ -2914,18 +2914,18 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     <div className="text-slate-400 text-xs">
-                      Total Ledger Invoices: <span className="text-white font-bold">{invoices.length}</span>
+                      Total Ledger Invoices: <span className="text-slate-900 font-bold">{invoices.length}</span>
                     </div>
                   </div>
 
                   {/* Student Ledger Invoices Table */}
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
-                    <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <div className="p-4 border-b border-slate-200 bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-blue-400" />
                         Active Student Fee Accounts & Invoices
                       </h2>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-slate-600">
                         Select an invoice below to process partial or full settlement with instantaneous receipt emission.
                       </span>
                     </div>
@@ -2944,26 +2944,26 @@ export const InteractiveDemoPage: React.FC = () => {
                             <th className="p-3 text-center">Collection Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-200">
                           {invoices
                             .filter(inv => feeCategoryFilter === 'ALL' || inv.fee_head === feeCategoryFilter)
                             .map((inv) => (
                               <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="p-3 font-mono text-slate-300 font-bold">{inv.invoice_number}</td>
+                                <td className="p-3 font-mono text-slate-800 font-bold">{inv.invoice_number}</td>
                                 <td className="p-3">
-                                  <span className="font-bold text-white block">{inv.student_name}</span>
+                                  <span className="font-bold text-slate-900 block">{inv.student_name}</span>
                                   <span className="text-[10px] text-slate-400 font-mono">{inv.admission_number} • {inv.class_name}</span>
                                 </td>
                                 <td className="p-3">
-                                  <span className="text-slate-200 block font-semibold">{inv.term_name || 'Term 1'}</span>
+                                  <span className="text-slate-700 block font-semibold">{inv.term_name || 'Term 1'}</span>
                                   <span className="text-[9px] bg-slate-800 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
                                     {inv.fee_head.replace('_', ' ')}
                                   </span>
                                 </td>
-                                <td className="p-3 font-mono font-bold text-slate-200">₹{inv.total_amount.toLocaleString()}</td>
+                                <td className="p-3 font-mono font-bold text-slate-900">₹{inv.total_amount.toLocaleString()}</td>
                                 <td className="p-3 font-mono text-emerald-400 font-semibold">₹{inv.paid_amount.toLocaleString()}</td>
                                 <td className="p-3 font-mono font-bold text-rose-400">₹{inv.balance_amount.toLocaleString()}</td>
-                                <td className="p-3 font-mono text-slate-400 text-[11px]">{inv.due_date}</td>
+                                <td className="p-3 font-mono text-slate-600 text-[11px]">{inv.due_date}</td>
                                 <td className="p-3">
                                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                                     inv.status === 'PAID'
@@ -2996,7 +2996,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                           setShowReceiptModal(true);
                                         }
                                       }}
-                                      className="text-emerald-400 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800"
+                                      className="text-emerald-400 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200"
                                     >
                                       <Receipt className="w-3.5 h-3.5" /> View Receipt
                                     </button>
@@ -3012,15 +3012,15 @@ export const InteractiveDemoPage: React.FC = () => {
                   {/* Payment Collection Drawer / Form Modal */}
                   {selectedInvoiceForPayment && (
                     <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-xs space-y-4">
-                      <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+                      <div className="flex items-start justify-between border-b border-slate-200 pb-3">
                         <div>
                           <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                             Active Collection Terminal
                           </span>
-                          <h3 className="text-lg font-bold text-white mt-1">
+                          <h3 className="text-lg font-bold text-slate-900 mt-1">
                             Collect Payment for {selectedInvoiceForPayment.student_name} ({selectedInvoiceForPayment.admission_number})
                           </h3>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-600">
                             Invoice #{selectedInvoiceForPayment.invoice_number} • {selectedInvoiceForPayment.class_name} • {selectedInvoiceForPayment.fee_title}
                           </p>
                         </div>
@@ -3032,10 +3032,10 @@ export const InteractiveDemoPage: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-200">
                         <div>
                           <span className="text-[10px] text-slate-400 uppercase font-bold">Total Invoice Due:</span>
-                          <p className="text-lg font-black text-white font-mono">₹{selectedInvoiceForPayment.total_amount.toLocaleString()}</p>
+                          <p className="text-lg font-black text-slate-900 font-mono">₹{selectedInvoiceForPayment.total_amount.toLocaleString()}</p>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 uppercase font-bold">Already Paid:</span>
@@ -3110,7 +3110,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-3 border-t border-slate-800">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-3 border-t border-slate-200">
                         <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                           <input
                             type="checkbox"
@@ -3205,7 +3205,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             <th className="p-3 text-center">Receipt Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-200">
                           {receipts
                             .filter(r => {
                               const matchQ =
@@ -3229,7 +3229,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                     className="text-left group cursor-pointer inline-flex flex-col"
                                     title="Click to inspect Student 360° Profile"
                                   >
-                                    <span className="font-bold text-white group-hover:text-teal-300 transition-colors flex items-center gap-1.5">
+                                    <span className="font-bold text-slate-900 group-hover:text-teal-600 transition-colors flex items-center gap-1.5">
                                       {rcp.student_name}
                                       <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-teal-950/70 text-teal-300 border border-teal-800/60 group-hover:bg-teal-600 group-hover:text-white transition-colors">
                                         360°
@@ -3369,9 +3369,9 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Executive KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-                        <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Total Expected Fee</span>
-                        <p className="text-2xl font-black text-white font-mono mt-1">₹{totalExpected.toLocaleString()}</p>
-                        <span className="text-[10px] text-slate-400 mt-1 block">Institutional Total Demand</span>
+                        <span className="text-[11px] text-slate-600 font-bold uppercase tracking-wider block">Total Expected Fee</span>
+                        <p className="text-2xl font-black text-slate-900 font-mono mt-1">₹{totalExpected.toLocaleString()}</p>
+                        <span className="text-[10px] text-slate-600 mt-1 block">Institutional Total Demand</span>
                       </div>
                       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider block">Total Fee Collected</span>
@@ -3395,8 +3395,8 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Category-Wise Breakdown Matrix */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
-                      <div className="p-4 border-b border-slate-800 bg-slate-900/50">
-                        <h3 className="text-sm font-bold text-white">Fee Head Category Wise Collection Breakdown</h3>
+                      <div className="p-4 border-b border-slate-200 bg-slate-900/50">
+                        <h3 className="text-sm font-bold text-slate-900">Fee Head Category Wise Collection Breakdown</h3>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
@@ -3409,12 +3409,12 @@ export const InteractiveDemoPage: React.FC = () => {
                               <th className="p-3">Collection Progress</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-850">
+                          <tbody className="divide-y divide-slate-200">
                             {Object.entries(catMap).map(([cat, d]) => {
                               const pct = d.expected > 0 ? Math.round((d.collected / d.expected) * 100) : 0;
                               return (
                                 <tr key={cat} className="hover:bg-slate-50/80">
-                                  <td className="p-3 font-bold text-white flex items-center gap-2">
+                                  <td className="p-3 font-bold text-slate-900 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-blue-400"></span>
                                     {cat.replace('_', ' ')}
                                   </td>
@@ -3518,7 +3518,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               <th className="p-3">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-850">
+                          <tbody className="divide-y divide-slate-200">
                             {dueInvoices
                               .filter(inv => dueReportStatusFilter === 'ALL' || inv.status === dueReportStatusFilter)
                               .map(inv => {
@@ -3533,7 +3533,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                         className="text-left group cursor-pointer inline-flex items-center gap-1.5"
                                         title="Click to inspect Student 360° Profile"
                                       >
-                                        <span className="font-bold text-white group-hover:text-rose-400 transition-colors">
+                                        <span className="font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
                                           {inv.student_name}
                                         </span>
                                         <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-rose-950/70 text-rose-300 border border-rose-800/60 group-hover:bg-rose-600 group-hover:text-white transition-colors">
@@ -3601,13 +3601,13 @@ export const InteractiveDemoPage: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {feeStructures.map((fs) => (
                       <div key={fs.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                        <div className="flex items-start justify-between border-b border-slate-800/80 pb-3">
+                        <div className="flex items-start justify-between border-b border-slate-200 pb-3">
                           <div>
                             <span className="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                               {fs.institution_type} Schedule ({fs.term_count} Terms)
                             </span>
-                            <h3 className="text-lg font-bold text-white mt-1.5">{fs.institution_name}</h3>
-                            <p className="text-xs text-slate-400 font-mono">
+                            <h3 className="text-lg font-bold text-slate-900 mt-1.5">{fs.institution_name}</h3>
+                            <p className="text-xs text-slate-600 font-mono">
                               {fs.class_or_stream} • Academic Year {fs.academic_year} (v{fs.version})
                             </p>
                           </div>
@@ -3624,9 +3624,9 @@ export const InteractiveDemoPage: React.FC = () => {
                           </h4>
                           <div className="space-y-1.5">
                             {fs.terms_config.map((t) => (
-                              <div key={t.term_code} className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                              <div key={t.term_code} className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                                 <div>
-                                  <span className="font-bold text-white block">{t.name}</span>
+                                  <span className="font-bold text-slate-900 block">{t.name}</span>
                                   <span className="text-[10px] text-slate-400 font-mono">Due Date: {t.due_date}</span>
                                 </div>
                                 <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
@@ -3652,7 +3652,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-slate-500 italic border-t border-slate-800/60 pt-2">
+                        <p className="text-[11px] text-slate-500 italic border-t border-slate-200/60 pt-2">
                           {fs.notes}
                         </p>
                       </div>
@@ -3668,7 +3668,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
                   <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl my-8">
                     {/* Modal Top Bar */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
@@ -3680,7 +3680,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <h2 className="text-lg font-black text-white mt-1">
+                        <h2 className="text-lg font-black text-slate-900 mt-1">
                           Receipt #{activeReceiptForModal.receipt_number}
                         </h2>
                       </div>
@@ -3690,7 +3690,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <button
                           onClick={() => setReceiptPrintLayout('A4')}
                           className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                            receiptPrintLayout === 'A4' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                            receiptPrintLayout === 'A4' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
                         >
                           A4 Standard
@@ -3698,7 +3698,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <button
                           onClick={() => setReceiptPrintLayout('80MM')}
                           className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                            receiptPrintLayout === '80MM' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                            receiptPrintLayout === '80MM' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
                         >
                           80mm Thermal
@@ -3706,7 +3706,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <button
                           onClick={() => setReceiptPrintLayout('58MM')}
                           className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                            receiptPrintLayout === '58MM' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                            receiptPrintLayout === '58MM' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
                         >
                           58mm Pocket
@@ -3900,7 +3900,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Modal Action Buttons */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -3954,8 +3954,8 @@ export const InteractiveDemoPage: React.FC = () => {
               {showAddHeadModal && (
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                   <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl text-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                      <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                         <Plus className="w-4 h-4 text-purple-400" />
                         Add Institution-Specific Fee Head
                       </h3>
@@ -4067,7 +4067,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                       <button
                         type="button"
                         onClick={() => setShowAddHeadModal(false)}
@@ -4137,8 +4137,8 @@ export const InteractiveDemoPage: React.FC = () => {
               <div className="space-y-6 max-w-6xl">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                   <div>
-                    <h1 className="text-2xl font-black text-white">Smart Data Migration & Bulk Ingest Centre</h1>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <h1 className="text-2xl font-black text-slate-900">Smart Data Migration & Bulk Ingest Centre</h1>
+                    <p className="text-xs text-slate-600 mt-1">
                       Multi-Format Ingestion (XLSX, CSV, PDF OCR) • Smart Column Alias Mapping • Duplicate Resolution Engine
                     </p>
                   </div>
@@ -4183,15 +4183,15 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Wizard Step 1: Upload Source Data */}
                 {migrationStep === 1 && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 1: Upload Source Master File</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 1: Upload Source Master File</h3>
+                    <p className="text-xs text-slate-600">
                       Supported formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx), Scanned PDF (OCR Extraction), and JSON.
                     </p>
                     <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center space-y-3 bg-slate-900/40">
                       <Upload className="w-8 h-8 text-blue-400 mx-auto" />
                       <div>
-                        <p className="text-sm font-bold text-white">Active Ingest File: {batch.fileName}</p>
-                        <p className="text-xs text-slate-400">Format: {batch.fileFormat} • Total Records: {batch.totalRecords.toLocaleString('en-IN')}</p>
+                        <p className="text-sm font-bold text-slate-900">Active Ingest File: {batch.fileName}</p>
+                        <p className="text-xs text-slate-600">Format: {batch.fileFormat} • Total Records: {batch.totalRecords.toLocaleString('en-IN')}</p>
                       </div>
                       <button
                         onClick={() => setMigrationStep(2)}
@@ -4206,13 +4206,13 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Wizard Step 2: Intelligent Column Mapping */}
                 {migrationStep === 2 && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 2: Smart Column Alias Mapping</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 2: Smart Column Alias Mapping</h3>
+                    <p className="text-xs text-slate-600">
                       The migration engine automatically matches non-standard legacy header names to institutional ERP fields.
                     </p>
-                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-3">Legacy Source Header</th>
                             <th className="px-4 py-3">Mapped Target Field</th>
@@ -4220,7 +4220,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             <th className="px-4 py-3">Sample Value</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-200">
                           {batch.columnMappings.map((m, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80">
                               <td className="px-4 py-3 font-mono font-bold text-amber-300">{m.sourceHeader}</td>
@@ -4250,8 +4250,8 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Wizard Step 3: Identity Resolution & Duplicate Prevention */}
                 {migrationStep === 3 && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 3: Identity Resolution & Duplicate Candidates</h3>
-                    <p className="text-xs text-slate-400">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 3: Identity Resolution & Duplicate Candidates</h3>
+                    <p className="text-xs text-slate-600">
                       Detected 12 exact duplicates and 8 probable matches against existing enrolled students.
                     </p>
                     <div className="space-y-3">
@@ -4263,7 +4263,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             }`}>
                               {c.matchType}
                             </span>
-                            <p className="font-bold text-white text-sm mt-1">Source Row #{c.sourceRow}: {c.sourceName} ({c.sourceAdmissionNo})</p>
+                            <p className="font-bold text-slate-900 text-sm mt-1">Source Row #{c.sourceRow}: {c.sourceName} ({c.sourceAdmissionNo})</p>
                             <p className="text-slate-400 text-[11px]">Matches Existing: {c.existingRecordName} • Phone: {c.sourcePhone}</p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -4301,11 +4301,11 @@ export const InteractiveDemoPage: React.FC = () => {
                 {/* Wizard Step 4: Validation Preview */}
                 {migrationStep === 4 && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 4: Pre-Commit Validation Summary</h3>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 4: Pre-Commit Validation Summary</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-slate-400 uppercase font-bold">Total Ingest Records</span>
-                        <p className="text-2xl font-black text-white mt-1">{batch.totalRecords}</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{batch.totalRecords}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-emerald-400 uppercase font-bold">Clean New Admissions</span>
@@ -4331,8 +4331,8 @@ export const InteractiveDemoPage: React.FC = () => {
                 {migrationStep === 5 && (
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 text-center">
                     <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                    <h3 className="text-lg font-black text-white">Ready for Production Ingestion</h3>
-                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    <h3 className="text-lg font-black text-slate-900">Ready for Production Ingestion</h3>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto">
                       All validation checks passed with zero integrity errors. Clicking execute will import {batch.cleanNewRecordsCount} student records with opening balances.
                     </p>
                     <button
@@ -4351,8 +4351,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Transport Fleet & Live GPS Tracking</h1>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h1 className="text-2xl font-black text-slate-900">Transport Fleet & Live GPS Tracking</h1>
+                  <p className="text-xs text-slate-600 mt-1">
                     Bus Routes, Student Stops, Driver Telemetry, and Parent Arrival ETA Alerts
                   </p>
                 </div>
@@ -4361,15 +4361,15 @@ export const InteractiveDemoPage: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {transportRoutes.map((rt) => (
                   <div key={rt.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                    <div className="flex items-start justify-between border-b border-slate-800/80 pb-3">
+                    <div className="flex items-start justify-between border-b border-slate-200 pb-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded font-mono font-bold">
                             {rt.route_code}
                           </span>
-                          <h3 className="font-bold text-white text-sm">{rt.route_name}</h3>
+                          <h3 className="font-bold text-slate-900 text-sm">{rt.route_name}</h3>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-600 mt-1">
                           {rt.vehicle_type} • Reg: {rt.vehicle_number}
                         </p>
                       </div>
@@ -4448,8 +4448,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Admissions Pipeline</h1>
-                  <p className="text-xs text-slate-400 mt-1">Application Ingestion • Verification • Approval</p>
+                  <h1 className="text-2xl font-black text-slate-900">Admissions Pipeline</h1>
+                  <p className="text-xs text-slate-600 mt-1">Application Ingestion • Verification • Approval</p>
                 </div>
               </div>
 
@@ -4461,12 +4461,12 @@ export const InteractiveDemoPage: React.FC = () => {
                         <span className="font-mono text-[10px] bg-slate-800 text-blue-300 px-2 py-0.5 rounded font-bold">
                           {adm.application_number}
                         </span>
-                        <h4 className="font-bold text-white text-sm">{adm.applicant_name}</h4>
+                        <h4 className="font-bold text-slate-900 text-sm">{adm.applicant_name}</h4>
                         <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
                           {adm.target_class} ({adm.level})
                         </span>
                       </div>
-                      <p className="text-slate-400 text-xs mt-1">
+                      <p className="text-slate-600 text-xs mt-1">
                         Parent: {adm.parent_name} • Phone: {adm.parent_phone} • Submitted: {adm.submission_date}
                       </p>
                     </div>
@@ -4554,7 +4554,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <td className="p-3.5 text-slate-600">{st.section_or_stream}</td>
                         <td className="p-3.5 text-slate-600">
                           <div className="font-medium text-slate-900">{st.guardian_name}</div>
-                          <div className="text-[11px] text-slate-400">{st.guardian_phone}</div>
+                          <div className="text-[11px] text-slate-600">{st.guardian_phone}</div>
                         </td>
                         <td className="p-3.5 font-bold text-emerald-600">{st.attendance_pct || 95}%</td>
                         <td className={`p-3.5 font-mono font-bold ${(st.fee_balance || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
@@ -4588,8 +4588,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Faculty & Staff Directory</h1>
-                  <p className="text-xs text-slate-400 mt-1">Teaching and Operational Staff Profiles</p>
+                  <h1 className="text-2xl font-black text-slate-900">Faculty & Staff Directory</h1>
+                  <p className="text-xs text-slate-600 mt-1">Teaching and Operational Staff Profiles</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -4616,9 +4616,9 @@ export const InteractiveDemoPage: React.FC = () => {
                 {staffMembers.map((st) => (
                   <div key={st.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between text-xs">
                     <div>
-                      <h4 className="font-bold text-white text-sm">{st.name}</h4>
+                      <h4 className="font-bold text-slate-900 text-sm">{st.name}</h4>
                       <p className="text-blue-400 mt-0.5">{st.designation || st.role}</p>
-                      <p className="text-[11px] text-slate-400 mt-1">Dept: {st.dept} • {st.email}</p>
+                      <p className="text-[11px] text-slate-600 mt-1">Dept: {st.dept} • {st.email}</p>
                     </div>
                     <span className="text-[10px] bg-slate-50 border border-slate-200 text-slate-300 font-mono px-2 py-1 rounded">
                       {st.employee_id}
@@ -4636,8 +4636,8 @@ export const InteractiveDemoPage: React.FC = () => {
             <div className="space-y-6 max-w-6xl">
               <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Weekly Academic Timetable</h1>
-                  <p className="text-xs text-slate-400 mt-1">Period Allocations • Lab Sessions • Classroom Schedules</p>
+                  <h1 className="text-2xl font-black text-slate-900">Weekly Academic Timetable</h1>
+                  <p className="text-xs text-slate-600 mt-1">Period Allocations • Lab Sessions • Classroom Schedules</p>
                 </div>
               </div>
 
@@ -4646,7 +4646,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
                     <div key={day} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                      <p className="font-bold text-white text-sm border-b border-slate-800 pb-1">{day}</p>
+                      <p className="font-bold text-slate-900 text-sm border-b border-slate-200 pb-1">{day}</p>
                       <div className="space-y-1.5 text-[11px]">
                         <div className="p-1.5 rounded bg-slate-850 text-slate-200">
                           <p className="font-bold text-blue-300">09:00 - 10:00 AM</p>
@@ -4753,7 +4753,7 @@ export const InteractiveDemoPage: React.FC = () => {
       {showExamModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="max-w-md w-full bg-white border border-slate-200 shadow-xs rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
-            <h3 className="text-base font-black text-white">Schedule New Institutional Examination</h3>
+            <h3 className="text-base font-black text-slate-900">Schedule New Institutional Examination</h3>
             
             <form onSubmit={handleCreateExamSubmit} className="space-y-3">
               <div>
@@ -4763,7 +4763,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   required
                   value={newExamTitle}
                   onChange={(e) => setNewExamTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -4773,7 +4773,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   <select
                     value={newExamCategory}
                     onChange={(e) => setNewExamCategory(e.target.value as InstitutionalExamCategory)}
-                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-2 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="Weekly Test">Weekly Test</option>
                     <option value="Unit Test">Unit Test</option>
@@ -4793,7 +4793,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   <select
                     value={newExamMode}
                     onChange={(e) => setNewExamMode(e.target.value as ExamDeliveryMode)}
-                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-2 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="Offline (Paper-based)">Offline (Paper-based)</option>
                     <option value="Internal Online">Internal Online CBT</option>
@@ -4809,7 +4809,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   required
                   value={newExamClass}
                   onChange={(e) => setNewExamClass(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -4837,7 +4837,7 @@ export const InteractiveDemoPage: React.FC = () => {
       {showChangeReqModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="max-w-md w-full bg-white border border-slate-200 shadow-xs rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
-            <h3 className="text-base font-black text-white">Submit Privilege Request to Super Admin</h3>
+            <h3 className="text-base font-black text-slate-900">Submit Privilege Request to Super Admin</h3>
             <p className="text-slate-400">
               Institution Admins cannot grant permissions directly. Requests are submitted to the Platform Super Admin for audit and approval.
             </p>
@@ -4848,7 +4848,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <select
                   value={reqRole}
                   onChange={(e) => setReqRole(e.target.value as UserRoleType)}
-                  className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none cursor-pointer"
+                  className="w-full px-2 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none cursor-pointer"
                 >
                   <option value="EXAM_CONTROLLER">Examination Controller</option>
                   <option value="TEACHER">Faculty / Teacher</option>
@@ -4862,7 +4862,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <select
                   value={reqAction}
                   onChange={(e) => setReqAction(e.target.value as FineGrainedAction)}
-                  className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none cursor-pointer"
+                  className="w-full px-2 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none cursor-pointer"
                 >
                   <option value="publish">publish (Publish examination results)</option>
                   <option value="export">export (Export student ledgers & reports)</option>
@@ -4877,7 +4877,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   rows={3}
                   value={reqJustification}
                   onChange={(e) => setReqJustification(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none"
                 />
               </div>
 

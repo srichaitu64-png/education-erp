@@ -144,8 +144,8 @@ export const LaboratoryManagementView: React.FC = () => {
             <FlaskConical className="w-3.5 h-3.5 text-blue-400" />
             Laboratory Management & Multi-Campus Stock Suite
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Institutional Laboratory & QR Inventory</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Institutional Laboratory & QR Inventory</h1>
+          <p className="text-xs text-slate-600 mt-1">
             Conventional & QR Stock Controls • Physics, Chemistry, Biology, CS & Electronics • Issue/Return Audit Ledger
           </p>
         </div>
@@ -163,25 +163,25 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* KPI Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Laboratories</p>
-          <p className="text-2xl font-black text-white mt-1">{laboratories.length}</p>
-          <p className="text-[10px] text-blue-400 font-medium mt-0.5">Physics, Chem, Bio, CS, Elec</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Total Laboratories</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{laboratories.length}</p>
+          <p className="text-[10px] text-blue-700 font-medium mt-0.5">Physics, Chem, Bio, CS, Elec</p>
         </div>
 
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Items</p>
-          <p className="text-2xl font-black text-white mt-1">{labInventory.length}</p>
-          <p className="text-[10px] text-emerald-400 font-medium mt-0.5">Tracked under master register</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Inventory Items</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{labInventory.length}</p>
+          <p className="text-[10px] text-emerald-700 font-medium mt-0.5">Tracked under master register</p>
         </div>
 
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Valuation</p>
-          <p className="text-2xl font-black text-emerald-400 mt-1">₹{(totalInventoryValue / 100000).toFixed(2)}L</p>
-          <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹{totalInventoryValue.toLocaleString('en-IN')}</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Inventory Valuation</p>
+          <p className="text-2xl font-black text-emerald-700 mt-1">₹{(totalInventoryValue / 100000).toFixed(2)}L</p>
+          <p className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">₹{totalInventoryValue.toLocaleString('en-IN')}</p>
         </div>
 
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Low-Stock Alerts</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Low-Stock Alerts</p>
           <p className={`text-2xl font-black mt-1 ${lowStockItems.length > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
             {lowStockItems.length}
           </p>
@@ -189,7 +189,7 @@ export const LaboratoryManagementView: React.FC = () => {
         </div>
 
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Calibration Due</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Calibration Due</p>
           <p className={`text-2xl font-black mt-1 ${maintenanceItems.length > 0 ? 'text-purple-400' : 'text-slate-400'}`}>
             {maintenanceItems.length}
           </p>
@@ -197,7 +197,7 @@ export const LaboratoryManagementView: React.FC = () => {
         </div>
 
         <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock Movements</p>
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Stock Movements</p>
           <p className="text-2xl font-black text-blue-400 mt-1">{labMovements.length}</p>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">Immutable audit logs</p>
         </div>
@@ -219,7 +219,7 @@ export const LaboratoryManagementView: React.FC = () => {
       )}
 
       {/* Sub-Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         {[
           { id: 'inventory', label: 'Inventory Register & Catalog', icon: Layers },
           { id: 'qr_scanner', label: 'QR Code Generator & Scanner', icon: QrCode },
@@ -236,7 +236,7 @@ export const LaboratoryManagementView: React.FC = () => {
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
+                  : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-200'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -252,14 +252,14 @@ export const LaboratoryManagementView: React.FC = () => {
       {subTab === 'inventory' && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 text-xs">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-200 text-xs">
             {/* Laboratory Selector */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
               <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider shrink-0">Laboratory:</span>
               <button
                 onClick={() => setActiveLabFilter('ALL')}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-colors shrink-0 cursor-pointer ${
-                  activeLabFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  activeLabFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-700 hover:bg-slate-700'
                 }`}
               >
                 All Labs ({labInventory.length})
@@ -269,7 +269,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   key={lab.id}
                   onClick={() => setActiveLabFilter(lab.id)}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-colors shrink-0 cursor-pointer ${
-                    activeLabFilter === lab.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    activeLabFilter === lab.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-700 hover:bg-slate-700'
                   }`}
                 >
                   {lab.name.split(' ')[0]} ({lab.type})
@@ -291,10 +291,10 @@ export const LaboratoryManagementView: React.FC = () => {
           </div>
 
           {/* Inventory Table */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+          <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
                   <tr>
                     <th className="p-4">Material / Item</th>
                     <th className="p-4">Laboratory</th>
@@ -319,8 +319,8 @@ export const LaboratoryManagementView: React.FC = () => {
                               QR
                             </div>
                             <div>
-                              <p className="font-bold text-white text-xs">{item.name}</p>
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              <p className="font-bold text-slate-900 text-xs">{item.name}</p>
+                              <p className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">
                                 ID: <span className="text-blue-300">{item.id}</span> • Batch: {item.batchNumber}
                               </p>
                             </div>
@@ -328,13 +328,13 @@ export const LaboratoryManagementView: React.FC = () => {
                         </td>
 
                         <td className="p-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-700 border border-slate-700">
                             {lab?.name || item.labId}
                           </span>
                           <p className="text-[10px] text-slate-400 mt-0.5">{lab?.roomNumber}</p>
                         </td>
 
-                        <td className="p-4 text-slate-300 font-mono text-[11px]">
+                        <td className="p-4 text-slate-700 font-mono text-[11px]">
                           {item.storageLocation}
                         </td>
 
@@ -352,7 +352,7 @@ export const LaboratoryManagementView: React.FC = () => {
                           )}
                         </td>
 
-                        <td className="p-4 text-right font-mono text-slate-300">
+                        <td className="p-4 text-right font-mono text-slate-700">
                           ₹{item.unitPrice.toLocaleString('en-IN')}
                         </td>
 
@@ -401,20 +401,20 @@ export const LaboratoryManagementView: React.FC = () => {
       {subTab === 'qr_scanner' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: QR Label & Print Card */}
-          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xl">
             <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <QrCode className="w-4 h-4 text-blue-400" />
                 Laboratory Material QR Label Generator
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Generate authenticated cryptographic QR stickers for test tubes, microscopes, and chemical containers.
               </p>
             </div>
 
             {/* Select Material Dropdown */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Select Laboratory Item for Labeling:
               </label>
               <select
@@ -501,14 +501,14 @@ export const LaboratoryManagementView: React.FC = () => {
           </div>
 
           {/* Right Column: Authenticated Scan Action Workbench */}
-          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-white flex items-center gap-2">
+                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   Authenticated QR Item Actions
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   Actions executed after physical QR camera scan. Strict tenant permissions enforced.
                 </p>
               </div>
@@ -536,7 +536,7 @@ export const LaboratoryManagementView: React.FC = () => {
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                 <div>
                   <h3 className="text-sm font-black text-white">{selectedItemForQR.name}</h3>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">Asset Code: {selectedItemForQR.id}</p>
+                  <p className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">Asset Code: {selectedItemForQR.id}</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono ${
                   selectedItemForQR.currentStock <= selectedItemForQR.minStockLevel
@@ -579,12 +579,12 @@ export const LaboratoryManagementView: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Action 1: Issue Item to Faculty/Student */}
               <form onSubmit={handleIssueSubmit} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
                   <ArrowRight className="w-3.5 h-3.5" /> Issue to Practical Batch
                 </h4>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Quantity to Issue:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Quantity to Issue:</label>
                   <input
                     type="number"
                     min="1"
@@ -596,7 +596,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Faculty / Requester:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Faculty / Requester:</label>
                   <input
                     type="text"
                     value={issueRequester}
@@ -606,7 +606,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Practical Purpose:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Practical Purpose:</label>
                   <input
                     type="text"
                     value={issuePurpose}
@@ -627,10 +627,10 @@ export const LaboratoryManagementView: React.FC = () => {
               {/* Action 2: Return or Record Consumption */}
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Return Custody / Consume
                   </h4>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-600 mt-1">
                     Record returned instruments back into cupboards or record consumed chemicals from practicals.
                   </p>
                 </div>
@@ -658,7 +658,7 @@ export const LaboratoryManagementView: React.FC = () => {
                         alert(`Audit Status: ${res.status}. Discrepancy: ${res.discrepancy} units.`);
                       }
                     }}
-                    className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                    className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
                   >
                     Physical Stock Verification Count
                   </button>
@@ -673,14 +673,14 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 3: ISSUE & RETURN MOVEMENTS LEDGER */}
       {/* ===================================================================== */}
       {subTab === 'movements' && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <PackageCheck className="w-4 h-4 text-blue-400" />
                 Immutable Laboratory Stock Movement Ledger
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Every issue, return, chemical consumption, and purchase creates a tamper-proof audit record.
               </p>
             </div>
@@ -688,7 +688,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
                 <tr>
                   <th className="p-3.5">Movement ID</th>
                   <th className="p-3.5">Item Name</th>
@@ -721,8 +721,8 @@ export const LaboratoryManagementView: React.FC = () => {
                     <td className="p-3.5 text-center font-bold font-mono text-slate-200">
                       {mov.quantity} {mov.unit}
                     </td>
-                    <td className="p-3.5 text-slate-300">{mov.requestedBy}</td>
-                    <td className="p-3.5 text-slate-400 text-[11px] max-w-xs truncate">{mov.purpose}</td>
+                    <td className="p-3.5 text-slate-700">{mov.requestedBy}</td>
+                    <td className="p-3.5 text-slate-600 text-[11px] max-w-xs truncate">{mov.purpose}</td>
                     <td className="p-3.5 text-slate-400 font-mono text-[10px]">{mov.timestamp}</td>
                     <td className="p-3.5 text-center font-bold font-mono text-emerald-400">{mov.balanceAfter}</td>
                   </tr>
@@ -737,13 +737,13 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 4: EQUIPMENT MAINTENANCE & CALIBRATION */}
       {/* ===================================================================== */}
       {subTab === 'maintenance' && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
           <div>
-            <h2 className="text-base font-black text-white flex items-center gap-2">
+            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Wrench className="w-4 h-4 text-purple-400" />
               Equipment Calibration & Preventive Maintenance Schedule
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Track annual optical calibrations, laser checks, autoclave safety certifications, and warranty renewals.
             </p>
           </div>
@@ -753,8 +753,8 @@ export const LaboratoryManagementView: React.FC = () => {
               <div key={eq.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-white">{eq.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-mono">ID: {eq.id} • Batch: {eq.batchNumber}</p>
+                    <h3 className="text-xs font-bold text-slate-900">{eq.name}</h3>
+                    <p className="text-[10px] text-slate-600 font-mono font-medium">ID: {eq.id} • Batch: {eq.batchNumber}</p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
                     eq.condition === 'OPERATIONAL'
@@ -799,13 +799,13 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 5: PRACTICALS & EXPERIMENT LINKAGE */}
       {/* ===================================================================== */}
       {subTab === 'experiments' && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
           <div>
-            <h2 className="text-base font-black text-white flex items-center gap-2">
+            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
               <FlaskConical className="w-4 h-4 text-emerald-400" />
               Board Syllabus Practical Sessions & Required Inventory
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Link scheduled laboratory experiments directly with required chemicals, glassware, and faculty in-charge.
             </p>
           </div>
@@ -827,20 +827,20 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold text-white">{exp.title}</h3>
+                  <h3 className="text-xs font-bold text-slate-900">{exp.title}</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">Target: {exp.classGroup} • Faculty: {exp.teacherName}</p>
                 </div>
 
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Required Apparatus & Reagents:</span>
-                  <ul className="list-disc list-inside text-[11px] text-slate-300 space-y-0.5">
+                  <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
                     {exp.requiredMaterials.map((m, idx) => (
                       <li key={idx} className="truncate">{m}</li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-600 font-mono font-medium">
                   <span>Schedule: {exp.scheduleDate}</span>
                 </div>
               </div>
@@ -853,7 +853,7 @@ export const LaboratoryManagementView: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
                 <FlaskConical className="w-4 h-4 text-blue-400" />
                 Register New Laboratory Material / Equipment
@@ -863,7 +863,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
             <form onSubmit={handleCreateMaterial} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Material Name:</label>
+                <label className="block text-[10px] font-bold text-slate-600 uppercase">Material Name:</label>
                 <input
                   type="text"
                   required
@@ -876,7 +876,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Laboratory:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Laboratory:</label>
                   <select
                     value={newItemLabId}
                     onChange={(e) => setNewItemLabId(e.target.value)}
@@ -889,7 +889,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Category:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Category:</label>
                   <select
                     value={newItemCategory}
                     onChange={(e) => setNewItemCategory(e.target.value as any)}
@@ -906,7 +906,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Current Stock:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Current Stock:</label>
                   <input
                     type="number"
                     min="1"
@@ -917,7 +917,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Min Stock:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Min Stock:</label>
                   <input
                     type="number"
                     min="1"
@@ -928,7 +928,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Unit Price (₹):</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Unit Price (₹):</label>
                   <input
                     type="number"
                     min="0"
@@ -941,7 +941,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Shelf / Rack Location:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Shelf / Rack Location:</label>
                   <input
                     type="text"
                     value={newItemLocation}
@@ -951,7 +951,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Unit Measurement:</label>
+                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Unit Measurement:</label>
                   <input
                     type="text"
                     value={newItemUnit}
@@ -961,11 +961,11 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-700 font-bold hover:bg-slate-700 cursor-pointer"
                 >
                   Cancel
                 </button>

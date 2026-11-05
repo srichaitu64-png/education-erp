@@ -465,3 +465,4 @@ export const CollectFeeModal: React.FC<CollectFeeModalProps> = ({
     </div>
   );
 };
+
