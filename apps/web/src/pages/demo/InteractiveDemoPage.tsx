@@ -2317,7 +2317,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* 4 Accountant Operations Buttons */}
                       <div className="border-t border-slate-200 pt-3">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-600 tracking-wider block mb-2">
                           Mandatory Accountant Action Suite:
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
@@ -2327,34 +2327,34 @@ export const InteractiveDemoPage: React.FC = () => {
                               setActiveReceiptForModal(targetReceipt);
                               setShowReceiptModal(true);
                             }}
-                            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
-                            <Receipt className="w-3.5 h-3.5 text-blue-400" />
+                            <Receipt className="w-3.5 h-3.5 text-blue-600" />
                             1. View / Print Individual Receipt
                           </button>
                           <button
                             onClick={() => window.print()}
-                            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                             2. Generate Consolidated Fee Statement
                           </button>
                           <button
                             onClick={() => {
                               alert(`Term-wise Fee History for ${statement.studentName}:\nTerm 1 (June-Aug): ₹85,000 due, Paid ₹50,000 (REC-2026-00125)\nTerm 2 (Sept-Nov): ₹65,000 due, Paid ₹30,000 (REC-2026-00126)\nRemaining Total Balance: ₹70,000`);
                             }}
-                            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
-                            <Clock className="w-3.5 h-3.5 text-amber-400" />
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
                             3. Term-wise Fee History
                           </button>
                           <button
                             onClick={() => {
                               alert(`FEE DUE NOTICE GENERATED\nStudent: ${statement.studentName} (${statement.admissionNumber})\nParent: ${statement.parentName}\nTotal Outstanding Due: ₹${statement.totalBalanceDue.toLocaleString('en-IN')}\nNotice dispatched to registered phone: +91 98450 99887`);
                             }}
-                            className="px-3.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/40 text-rose-300 border border-rose-800/60 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                             4. Generate Fee Due Statement
                           </button>
                         </div>
@@ -2397,19 +2397,19 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* Financial KPI Summary Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
-                          <span className="text-[11px] text-slate-600 uppercase font-bold">Total Annual Fee</span>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold tracking-wider">Total Annual Fee</span>
                           <p className="text-2xl font-black text-slate-900 mt-1">₹{statement.totalAnnualFee.toLocaleString('en-IN')}</p>
                           <p className="text-[10px] text-slate-500 mt-0.5">Approved annual institutional schedule</p>
                         </div>
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
-                          <span className="text-[11px] text-slate-600 uppercase font-bold">Total Amount Paid</span>
-                          <p className="text-2xl font-black text-emerald-400 mt-1">₹{statement.totalPaid.toLocaleString('en-IN')}</p>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold tracking-wider">Total Amount Paid</span>
+                          <p className="text-2xl font-black text-emerald-700 mt-1">₹{statement.totalPaid.toLocaleString('en-IN')}</p>
                           <p className="text-[10px] text-slate-500 mt-0.5">Realised across {statement.receiptHistory.length} confirmed receipts</p>
                         </div>
-                        <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
-                          <span className="text-[11px] text-slate-600 uppercase font-bold">Outstanding Balance Due</span>
-                          <p className={`text-2xl font-black mt-1 ${statement.totalBalanceDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                          <span className="text-[11px] text-slate-600 uppercase font-bold tracking-wider">Outstanding Balance Due</span>
+                          <p className={`text-2xl font-black mt-1 ${statement.totalBalanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
                             ₹{statement.totalBalanceDue.toLocaleString('en-IN')}
                           </p>
                           <p className="text-[10px] text-slate-500 mt-0.5">Status: {statement.paymentStatus}</p>
@@ -2419,7 +2419,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       {/* Fee-Head Allocation Table */}
                       <div className="overflow-x-auto rounded-xl border border-slate-200">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
+                          <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200">
                             <tr>
                               <th className="px-4 py-3">Fee Head / Description</th>
                               <th className="px-4 py-3">Category</th>
@@ -2436,11 +2436,11 @@ export const InteractiveDemoPage: React.FC = () => {
                               <tr key={head.feeHeadId} className="hover:bg-slate-50/80">
                                 <td className="px-4 py-3 font-bold text-slate-900">{head.feeHeadName}</td>
                                 <td className="px-4 py-3 text-slate-700 font-medium">{head.category}</td>
-                                <td className="px-4 py-3 text-right font-mono text-slate-200">₹{head.annualFee.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-slate-700 font-medium">₹{head.term1Due.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-slate-700 font-medium">₹{head.term2Due.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-emerald-400 font-bold">₹{head.paidAmount.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3 text-right font-mono text-amber-400 font-bold">₹{head.balanceDue.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">₹{head.annualFee.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono font-medium text-slate-700">₹{head.term1Due.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono font-medium text-slate-700">₹{head.term2Due.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono text-emerald-700 font-bold">₹{head.paidAmount.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-mono text-amber-700 font-bold">₹{head.balanceDue.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3 text-center">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                                     head.status === 'PAID' ? 'bg-emerald-950 text-emerald-300' : head.status === 'PARTIAL' ? 'bg-amber-950 text-amber-300' : 'bg-rose-950 text-rose-300'
@@ -2474,7 +2474,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </h4>
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
+                            <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200">
                               <tr>
                                 <th className="px-4 py-2.5">Receipt #</th>
                                 <th className="px-4 py-2.5">Payment Date</th>
@@ -2487,25 +2487,25 @@ export const InteractiveDemoPage: React.FC = () => {
                             <tbody className="divide-y divide-slate-200">
                               {statement.receiptHistory.map((rcp) => (
                                 <tr key={rcp.id} className="hover:bg-slate-50/80">
-                                  <td className="px-4 py-3 font-mono font-bold text-blue-400">{rcp.receipt_number}</td>
-                                  <td className="px-4 py-3 text-slate-300">{rcp.payment_date}</td>
-                                  <td className="px-4 py-3 text-slate-300">
+                                  <td className="px-4 py-3 font-mono font-bold text-blue-600">{rcp.receipt_number}</td>
+                                  <td className="px-4 py-3 text-slate-700 font-medium">{rcp.payment_date}</td>
+                                  <td className="px-4 py-3 text-slate-800">
                                     <span className="font-semibold text-slate-900">{rcp.payment_method}</span>
-                                    <span className="block text-[10px] text-slate-500 font-mono">{rcp.transaction_reference}</span>
+                                    <span className="block text-[10px] text-slate-600 font-mono font-medium">{rcp.transaction_reference}</span>
                                   </td>
-                                  <td className="px-4 py-3 text-slate-300">
+                                  <td className="px-4 py-3 text-slate-700">
                                     <div className="flex flex-wrap gap-1">
                                       {rcp.allocations.map((a, idx) => (
-                                        <span key={idx} className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">
-                                          {a.title}: <strong className="text-emerald-400">₹{a.allocated.toLocaleString('en-IN')}</strong>
+                                        <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-800 font-medium">
+                                          {a.title}: <strong className="text-emerald-700">₹{a.allocated.toLocaleString('en-IN')}</strong>
                                         </span>
                                       ))}
                                     </div>
-                                    <span className="block text-[10px] text-slate-500 italic mt-0.5">
+                                    <span className="block text-[10px] text-slate-600 italic mt-0.5">
                                       Words: {rcp.amount_in_words || 'Confirmed in full'}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-3 text-right font-mono font-black text-emerald-400 text-sm">
+                                  <td className="px-4 py-3 text-right font-mono font-black text-emerald-700 text-sm">
                                     ₹{rcp.amount_paid.toLocaleString('en-IN')}
                                   </td>
                                   <td className="px-4 py-3 text-center">
