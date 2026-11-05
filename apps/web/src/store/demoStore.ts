@@ -3458,6 +3458,9 @@ export const useDemoStore = create<DemoState>()(
   staffMembers: initialStaffMembers,
 
   setTenantScope: (code: string) => {
+    if (code === get().tenantScope) {
+      return; // Preserve existing mutations and local storage across page reloads
+    }
     if (code === 'akshara-trial') {
       set({
         tenantScope: 'akshara-trial',
