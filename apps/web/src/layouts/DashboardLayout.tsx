@@ -46,23 +46,23 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   const isSuperAdmin = user?.is_superadmin;
 
   const institutionNavItems: NavItem[] = [
-    { label: 'Overview', path: '/dashboard', icon: GraduationCap },
-    { label: 'Admissions & Students', path: '/dashboard/students', icon: Users, featureId: 'students.management' },
-    { label: 'Fees & Invoicing', path: '/dashboard/fees', icon: CreditCard, featureId: 'fees.basic' },
-    { label: 'Daily Attendance', path: '/dashboard/attendance', icon: CalendarCheck, featureId: 'attendance.basic' },
-    { label: 'Examinations & Marks', path: '/dashboard/examinations', icon: Award, featureId: 'examinations.basic' },
-    { label: 'Academics & Timetable', path: '/dashboard/academics', icon: BookOpen },
-    { label: 'WhatsApp Automation', path: '/dashboard/whatsapp', icon: MessageSquare, featureId: 'communication.whatsapp' },
-    { label: 'AI Performance Reports', path: '/dashboard/ai-reports', icon: Sparkles, featureId: 'analytics.ai_reports' },
-    { label: 'Multi-Campus Directory', path: '/dashboard/campuses', icon: Building2, featureId: 'multi_campus' },
+    { label: 'Overview', path: '/app', icon: GraduationCap },
+    { label: 'Admissions & Students', path: '/app/students', icon: Users, featureId: 'students.management' },
+    { label: 'Fees & Invoicing', path: '/app/fees', icon: CreditCard, featureId: 'fees.basic' },
+    { label: 'Daily Attendance', path: '/app/attendance', icon: CalendarCheck, featureId: 'attendance.basic' },
+    { label: 'Examinations & Marks', path: '/app/examinations', icon: Award, featureId: 'examinations.basic' },
+    { label: 'Academics & Timetable', path: '/app/academics', icon: BookOpen },
+    { label: 'WhatsApp Automation', path: '/app/whatsapp', icon: MessageSquare, featureId: 'communication.whatsapp' },
+    { label: 'AI Performance Reports', path: '/app/ai-reports', icon: Sparkles, featureId: 'analytics.ai_reports' },
+    { label: 'Multi-Campus Directory', path: '/app/campuses', icon: Building2, featureId: 'multi_campus' },
   ];
 
   const superAdminNavItems: NavItem[] = [
-    { label: 'Platform Overview', path: '/superadmin', icon: Shield },
-    { label: 'Institutions Directory', path: '/superadmin/institutions', icon: Building2 },
-    { label: 'Subscription Plans', path: '/superadmin/plans', icon: CreditCard },
-    { label: 'Feature Entitlements', path: '/superadmin/entitlements', icon: Lock },
-    { label: 'Global Audit Logs', path: '/superadmin/audit', icon: BarChart3 },
+    { label: 'Platform Overview', path: '/platform', icon: Shield },
+    { label: 'Institutions Directory', path: '/platform/institutions', icon: Building2 },
+    { label: 'Subscription Plans', path: '/platform/plans', icon: CreditCard },
+    { label: 'Feature Entitlements', path: '/platform/entitlements', icon: Lock },
+    { label: 'Global Audit Logs', path: '/platform/audit', icon: BarChart3 },
   ];
 
   const navItems = isSuperAdmin ? superAdminNavItems : institutionNavItems;

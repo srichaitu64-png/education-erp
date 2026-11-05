@@ -6,6 +6,7 @@ import {
   Upload, ShieldAlert, Lock, ChevronDown, ChevronRight, Menu, X, Shield, ShieldCheck
 } from 'lucide-react';
 import { UserRoleType } from '../../../store/demoStore';
+import { useAuthStore } from '../../../store/authStore';
 
 export interface NavItemConfig {
   id: string;
@@ -164,13 +165,20 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
     return isTabAllowed(item.id);
   };
 
+  const { tenant } = useAuthStore();
+  const isTrial = tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'));
+  const brandName = isTrial ? 'Akshara Global ERP' : 'OUR SCHOOL ERP';
+  const brandSub = isTrial ? 'School & PU College (Trial)' : 'Demonstration Campus (Demo)';
+  const brandInitial = isTrial ? 'A' : 'O';
+  const brandBg = isTrial ? 'bg-amber-600' : 'bg-blue-600';
+
   return (
     <>
       {/* Mobile Hamburger Button */}
       <div className="md:hidden bg-[#172B4D] text-white p-3 flex items-center justify-between border-b border-slate-700">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs">A</div>
-          <span className="font-bold text-xs">Akshara Global ERP</span>
+          <div className={`w-7 h-7 rounded-lg ${brandBg} flex items-center justify-center font-bold text-xs text-white`}>{brandInitial}</div>
+          <span className="font-bold text-xs">{brandName}</span>
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
@@ -189,12 +197,12 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
         {/* Campus / Institution Brand Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md">
-              A
+            <div className={`w-9 h-9 rounded-xl ${brandBg} text-white font-black flex items-center justify-center text-sm shadow-md`}>
+              {brandInitial}
             </div>
             <div>
-              <h2 className="text-xs font-black text-white uppercase tracking-wider">Akshara Global ERP</h2>
-              <span className="text-[10px] text-slate-400">School & College Campus</span>
+              <h2 className="text-xs font-black text-white uppercase tracking-wider">{brandName}</h2>
+              <span className="text-[10px] text-slate-400">{brandSub}</span>
             </div>
           </div>
         </div>

@@ -154,7 +154,7 @@ export const InteractiveDemoPage: React.FC = () => {
     resetDemoData,
   } = useDemoStore();
 
-  const { user, isAuthenticated, entitlements } = useAuthStore();
+  const { user, tenant, isAuthenticated, entitlements } = useAuthStore();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   // Sync role and tab from URL search parameters with authenticated session enforcement
@@ -666,7 +666,9 @@ export const InteractiveDemoPage: React.FC = () => {
               </>
             ) : (
               <span className="text-slate-300 font-medium">
-                Akshara Global Campus • Affiliation # 830192 • Karnataka State PU Board
+                {tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'))
+                  ? 'Akshara Global Trial Campus • School & PU College Units'
+                  : 'OUR SCHOOL Demonstration Campus • CBSE & State Board • Affiliation # 830192'}
               </span>
             )}
           </span>
@@ -828,7 +830,9 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1.5 rounded-xl bg-purple-900/60 text-purple-200 border border-purple-700 text-xs font-bold">
-                    Akshara Global Educational Trust
+                    {tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'))
+                      ? 'Akshara Global Educational Trust'
+                      : 'OUR SCHOOL Educational Trust'}
                   </span>
                 </div>
               </div>

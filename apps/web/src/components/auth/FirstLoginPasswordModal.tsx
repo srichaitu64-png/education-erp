@@ -7,12 +7,14 @@ import { api } from '../../services/api';
 interface FirstLoginPasswordModalProps {
   isOpen: boolean;
   userEmail: string;
+  token?: string;
   onSuccess: () => void;
 }
 
 export const FirstLoginPasswordModal: React.FC<FirstLoginPasswordModalProps> = ({
   isOpen,
   userEmail,
+  token,
   onSuccess,
 }) => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -43,18 +45,27 @@ export const FirstLoginPasswordModal: React.FC<FirstLoginPasswordModalProps> = (
 
     setLoading(true);
     try {
-      await api.post('/auth/password/first-login-setup', {
-        current_password: currentPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      });
+      await api.post(
+        '/auth/password/first-login-setup',
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        },
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
       onSuccess();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
+      if (detail && typeof detail === 'string' && detail.toLowerCase().includes('not flagged')) {
+        // If account is already past first-login setup, proceed into session
+        onSuccess();
+        return;
+      }
       if (detail) {
-        setErrorMessage(detail);
+        setErrorMessage(typeof detail === 'string' ? detail : JSON.stringify(detail));
       } else {
-        // Fallback for simulation
+        // Fallback for offline preview simulation
         onSuccess();
       }
     } finally {

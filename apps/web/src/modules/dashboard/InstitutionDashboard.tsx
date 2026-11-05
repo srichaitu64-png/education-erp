@@ -583,7 +583,9 @@ export const InstitutionDashboard: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
               Verified Institution
             </span>
-            <h2 className="text-2xl font-black">{tenant?.name || 'Akshara Global School & College'}</h2>
+            <h2 className="text-2xl font-black">
+              {tenant?.name || (tenant?.code === 'akshara-trial' ? 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE' : 'OUR SCHOOL')}
+            </h2>
             <p className="text-blue-200 text-sm mt-1">
               Academic Year 2026–2027 • Main Campus Active • Multi-Tenant Isolated
             </p>
@@ -602,7 +604,7 @@ export const InstitutionDashboard: React.FC = () => {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link to="/dashboard/students" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
+          <Link to="/app/students" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Active Students</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">{students.length} / 750</p>
@@ -615,7 +617,7 @@ export const InstitutionDashboard: React.FC = () => {
             </div>
           </Link>
 
-          <Link to="/dashboard/attendance" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-emerald-300 transition-colors">
+          <Link to="/app/attendance" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-emerald-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Today's Attendance</p>
               <p className="text-2xl font-bold text-emerald-600 mt-1">94.8%</p>
@@ -626,7 +628,7 @@ export const InstitutionDashboard: React.FC = () => {
             </div>
           </Link>
 
-          <Link to="/dashboard/fees" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-amber-300 transition-colors">
+          <Link to="/app/fees" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-amber-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Total Collections</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">₹1,15,000</p>
@@ -637,7 +639,7 @@ export const InstitutionDashboard: React.FC = () => {
             </div>
           </Link>
 
-          <Link to="/dashboard/examinations" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
+          <Link to="/app/examinations" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Examinations</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">Active</p>
@@ -662,7 +664,7 @@ export const InstitutionDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Link to="/dashboard/students" className="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-start gap-3">
+            <Link to="/app/students" className="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                 <Users className="w-5 h-5" />
               </div>
@@ -675,7 +677,7 @@ export const InstitutionDashboard: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/dashboard/fees" className="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-start gap-3">
+            <Link to="/app/fees" className="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                 <CreditCard className="w-5 h-5" />
               </div>

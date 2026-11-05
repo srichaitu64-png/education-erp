@@ -465,6 +465,7 @@ export const LoginPage: React.FC = () => {
         <FirstLoginPasswordModal
           isOpen={showFirstLoginModal}
           userEmail={pendingAuthSession.user.email}
+          token={pendingAuthSession.token}
           onSuccess={handleFirstLoginSuccess}
         />
       )}

@@ -101,7 +101,7 @@ export const App: React.FC = () => {
             }
           />
 
-          {/* Dedicated /app/* Authenticated Institution ERP Route Group */}
+          {/* Dedicated /app/* & /dashboard/* Authenticated Institution ERP Route Groups */}
           <Route
             path="/app"
             element={
@@ -118,10 +118,22 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
-          {/* Backward Compatibility Aliases */}
-          <Route path="/dashboard" element={<Navigate to="/app" replace />} />
-          <Route path="/dashboard/*" element={<Navigate to="/app" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <InstitutionDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/*"
+            element={
+              <ProtectedRoute>
+                <InstitutionDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/superadmin" element={<Navigate to="/platform" replace />} />
           <Route path="/superadmin/*" element={<Navigate to="/platform" replace />} />
 
