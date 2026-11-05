@@ -395,15 +395,51 @@ export interface DemoStudent {
   admission_number: string;
   roll_number: string;
   first_name: string;
+  middle_name?: string;
   last_name: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  date_of_birth?: string;
+  blood_group?: string;
+  aadhaar_number?: string;
   institution_level: 'School' | 'PU College' | 'Degree College';
   class_name: string;
   section_or_stream: string;
+  academic_year?: string;
+  pen_number?: string;
+  registration_number?: string;
+  omr_number?: string;
+  father_name?: string;
+  mother_name?: string;
+  father_mobile?: string;
+  mother_mobile?: string;
+  parent_email?: string;
+  emergency_contact?: string;
   guardian_name: string;
   guardian_phone: string;
+  address_line?: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  pincode?: string;
   fee_balance: number;
   attendance_pct: number;
   status: 'ACTIVE' | 'INACTIVE';
+  custom_fields?: Record<string, string>;
+}
+
+export interface DemoStaffMember {
+  id: string;
+  name: string;
+  employee_id: string;
+  role: string;
+  designation: string;
+  dept: string;
+  academic_unit: 'School' | 'PU College' | 'Degree College' | 'All';
+  email: string;
+  mobile: string;
+  status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+  joining_date?: string;
+  employment_type?: 'PERMANENT' | 'CONTRACT' | 'PROBATION';
 }
 
 export interface DemoAdmission {
@@ -1455,6 +1491,14 @@ interface DemoState {
   batchMarkDailyAttendance: (sectionId: string, date: string, records: { student_id: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'LEAVE'; late_minutes?: number; reason?: string }[]) => void;
   addMigrationJob: (job: MigrationBatch) => void;
 
+  // Faculty & Staff Directory Management
+  staffMembers: DemoStaffMember[];
+  addStaffMember: (data: Partial<DemoStaffMember>) => void;
+
+  // Multi-Institution Tenant Isolation Scope
+  tenantScope: string;
+  setTenantScope: (code: string) => void;
+
   resetDemoData: () => void;
 }
 
@@ -2074,19 +2118,61 @@ export const initialStaffDuties: StaffDutyAssignmentModel[] = [
 
 export const initialHallTickets: HallTicketModel[] = [
   {
-    id: 'HT-2026-0152',
-    ticket_number: 'HT-AKG-2026-0152',
-    student_id: 'st-rahul',
-    student_name: 'Rahul Kumar',
-    admission_number: 'AKG-2026-0152',
+    id: 'HT-2026-0101',
+    ticket_number: 'HT-OUR-2026-0101',
+    student_id: 'st-1',
+    student_name: 'Aarav Sharma',
+    admission_number: 'OUR-2026-0101',
+    class_name: 'Class 10',
+    section_code: 'A',
+    exam_title: 'CBSE Secondary Board Preparatory Examination 2026',
+    exam_centre: 'OUR SCHOOL Demonstration Campus • Block A',
+    room_number: 'Hall A-101',
+    seat_number: 'Seat #01',
+    eligibility_status: 'ELIGIBLE',
+    qr_code_signature: 'EDOS-VERIFIED-TICKET-OUR-0101-2026-VALID',
+    timetable: [
+      { subject: 'Science & Technology (Theory + Practical)', date: '2026-11-24', time: '09:30 AM - 12:30 PM', room: 'Hall A-101' },
+      { subject: 'Mathematics (Theory)', date: '2026-11-26', time: '09:30 AM - 12:30 PM', room: 'Hall A-101' },
+      { subject: 'Social Science (Theory)', date: '2026-11-28', time: '09:30 AM - 12:30 PM', room: 'Hall A-101' },
+      { subject: 'English Language & Literature', date: '2026-11-30', time: '09:30 AM - 12:30 PM', room: 'Hall A-101' }
+    ]
+  },
+  {
+    id: 'HT-2026-0102',
+    ticket_number: 'HT-OUR-2026-0102',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'OUR-2026-0102',
     class_name: 'I PUC',
     section_code: 'A',
-    exam_title: 'Mid-Term Institutional Examination 2026',
-    exam_centre: 'Akshara Global Campus • Block B',
+    exam_title: 'Pre-University Board Examination 2026',
+    exam_centre: 'OUR SCHOOL Demonstration Campus • Block B',
+    room_number: 'Hall ST-201',
+    seat_number: 'Seat #08',
+    eligibility_status: 'ELIGIBLE',
+    qr_code_signature: 'EDOS-VERIFIED-TICKET-OUR-0102-2026-VALID',
+    timetable: [
+      { subject: 'Physics (Theory + Practical)', date: '2026-11-24', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Chemistry (Theory + Practical)', date: '2026-11-26', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Mathematics (Theory)', date: '2026-11-28', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
+      { subject: 'Biology (Theory + Practical)', date: '2026-11-30', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' }
+    ]
+  },
+  {
+    id: 'HT-2026-0103',
+    ticket_number: 'HT-OUR-2026-0103',
+    student_id: 'st-3',
+    student_name: 'Rahul Kumar',
+    admission_number: 'OUR-2026-0103',
+    class_name: 'II PUC',
+    section_code: 'A',
+    exam_title: 'Pre-University Board Examination 2026',
+    exam_centre: 'OUR SCHOOL Demonstration Campus • Block B',
     room_number: 'Hall ST-201',
     seat_number: 'Seat #14',
     eligibility_status: 'ELIGIBLE',
-    qr_code_signature: 'EDOS-VERIFIED-TICKET-AKG-0152-2026-VALID',
+    qr_code_signature: 'EDOS-VERIFIED-TICKET-OUR-0103-2026-VALID',
     timetable: [
       { subject: 'Physics (Theory + Practical)', date: '2026-11-24', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
       { subject: 'Chemistry (Theory + Practical)', date: '2026-11-26', time: '09:30 AM - 12:30 PM', room: 'Hall ST-201' },
@@ -2119,27 +2205,114 @@ export const initialFeeSnapshots: ConsolidatedFeeReportSnapshotModel[] = [
   }
 ];
 
-const initialStudents: DemoStudent[] = [
-  { id: 'st-rahul', admission_number: 'AKG-2026-0152', roll_number: '152', first_name: 'Rahul', last_name: 'Kumar', institution_level: 'PU College', class_name: 'I PUC', section_or_stream: 'PCMB (Science)', guardian_name: 'Ramesh Kumar', guardian_phone: '+91 98450 99887', fee_balance: 70000, attendance_pct: 94.2, status: 'ACTIVE' },
-  { id: 'st-1', admission_number: 'ADM-2026-001', roll_number: '101', first_name: 'Aarav', last_name: 'Sharma', institution_level: 'School', class_name: 'Class 10', section_or_stream: 'Section A', guardian_name: 'Rajesh Sharma', guardian_phone: '+91 98450 12345', fee_balance: 0, attendance_pct: 96.5, status: 'ACTIVE' },
-  { id: 'st-2', admission_number: 'ADM-2026-002', roll_number: '102', first_name: 'Ananya', last_name: 'Hegde', institution_level: 'PU College', class_name: 'I PUC', section_or_stream: 'PCMB (Science)', guardian_name: 'Venkatesh Hegde', guardian_phone: '+91 98450 23456', fee_balance: 12500, attendance_pct: 92.0, status: 'ACTIVE' },
-  { id: 'st-3', admission_number: 'ADM-2026-003', roll_number: '103', first_name: 'Rohan', last_name: 'Verma', institution_level: 'Degree College', class_name: 'B.Sc Computer Science', section_or_stream: 'Semester 3 (Credits: 24)', guardian_name: 'Sunil Verma', guardian_phone: '+91 98450 34567', fee_balance: 24000, attendance_pct: 88.2, status: 'ACTIVE' },
-  { id: 'st-4', admission_number: 'ADM-2026-004', roll_number: '104', first_name: 'Priya', last_name: 'Nair', institution_level: 'School', class_name: 'Class 9', section_or_stream: 'Section B', guardian_name: 'K. Nair', guardian_phone: '+91 98450 45678', fee_balance: 4500, attendance_pct: 98.0, status: 'ACTIVE' },
-  { id: 'st-5', admission_number: 'ADM-2026-005', roll_number: '105', first_name: 'Aditya', last_name: 'Patil', institution_level: 'PU College', class_name: 'II PUC', section_or_stream: 'Commerce (EBAC)', guardian_name: 'Mahesh Patil', guardian_phone: '+91 98450 56789', fee_balance: 0, attendance_pct: 94.6, status: 'ACTIVE' },
+export const initialStaffMembers: DemoStaffMember[] = [
+  { id: 'stf-1', name: 'Dr. Ramesh Kumar', employee_id: 'EMP-PRIN-01', role: 'PRINCIPAL', designation: 'School & PU Principal', dept: 'Leadership & Administration', academic_unit: 'All', email: 'principal@ourschool.edu.in', mobile: '+91 98450 11001', status: 'ACTIVE', joining_date: '2021-06-01', employment_type: 'PERMANENT' },
+  { id: 'stf-2', name: 'Dr. V. Murthy', employee_id: 'EMP-PHY-102', role: 'LECTURER', designation: 'Senior Lecturer in Physics', dept: 'PU College Science', academic_unit: 'PU College', email: 'v.murthy@ourschool.edu.in', mobile: '+91 98450 11002', status: 'ACTIVE', joining_date: '2022-07-15', employment_type: 'PERMANENT' },
+  { id: 'stf-3', name: 'Prof. S. Joshi', employee_id: 'EMP-CHEM-103', role: 'EXAM_CONTROLLER', designation: 'Head of Chemistry & Exam Controller', dept: 'PU College Science', academic_unit: 'PU College', email: 's.joshi@ourschool.edu.in', mobile: '+91 98450 11003', status: 'ACTIVE', joining_date: '2021-08-01', employment_type: 'PERMANENT' },
+  { id: 'stf-4', name: 'Mrs. K. Swamy', employee_id: 'EMP-MTH-105', role: 'TEACHER', designation: 'Senior Mathematics Faculty', dept: 'Secondary & PU', academic_unit: 'School', email: 'k.swamy@ourschool.edu.in', mobile: '+91 98450 11004', status: 'ACTIVE', joining_date: '2023-01-10', employment_type: 'PERMANENT' },
+  { id: 'stf-5', name: 'K. S. Narayana', employee_id: 'EMP-ACC-09', role: 'ACCOUNTANT', designation: 'Senior Accounts Officer & Bursar', dept: 'Finance & Accounts', academic_unit: 'All', email: 'accountant@ourschool.edu.in', mobile: '+91 98450 11005', status: 'ACTIVE', joining_date: '2020-05-20', employment_type: 'PERMANENT' },
+  { id: 'stf-6', name: 'Suresh Gowda', employee_id: 'EMP-TRP-07', role: 'TRANSPORT_MANAGER', designation: 'Transport Supervisor', dept: 'Logistics & Transport', academic_unit: 'All', email: 'transport@ourschool.edu.in', mobile: '+91 98450 11006', status: 'ACTIVE', joining_date: '2022-11-01', employment_type: 'PERMANENT' },
+];
+
+export const initialStudents: DemoStudent[] = [
+  {
+    id: 'st-1',
+    admission_number: 'OUR-2026-0101',
+    roll_number: '101',
+    first_name: 'Aarav',
+    last_name: 'Sharma',
+    institution_level: 'School',
+    class_name: 'Class 10',
+    section_or_stream: 'Section A',
+    gender: 'MALE',
+    date_of_birth: '2010-04-12',
+    blood_group: 'O+',
+    father_name: 'Rajesh Sharma',
+    mother_name: 'Sunita Sharma',
+    guardian_name: 'Rajesh Sharma',
+    guardian_phone: '+91 98450 12345',
+    father_mobile: '+91 98450 12345',
+    mother_mobile: '+91 98450 12346',
+    parent_email: 'rajesh.sharma@example.com',
+    address_line: '#42, 3rd Cross, Indiranagar',
+    city: 'Bengaluru',
+    district: 'Bengaluru Urban',
+    state: 'Karnataka',
+    pincode: '560038',
+    fee_balance: 0,
+    attendance_pct: 96.5,
+    status: 'ACTIVE'
+  },
+  {
+    id: 'st-2',
+    admission_number: 'OUR-2026-0102',
+    roll_number: '102',
+    first_name: 'Ananya',
+    last_name: 'Hegde',
+    institution_level: 'PU College',
+    class_name: 'I PUC',
+    section_or_stream: 'PCMB (Science)',
+    gender: 'FEMALE',
+    date_of_birth: '2009-08-25',
+    blood_group: 'B+',
+    father_name: 'Venkatesh Hegde',
+    mother_name: 'Radha Hegde',
+    guardian_name: 'Venkatesh Hegde',
+    guardian_phone: '+91 98450 23456',
+    father_mobile: '+91 98450 23456',
+    mother_mobile: '+91 98450 23457',
+    parent_email: 'venkatesh.hegde@example.com',
+    address_line: '#15/B, Malleshwaram 7th Cross',
+    city: 'Bengaluru',
+    district: 'Bengaluru Urban',
+    state: 'Karnataka',
+    pincode: '560003',
+    fee_balance: 12500,
+    attendance_pct: 92.0,
+    status: 'ACTIVE'
+  },
+  {
+    id: 'st-3',
+    admission_number: 'OUR-2026-0103',
+    roll_number: '103',
+    first_name: 'Rahul',
+    last_name: 'Kumar',
+    institution_level: 'PU College',
+    class_name: 'II PUC',
+    section_or_stream: 'PCMB (Science)',
+    gender: 'MALE',
+    date_of_birth: '2008-11-18',
+    blood_group: 'A+',
+    father_name: 'Ramesh Kumar',
+    mother_name: 'Savitha Kumar',
+    guardian_name: 'Ramesh Kumar',
+    guardian_phone: '+91 98450 99887',
+    father_mobile: '+91 98450 99887',
+    mother_mobile: '+91 98450 99888',
+    parent_email: 'parent.rahul@example.com',
+    address_line: '#88, 5th Main, Jayanagar 4th Block',
+    city: 'Bengaluru',
+    district: 'Bengaluru Urban',
+    state: 'Karnataka',
+    pincode: '560011',
+    fee_balance: 25000,
+    attendance_pct: 94.2,
+    status: 'ACTIVE'
+  }
 ];
 
 const initialAdmissions: DemoAdmission[] = [
   { id: 'adm-101', application_number: 'APP-2026-891', applicant_name: 'Tanvi Deshmukh', level: 'School', target_class: 'Class 6', parent_name: 'Sanjay Deshmukh', parent_phone: '+91 99001 11223', parent_email: 'sanjay@example.com', submission_date: '2026-11-01', status: 'PENDING' },
   { id: 'adm-102', application_number: 'APP-2026-892', applicant_name: 'Karan Rao', level: 'PU College', target_class: 'I PUC - PCMC', parent_name: 'Girish Rao', parent_phone: '+91 99001 22334', parent_email: 'girish@example.com', submission_date: '2026-11-02', status: 'VERIFIED' },
-  { id: 'adm-103', application_number: 'APP-2026-893', applicant_name: 'Sneha Kulkarni', level: 'Degree College', target_class: 'B.Com Accounting', parent_name: 'Nitin Kulkarni', parent_phone: '+91 99001 33445', parent_email: 'nitin@example.com', submission_date: '2026-11-03', status: 'APPROVED' },
+  { id: 'adm-103', application_number: 'APP-2026-893', applicant_name: 'Sneha Kulkarni', level: 'PU College', target_class: 'I PUC - PCMB', parent_name: 'Nitin Kulkarni', parent_phone: '+91 99001 33445', parent_email: 'nitin@example.com', submission_date: '2026-11-03', status: 'APPROVED' },
 ];
 
-const initialInvoices: DemoFeeInvoice[] = [
+export const initialInvoices: DemoFeeInvoice[] = [
   {
     id: 'inv-1',
     invoice_number: 'INV-2026-0091',
     student_name: 'Aarav Sharma',
-    admission_number: 'ADM-2026-001',
+    admission_number: 'OUR-2026-0101',
     class_name: 'Class 10-A',
     academic_year: '2026-2027',
     term_code: 'TERM_1',
@@ -2161,7 +2334,7 @@ const initialInvoices: DemoFeeInvoice[] = [
     id: 'inv-2',
     invoice_number: 'INV-2026-0092',
     student_name: 'Ananya Hegde',
-    admission_number: 'ADM-2026-002',
+    admission_number: 'OUR-2026-0102',
     class_name: 'I PUC - PCMB',
     academic_year: '2026-2027',
     term_code: 'SEM_1',
@@ -2181,86 +2354,23 @@ const initialInvoices: DemoFeeInvoice[] = [
   {
     id: 'inv-3',
     invoice_number: 'INV-2026-0093',
-    student_name: 'Rohan Verma',
-    admission_number: 'ADM-2026-003',
-    class_name: 'B.Sc CS (Sem 3)',
+    student_name: 'Rahul Kumar',
+    admission_number: 'OUR-2026-0103',
+    class_name: 'II PUC - PCMB',
     academic_year: '2026-2027',
     term_code: 'SEM_1',
     term_name: 'Semester 1 (June-Nov)',
-    fee_head: 'HOSTEL_MESS_FEE',
-    fee_title: 'Hostel Accommodation & Dining (Term 1)',
-    total_amount: 38000,
-    paid_amount: 14000,
-    balance_amount: 24000,
-    due_date: '2026-10-31',
-    last_payment_date: '2026-10-05',
-    status: 'OVERDUE',
-    breakdown: [
-      { head_code: 'HOSTEL_MESS_FEE', title: 'Hostel Accommodation', amount: 25000 },
-      { head_code: 'HOSTEL_MESS_FEE', title: 'Mess & Dining', amount: 13000 }
-    ]
-  },
-  {
-    id: 'inv-4',
-    invoice_number: 'INV-2026-0094',
-    student_name: 'Priya Nair',
-    admission_number: 'ADM-2026-004',
-    class_name: 'Class 9-B',
-    academic_year: '2026-2027',
-    term_code: 'TERM_2',
-    term_name: 'Term 2 (Sept-Nov)',
-    fee_head: 'TRANSPORT_FEE',
-    fee_title: 'School Bus Route 104 Transport Fee',
-    total_amount: 12000,
-    paid_amount: 7500,
-    balance_amount: 4500,
+    fee_head: 'PU_TUITION',
+    fee_title: 'PU Science Tuition & State Lab Consumables',
+    total_amount: 45000,
+    paid_amount: 20000,
+    balance_amount: 25000,
     due_date: '2026-11-25',
-    last_payment_date: '2026-10-12',
+    last_payment_date: '2026-08-15',
     status: 'PARTIAL',
     breakdown: [
-      { head_code: 'TRANSPORT_FEE', title: 'GPS Monitored Bus Transport', amount: 12000 }
-    ]
-  },
-  {
-    id: 'inv-5',
-    invoice_number: 'INV-2026-0095',
-    student_name: 'Aditya Patil',
-    admission_number: 'ADM-2026-005',
-    class_name: 'II PUC Commerce',
-    academic_year: '2026-2027',
-    term_code: 'SEM_1',
-    term_name: 'Semester 1 (June-Nov)',
-    fee_head: 'EXAM_FEE',
-    fee_title: 'State Pre-University Board Exam Fee',
-    total_amount: 3500,
-    paid_amount: 3500,
-    balance_amount: 0,
-    due_date: '2026-11-10',
-    last_payment_date: '2026-11-02',
-    status: 'PAID',
-    breakdown: [
-      { head_code: 'EXAM_FEE', title: 'Board Exam Registration', amount: 3500 }
-    ]
-  },
-  {
-    id: 'inv-6',
-    invoice_number: 'INV-2026-0096',
-    student_name: 'Tanvi Deshmukh',
-    admission_number: 'ADM-2026-006',
-    class_name: 'Class 6-A',
-    academic_year: '2026-2027',
-    term_code: 'TERM_2',
-    term_name: 'Term 2 (Sept-Nov)',
-    fee_head: 'COLLEGE_FEE',
-    fee_title: 'Term 2 Tuition & Science Activity Kit',
-    total_amount: 22000,
-    paid_amount: 0,
-    balance_amount: 22000,
-    due_date: '2026-10-15',
-    status: 'OVERDUE',
-    breakdown: [
-      { head_code: 'TUITION', title: 'Middle School Tuition', amount: 18000 },
-      { head_code: 'LABORATORY', title: 'Science Activity Kit', amount: 4000 }
+      { head_code: 'TUITION', title: 'PU Science Tuition Fee', amount: 35000 },
+      { head_code: 'LABORATORY', title: 'Practical Science Labs', amount: 10000 }
     ]
   }
 ];
@@ -2415,9 +2525,7 @@ const initialFeeStructures: DemoFeeStructure[] = [
 const initialAttendance: DemoAttendanceRecord[] = [
   { student_id: 'st-1', student_name: 'Aarav Sharma', roll_number: '101', class_name: 'Class 10-A', status: 'PRESENT' },
   { student_id: 'st-2', student_name: 'Ananya Hegde', roll_number: '102', class_name: 'I PUC PCMB', status: 'PRESENT' },
-  { student_id: 'st-3', student_name: 'Rohan Verma', roll_number: '103', class_name: 'B.Sc CS Sem 3', status: 'ABSENT' },
-  { student_id: 'st-4', student_name: 'Priya Nair', roll_number: '104', class_name: 'Class 9-B', status: 'PRESENT' },
-  { student_id: 'st-5', student_name: 'Aditya Patil', roll_number: '105', class_name: 'II PUC Commerce', status: 'LATE' },
+  { student_id: 'st-3', student_name: 'Rahul Kumar', roll_number: '103', class_name: 'II PUC PCMB', status: 'PRESENT' },
 ];
 
 export const initialAttendanceConfig: AttendanceInstitutionConfig = {
@@ -2436,7 +2544,7 @@ export const initialDetailedDailyAttendance: DemoDailyAttendanceDetail[] = [
     id: 'att-d-001',
     student_id: 'st-1',
     student_name: 'Aarav Sharma',
-    admission_number: 'ADM-2026-001',
+    admission_number: 'OUR-2026-0101',
     roll_number: '101',
     class_name: 'Class 10',
     section_code: 'A',
@@ -2447,7 +2555,7 @@ export const initialDetailedDailyAttendance: DemoDailyAttendanceDetail[] = [
     id: 'att-d-002',
     student_id: 'st-2',
     student_name: 'Ananya Hegde',
-    admission_number: 'ADM-2026-002',
+    admission_number: 'OUR-2026-0102',
     roll_number: '102',
     class_name: 'I PUC',
     section_code: 'A',
@@ -2458,83 +2566,12 @@ export const initialDetailedDailyAttendance: DemoDailyAttendanceDetail[] = [
   {
     id: 'att-d-003',
     student_id: 'st-3',
-    student_name: 'Rohan Verma',
-    admission_number: 'ADM-2026-003',
+    student_name: 'Rahul Kumar',
+    admission_number: 'OUR-2026-0103',
     roll_number: '103',
-    class_name: 'B.Sc CS',
-    section_code: 'Sem 3',
-    stream: 'Computer Science',
-    status: 'ABSENT',
-    absence_reason: 'Severe Viral Fever (Medical Certificate Submitted)',
-    leave_request_status: 'APPROVED_BY_PRINCIPAL',
-    guardian_name: 'Sunil Verma',
-    guardian_phone: '+91 98450 34567',
-    attendance_date: '2026-11-04'
-  },
-  {
-    id: 'att-d-004',
-    student_id: 'st-4',
-    student_name: 'Priya Nair',
-    admission_number: 'ADM-2026-004',
-    roll_number: '104',
-    class_name: 'Class 10',
-    section_code: 'A',
-    status: 'LATE',
-    late_minutes: 20,
-    absence_reason: 'School Bus Route 104 delayed in traffic',
-    attendance_date: '2026-11-04'
-  },
-  {
-    id: 'att-d-005',
-    student_id: 'st-5',
-    student_name: 'Kavya Deshmukh',
-    admission_number: 'ADM-2026-005',
-    roll_number: '105',
-    class_name: 'I PUC',
+    class_name: 'II PUC',
     section_code: 'A',
     stream: 'PCMB',
-    status: 'LEAVE',
-    absence_reason: 'Inter-College State Athletic Championship',
-    leave_request_status: 'OFFICIAL_SPORTS_EXCUSAL',
-    guardian_name: 'Ramesh Deshmukh',
-    guardian_phone: '+91 98450 56789',
-    attendance_date: '2026-11-04'
-  },
-  {
-    id: 'att-d-006',
-    student_id: 'st-6',
-    student_name: 'Aditya Patil',
-    admission_number: 'ADM-2026-006',
-    roll_number: '106',
-    class_name: 'I PUC',
-    section_code: 'B',
-    stream: 'PCMB',
-    status: 'ABSENT',
-    absence_reason: 'Family Event (Out of Town)',
-    leave_request_status: 'UNEXCUSED',
-    guardian_name: 'Sanjay Patil',
-    guardian_phone: '+91 98450 67890',
-    attendance_date: '2026-11-04'
-  },
-  {
-    id: 'att-d-007',
-    student_id: 'st-7',
-    student_name: 'Deepak Rao',
-    admission_number: 'ADM-2026-007',
-    roll_number: '107',
-    class_name: 'Class 6',
-    section_code: 'A',
-    status: 'PRESENT',
-    attendance_date: '2026-11-04'
-  },
-  {
-    id: 'att-d-008',
-    student_id: 'st-8',
-    student_name: 'Sneha Kulkarni',
-    admission_number: 'ADM-2026-008',
-    roll_number: '108',
-    class_name: 'Class 6',
-    section_code: 'B',
     status: 'PRESENT',
     attendance_date: '2026-11-04'
   }
@@ -3406,6 +3443,59 @@ const initialMigrationBatches: MigrationBatch[] = [
 export const useDemoStore = create<DemoState>((set, get) => ({
   currentRole: 'PRINCIPAL',
   switchRole: (role) => set({ currentRole: role }),
+
+  tenantScope: 'our-school-demo',
+  staffMembers: initialStaffMembers,
+
+  setTenantScope: (code: string) => {
+    if (code === 'akshara-trial') {
+      set({
+        tenantScope: 'akshara-trial',
+        students: [],
+        invoices: [],
+        receipts: [],
+        admissions: [],
+        attendance: [],
+        marks: [],
+        detailedDailyAttendance: [],
+        periodAttendance: [],
+        hallTickets: [],
+        staffMembers: [],
+      });
+    } else {
+      set({
+        tenantScope: 'our-school-demo',
+        students: initialStudents,
+        invoices: initialInvoices,
+        receipts: initialReceipts,
+        admissions: initialAdmissions,
+        attendance: initialAttendance,
+        marks: initialMarks,
+        detailedDailyAttendance: initialDetailedDailyAttendance,
+        periodAttendance: initialPeriodAttendance,
+        hallTickets: initialHallTickets,
+        staffMembers: initialStaffMembers,
+      });
+    }
+  },
+
+  addStaffMember: (data: Partial<DemoStaffMember>) => {
+    const newStaff: DemoStaffMember = {
+      id: `stf-${Date.now()}`,
+      name: data.name || 'New Staff Member',
+      employee_id: data.employee_id || `EMP-2026-${Math.floor(100 + Math.random() * 900)}`,
+      role: data.role || 'TEACHER',
+      designation: data.designation || 'Faculty Member',
+      dept: data.dept || 'Academics',
+      academic_unit: data.academic_unit || 'School',
+      email: data.email || 'staff@ourschool.edu.in',
+      mobile: data.mobile || '+91 98450 00000',
+      status: data.status || 'ACTIVE',
+      joining_date: data.joining_date || new Date().toISOString().split('T')[0],
+      employment_type: data.employment_type || 'PERMANENT',
+    };
+    set((state) => ({ staffMembers: [newStaff, ...state.staffMembers] }));
+  },
 
   students: initialStudents,
   admissions: initialAdmissions,
@@ -5013,6 +5103,8 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   resetDemoData: () => {
     set({
       currentRole: 'PRINCIPAL',
+      tenantScope: 'our-school-demo',
+      staffMembers: initialStaffMembers,
       students: initialStudents,
       admissions: initialAdmissions,
       invoices: initialInvoices,

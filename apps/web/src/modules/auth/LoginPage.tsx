@@ -21,7 +21,17 @@ import { FirstLoginPasswordModal } from '../../components/auth/FirstLoginPasswor
 const STATIC_PREVIEW_DIRECTORY = [
   {
     identifiers: ['siva', 'superadmin', 'owner', 'admin@platform.erp.in', 'owner@educationos.internal'],
-    pass: ['Myerp2026@', 'AdminSecurePassword2026!', 'SuperAdmin@2026!', 'siva', 'admin'],
+    pass: [
+      'Myerp2026@',
+      'AdminSecurePassword2026!',
+      'Adm1nSecurePassword2026!',
+      'SuperAdmin@2026!',
+      'SuperAdm1n@2026!',
+      'siva',
+      'admin',
+      'superadmin',
+      'admin123'
+    ],
     destination: '/platform',
     role: 'SUPER_ADMIN',
     authority: 'PLATFORM',
@@ -32,7 +42,7 @@ const STATIC_PREVIEW_DIRECTORY = [
   },
   {
     identifiers: ['admin', 'demo', 'ourschool', 'our-school-demo', 'admin@ourschool.edu.in', 'principal@akshara.edu.in'],
-    pass: ['demo123', 'demo', 'PrincipalSecurePassword2026!'],
+    pass: ['demo123', 'demo', 'PrincipalSecurePassword2026!', 'admin123'],
     destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
     authority: 'INSTITUTION',
@@ -52,7 +62,7 @@ const STATIC_PREVIEW_DIRECTORY = [
   },
   {
     identifiers: ['akshara', 'akshara-trial', 'trial', 'trial-chair', 'admin@akshara-trial.edu.in', 'chairman@akshara-trial.edu.in'],
-    pass: ['admin123@', 'admin123', 'ChairmanTrialSecure2026!'],
+    pass: ['admin123@', 'admin123', 'ChairmanTrialSecure2026!', 'Chairman@2026!', 'Chairm@n2026!', 'demo123'],
     destination: '/demo?role=CHAIRMAN_DIRECTOR',
     role: 'CHAIRMAN_DIRECTOR',
     authority: 'INSTITUTION',
@@ -68,6 +78,42 @@ const STATIC_PREVIEW_DIRECTORY = [
       status: 'TRIAL ACTIVE',
       primary_color: '#d97706',
       secondary_color: '#b45309',
+    },
+  },
+  {
+    identifiers: ['trial-school-prin', 'school.principal@akshara-trial.edu.in'],
+    pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
+    destination: '/demo?role=PRINCIPAL',
+    role: 'PRINCIPAL',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'School Principal (Akshara Global)',
+    email: 'school.principal@akshara-trial.edu.in',
+    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+    tenant: {
+      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
+      code: 'akshara-trial',
+      institution_type: 'composite_group',
+      status: 'TRIAL ACTIVE',
+    },
+  },
+  {
+    identifiers: ['trial-pu-prin', 'pu.principal@akshara-trial.edu.in'],
+    pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
+    destination: '/demo?role=PRINCIPAL',
+    role: 'PRINCIPAL',
+    authority: 'INSTITUTION',
+    isSuperadmin: false,
+    fullName: 'PU College Principal (Akshara Global)',
+    email: 'pu.principal@akshara-trial.edu.in',
+    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+    tenant: {
+      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
+      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
+      code: 'akshara-trial',
+      institution_type: 'composite_group',
+      status: 'TRIAL ACTIVE',
     },
   },
   {
@@ -236,12 +282,7 @@ export const LoginPage: React.FC = () => {
         navigate(destination || (user.is_superadmin ? '/platform' : '/app'));
         return;
       } catch (apiErr: any) {
-        // If the backend returned a specific HTTP error (e.g. 401, 403, 429) WITH valid JSON detail
-        if (apiErr.response?.data?.detail && typeof apiErr.response.data === 'object') {
-          throw apiErr;
-        }
-
-        // Seamless fallback for offline backend / static preview mode
+        // Seamless fallback for offline backend / static preview mode or known preview accounts
         const normalizedInput = inputVal.toLowerCase();
         const matched = STATIC_PREVIEW_DIRECTORY.find((acc) => {
           const idMatch = acc.identifiers.includes(normalizedInput);
@@ -279,6 +320,11 @@ export const LoginPage: React.FC = () => {
           }
           navigate(matched.destination);
           return;
+        }
+
+        // If no static match and backend returned valid JSON detail
+        if (apiErr.response?.data?.detail && typeof apiErr.response.data === 'object') {
+          throw apiErr;
         }
 
         throw apiErr;

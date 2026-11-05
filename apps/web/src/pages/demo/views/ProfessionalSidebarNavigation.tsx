@@ -166,11 +166,11 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
   };
 
   const { tenant } = useAuthStore();
-  const isTrial = tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'));
+  const isTrial = tenant?.code === 'akshara-trial';
   const brandName = isTrial ? 'Akshara Global ERP' : 'OUR SCHOOL ERP';
-  const brandSub = isTrial ? 'School & PU College (Trial)' : 'Demonstration Campus (Demo)';
+  const brandSub = isTrial ? 'School & PU College (Trial Pilot)' : 'OUR SCHOOL • Live Demo Sandbox';
   const brandInitial = isTrial ? 'A' : 'O';
-  const brandBg = isTrial ? 'bg-amber-600' : 'bg-blue-600';
+  const brandBg = isTrial ? 'bg-amber-600' : 'bg-emerald-600';
 
   return (
     <>

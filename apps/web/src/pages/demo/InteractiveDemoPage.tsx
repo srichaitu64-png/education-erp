@@ -14,6 +14,8 @@ import { ConfigurableAttendanceView } from './views/ConfigurableAttendanceView';
 import { SharedImportWizardModal, MigrationTargetModule } from '../../components/migration/SharedImportWizardModal';
 import { CommandPaletteModal } from '../../components/ui/CommandPaletteModal';
 import { Student360Drawer } from '../../components/student/Student360Drawer';
+import { CreateStudentModal } from '../../components/student/CreateStudentModal';
+import { CreateFacultyModal } from '../../components/staff/CreateFacultyModal';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import React, { useState, useEffect } from 'react';
@@ -152,10 +154,23 @@ export const InteractiveDemoPage: React.FC = () => {
     publishDashboardDesignerConfig,
     rollbackDashboardDesignerConfig,
     resetDemoData,
+    staffMembers,
+    setTenantScope,
   } = useDemoStore();
 
   const { user, tenant, isAuthenticated, entitlements } = useAuthStore();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [showCreateStudentModal, setShowCreateStudentModal] = useState<boolean>(false);
+  const [showCreateFacultyModal, setShowCreateFacultyModal] = useState<boolean>(false);
+
+  // Synchronize tenant isolation scope: Trial starts 100% clean (0 records), Demo has 3 demo records
+  useEffect(() => {
+    if (tenant?.code === 'akshara-trial') {
+      setTenantScope('akshara-trial');
+    } else {
+      setTenantScope('our-school-demo');
+    }
+  }, [tenant, setTenantScope]);
 
   // Sync role and tab from URL search parameters with authenticated session enforcement
   useEffect(() => {
@@ -577,12 +592,21 @@ export const InteractiveDemoPage: React.FC = () => {
       <header className="bg-slate-950 border-b border-slate-800 text-white px-4 py-3 shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              EducationOS Enterprise Sandbox
-            </span>
+            {tenant?.code === 'akshara-trial' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                AKSHARA GLOBAL SCHOOL & PU COLLEGE • 30-DAY TRIAL PILOT
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                OUR SCHOOL • LIVE DEMO SANDBOX (ACTIVE DEMO)
+              </span>
+            )}
             <span className="text-xs text-slate-400 hidden sm:inline">
-              Super Admin Controlled Permissions • Institutional Examination Suite • Role Autocomplete
+              {tenant?.code === 'akshara-trial'
+                ? 'Independent Trial Pilot Sandbox • Clean Canvas Ready for Pilot Records'
+                : '3 Fictional Demonstration Students • Connected Invoices, Marks & Hall Tickets'}
             </span>
           </div>
 
@@ -666,9 +690,9 @@ export const InteractiveDemoPage: React.FC = () => {
               </>
             ) : (
               <span className="text-slate-300 font-medium">
-                {tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'))
-                  ? 'Akshara Global Trial Campus • School & PU College Units'
-                  : 'OUR SCHOOL Demonstration Campus • CBSE & State Board • Affiliation # 830192'}
+                {tenant?.code === 'akshara-trial'
+                  ? 'Akshara Global Trial Campus • School & PU College Units (Trial Pilot)'
+                  : 'OUR SCHOOL Demonstration Campus • CBSE & State Board • Affiliation # 830192 (Live Demo)'}
               </span>
             )}
           </span>
@@ -4393,6 +4417,13 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => setShowCreateStudentModal(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Enrol New Student
+                  </button>
+                  <button
                     onClick={() => handleOpenImportModal('STUDENTS', 'Admissions / Student Roster')}
                     className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                   >
@@ -4480,32 +4511,37 @@ export const InteractiveDemoPage: React.FC = () => {
                   <h1 className="text-2xl font-black text-white">Faculty & Staff Directory</h1>
                   <p className="text-xs text-slate-400 mt-1">Teaching and Operational Staff Profiles</p>
                 </div>
-                <button
-                  onClick={() => handleOpenImportModal('STAFF', 'Faculty & Staff Directory')}
-                  className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  Import Staff
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowCreateFacultyModal(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Faculty / Staff
+                  </button>
+                  <button
+                    onClick={() => handleOpenImportModal('STAFF', 'Faculty & Staff Directory')}
+                    className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Import Staff
+                  </button>
+                  <span className="text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3 py-1.5 rounded-xl">
+                    {staffMembers.length} Staff Members
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { name: 'Dr. Ramesh Kumar', role: 'Principal / Director', dept: 'Leadership', email: 'principal@akshara.edu.in', id: 'EMP-PRIN-01' },
-                  { name: 'Dr. V. Murthy', role: 'Senior Lecturer in Physics', dept: 'PU College Science', email: 'v.murthy@akshara.edu.in', id: 'EMP-PHY-102' },
-                  { name: 'Prof. S. Joshi', role: 'Head of Chemistry', dept: 'PU College Science', email: 's.joshi@akshara.edu.in', id: 'EMP-CHEM-103' },
-                  { name: 'Mrs. K. Swamy', role: 'Senior Mathematics Faculty', dept: 'Secondary & PU', email: 'k.swamy@akshara.edu.in', id: 'EMP-MTH-105' },
-                  { name: 'K. S. Narayana', role: 'Senior Accounts Officer', dept: 'Finance & Accounts', email: 'accountant@akshara.edu.in', id: 'EMP-ACC-09' },
-                  { name: 'Suresh Gowda', role: 'Transport Supervisor', dept: 'Logistics', email: 'transport@akshara.edu.in', id: 'EMP-TRP-07' },
-                ].map((st, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                {staffMembers.map((st) => (
+                  <div key={st.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                     <div>
                       <h4 className="font-bold text-white text-sm">{st.name}</h4>
-                      <p className="text-blue-400 mt-0.5">{st.role}</p>
+                      <p className="text-blue-400 mt-0.5">{st.designation || st.role}</p>
                       <p className="text-[11px] text-slate-400 mt-1">Dept: {st.dept} • {st.email}</p>
                     </div>
                     <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 font-mono px-2 py-1 rounded">
-                      {st.id}
+                      {st.employee_id}
                     </span>
                   </div>
                 ))}
@@ -4832,6 +4868,26 @@ export const InteractiveDemoPage: React.FC = () => {
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onSelectTab={(tabId) => setActiveTab(tabId)}
+      />
+
+      {/* Enrol New Student Modal */}
+      <CreateStudentModal
+        isOpen={showCreateStudentModal}
+        onClose={() => setShowCreateStudentModal(false)}
+        onSuccess={(student) => {
+          setModuleImportToast(`Student enrolled successfully: ${student.first_name} ${student.last_name} (${student.admission_number})`);
+          setTimeout(() => setModuleImportToast(null), 5000);
+        }}
+      />
+
+      {/* Add Faculty / Staff Modal */}
+      <CreateFacultyModal
+        isOpen={showCreateFacultyModal}
+        onClose={() => setShowCreateFacultyModal(false)}
+        onSuccess={(staff) => {
+          setModuleImportToast(`Faculty added successfully: ${staff.name} (${staff.employee_id})`);
+          setTimeout(() => setModuleImportToast(null), 5000);
+        }}
       />
     </div>
   );
