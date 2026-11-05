@@ -130,7 +130,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
     <div className="space-y-6 max-w-7xl font-sans text-white">
       
       {/* Top Header Banner */}
-      <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-950 text-indigo-300 border border-indigo-800/60 flex items-center gap-1">
@@ -189,7 +189,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       )}
 
       {/* Tab Navigation Pills */}
-      <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold overflow-x-auto">
+      <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 text-xs font-bold overflow-x-auto shadow-xs">
         <button
           onClick={() => setActiveTab('DASHBOARD')}
           className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
@@ -258,26 +258,26 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           
           {/* Institutional KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Total Strength</span>
               <p className="text-2xl font-mono font-black text-white mt-1">{overallMetrics.totStrength}</p>
               <span className="text-[10px] text-slate-500">7 Active Sections</span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] uppercase font-bold text-emerald-400 block tracking-wider">Present Today</span>
               <p className="text-2xl font-mono font-black text-emerald-400 mt-1">{overallMetrics.totPres}</p>
               <span className="text-[10px] text-slate-500">In Classroom</span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] uppercase font-bold text-rose-400 block tracking-wider">Absent Today</span>
               <p className="text-2xl font-mono font-black text-rose-400 mt-1">{overallMetrics.totAbs}</p>
               <span className="text-[10px] text-rose-400/80">Requires verification</span>
             </div>
 
             {attendanceConfig.enable_late_tracking && (
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">Late Arrivals</span>
                 <p className="text-2xl font-mono font-black text-amber-400 mt-1">{overallMetrics.totLate}</p>
                 <span className="text-[10px] text-slate-500">Tracked arrival mins</span>
@@ -285,14 +285,14 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
             )}
 
             {attendanceConfig.enable_parent_leave_requests && (
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-purple-400 block tracking-wider">Approved Leave</span>
                 <p className="text-2xl font-mono font-black text-purple-400 mt-1">{overallMetrics.totLeave}</p>
                 <span className="text-[10px] text-slate-500">Parent / Medical excusal</span>
               </div>
             )}
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] uppercase font-bold text-teal-400 block tracking-wider">Attendance %</span>
               <p className="text-2xl font-mono font-black text-teal-300 mt-1">{overallMetrics.avgPct}%</p>
               <span className="text-[10px] text-teal-500">Above {attendanceConfig.minimum_attendance_pct}% target</span>
@@ -300,7 +300,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           </div>
 
           {/* Class-Wise and Section-Wise Summary Table */}
-          <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
             <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-white">Class & Section Attendance Breakdown</h3>
@@ -311,7 +311,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                   <tr>
                     <th className="p-3.5">Class & Section</th>
                     <th className="p-3.5">Stream / Level</th>
@@ -333,7 +333,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
                         setSelectedClassFilter(sec.className);
                         if (isDailyActive) setActiveTab('DAILY_ROLL');
                       }}
-                      className="hover:bg-slate-900/60 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                     >
                       <td className="p-3.5 font-bold text-white group-hover:text-indigo-400 transition-colors">
                         {sec.className} - Section {sec.sectionCode}
@@ -380,13 +380,13 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       {activeTab === 'DAILY_ROLL' && isDailyActive && (
         <div className="space-y-4">
           {/* Controls */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-slate-400 font-bold uppercase text-[10px]">Filter Class:</span>
               <select
                 value={selectedClassFilter}
                 onChange={(e) => setSelectedClassFilter(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-white px-3 py-1.5 rounded-xl font-bold"
+                className="bg-white border border-slate-200 text-slate-900 px-3 py-1.5 rounded-xl font-bold"
               >
                 <option value="ALL">All Classes & Sections</option>
                 <option value="Class 6">Class 6 (A-B)</option>
@@ -409,9 +409,9 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           </div>
 
           {/* Roll-Call Table */}
-          <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                 <tr>
                   <th className="p-3">Roll #</th>
                   <th className="p-3">Student Name</th>
@@ -423,7 +423,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
               </thead>
               <tbody className="divide-y divide-slate-850 font-medium">
                 {filteredDailyRecords.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-900/60 transition-colors">
+                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3 font-mono font-bold text-slate-300">{r.roll_number}</td>
                     <td className="p-3">
                       <button
@@ -506,7 +506,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       {activeTab === 'PERIOD_WISE' && isPeriodActive && (
         <div className="space-y-4">
           {/* Period Selector Tabs */}
-          <div className="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
             <div>
               <span className="text-[10px] font-bold uppercase text-teal-400 block tracking-wider">Timetable Period Slot</span>
               <h3 className="text-sm font-bold text-white mt-0.5">
@@ -532,7 +532,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           </div>
 
           {/* Period Info Card */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between text-xs">
             <div className="flex items-center gap-4">
               <div>
                 <span className="text-slate-400 block text-[10px]">Subject</span>
@@ -553,9 +553,9 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           </div>
 
           {/* Period Attendance Table */}
-          <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                 <tr>
                   <th className="p-3">Period #</th>
                   <th className="p-3">Student Name</th>
@@ -567,7 +567,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
               </thead>
               <tbody className="divide-y divide-slate-850 font-medium">
                 {currentPeriodRecords.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-900/60 transition-colors">
+                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3 font-mono font-bold text-teal-400">P-{p.period_number}</td>
                     <td className="p-3 font-bold text-white">
                       <button
@@ -621,7 +621,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       {/* ==================================================================== */}
       {activeTab === 'ABSENTEES' && (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+          <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-between text-xs">
             <div>
               <h3 className="text-sm font-bold text-white">Absentee Register & Leave Tracking ({absentStudents.length} Students)</h3>
               <p className="text-slate-400 text-[11px]">Authorized guardian contact information displayed for SMS/WhatsApp verification.</p>
@@ -635,9 +635,9 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
             </button>
           </div>
 
-          <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                 <tr>
                   <th className="p-3.5">Student Name</th>
                   <th className="p-3.5">Admission #</th>
@@ -650,7 +650,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
               </thead>
               <tbody className="divide-y divide-slate-850 font-medium">
                 {absentStudents.map((st) => (
-                  <tr key={st.id} className="hover:bg-slate-900/60 transition-colors">
+                  <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5">
                       <button
                         type="button"
@@ -705,7 +705,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       {/* ==================================================================== */}
       {activeTab === 'REPORTS' && (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+          <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-between text-xs">
             <div>
               <h3 className="text-sm font-bold text-white">Attendance Shortage & Exam Eligibility Report</h3>
               <p className="text-slate-400 text-[11px]">Students below institutional threshold ({attendanceConfig.minimum_attendance_pct}%) flagged for hall ticket review.</p>
@@ -720,17 +720,17 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Institution Attendance Policy</span>
               <p className="text-xl font-black text-white mt-1">Minimum {attendanceConfig.minimum_attendance_pct}%</p>
               <span className="text-[10px] text-teal-400">Board Compliant</span>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Shortage Candidates</span>
               <p className="text-xl font-black text-rose-400 mt-1">12 Students</p>
               <span className="text-[10px] text-rose-400/80">Require Principal exemption pass</span>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Average Institute Rate</span>
               <p className="text-xl font-black text-teal-300 mt-1">{overallMetrics.avgPct}%</p>
               <span className="text-[10px] text-slate-500">Academic Year 2026-2027</span>
@@ -743,7 +743,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
       {/* 6. INSTITUTION CONFIGURATION & POLICY SETTINGS */}
       {/* ==================================================================== */}
       {activeTab === 'SETTINGS' && canConfigure && (
-        <div className="space-y-6 bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl text-xs">
+        <div className="space-y-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs text-xs">
           <div>
             <h3 className="text-base font-black text-white flex items-center gap-2">
               <Settings className="w-5 h-5 text-indigo-400" />
@@ -790,7 +790,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
               2. Optional Configurable Features
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between cursor-pointer">
+              <label className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="font-bold text-white block">Biometric Hardware Integration Sync</span>
                   <span className="text-[10px] text-slate-400">Captures biometric fingerprint/facial punches via LAN/TCP timeclocks.</span>
@@ -803,7 +803,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
                 />
               </label>
 
-              <label className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between cursor-pointer">
+              <label className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="font-bold text-white block">Parent Leave & Absence Requests</span>
                   <span className="text-[10px] text-slate-400">Parents can submit absence notices from portal for Principal approval.</span>
@@ -816,7 +816,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
                 />
               </label>
 
-              <label className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between cursor-pointer">
+              <label className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="font-bold text-white block">Absence Reason Tracking</span>
                   <span className="text-[10px] text-slate-400">Class teachers record medical, sports, or personal absence reasons.</span>
@@ -829,7 +829,7 @@ export const ConfigurableAttendanceView: React.FC<ConfigurableAttendanceViewProp
                 />
               </label>
 
-              <label className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between cursor-pointer">
+              <label className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="font-bold text-white block">Late Arrival Minutes Tracking</span>
                   <span className="text-[10px] text-slate-400">Tracks late student arrivals with exact delay minutes.</span>

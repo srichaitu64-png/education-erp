@@ -16,6 +16,8 @@ import { CommandPaletteModal } from '../../components/ui/CommandPaletteModal';
 import { Student360Drawer } from '../../components/student/Student360Drawer';
 import { CreateStudentModal } from '../../components/student/CreateStudentModal';
 import { CreateFacultyModal } from '../../components/staff/CreateFacultyModal';
+import { CollectFeeModal } from '../../components/finance/CollectFeeModal';
+import { CreateClassModal } from '../../components/academic/CreateClassModal';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import React, { useState, useEffect } from 'react';
@@ -162,6 +164,8 @@ export const InteractiveDemoPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [showCreateStudentModal, setShowCreateStudentModal] = useState<boolean>(false);
   const [showCreateFacultyModal, setShowCreateFacultyModal] = useState<boolean>(false);
+  const [showCollectFeeModal, setShowCollectFeeModal] = useState<boolean>(false);
+  const [showCreateClassModal, setShowCreateClassModal] = useState<boolean>(false);
 
   // Synchronize tenant isolation scope: Trial starts 100% clean (0 records), Demo has 3 demo records
   useEffect(() => {
@@ -587,23 +591,23 @@ export const InteractiveDemoPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
       {/* Top Banner with Role Switcher & Reset */}
-      <header className="bg-slate-950 border-b border-slate-800 text-white px-4 py-3 shrink-0">
+      <header className="bg-white border-b border-slate-200 text-slate-900 px-4 py-3 shrink-0 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {tenant?.code === 'akshara-trial' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
                 AKSHARA GLOBAL SCHOOL & PU COLLEGE • 30-DAY TRIAL PILOT
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 OUR SCHOOL • LIVE DEMO SANDBOX (ACTIVE DEMO)
               </span>
             )}
-            <span className="text-xs text-slate-400 hidden sm:inline">
+            <span className="text-xs text-slate-500 hidden sm:inline">
               {tenant?.code === 'akshara-trial'
                 ? 'Independent Trial Pilot Sandbox • Clean Canvas Ready for Pilot Records'
                 : '3 Fictional Demonstration Students • Connected Invoices, Marks & Hall Tickets'}
@@ -612,7 +616,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
           {/* Quick Role Switcher Bar */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Simulate Role:</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Simulate Role:</span>
             <select
               value={currentRole}
               onChange={(e) => {
@@ -620,7 +624,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 switchRole(nextRole);
                 setActiveTab('dashboard');
               }}
-              className="bg-slate-800 border border-slate-700 text-xs font-bold text-amber-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-xs"
             >
               <option value="CHAIRMAN_DIRECTOR">🏛️ Chairman / Director (Institution Super Admin)</option>
               <option value="PRINCIPAL">👑 Principal (Academics & Approvals)</option>
@@ -645,19 +649,19 @@ export const InteractiveDemoPage: React.FC = () => {
 
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer group"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 border border-slate-300 transition-colors cursor-pointer group shadow-xs"
               title="Open Fast Command Navigator (⌘K)"
             >
-              <Search className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-300" />
+              <Search className="w-3.5 h-3.5 text-blue-600 group-hover:text-blue-500" />
               <span className="hidden sm:inline">Search...</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-400">
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-[10px] font-mono text-slate-500">
                 ⌘K
               </kbd>
             </button>
 
             <button
               onClick={resetDemoData}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 border border-slate-300 transition-colors cursor-pointer shadow-xs"
               title="Reset sandbox data to default"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -666,7 +670,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
             <a
               href="/login"
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-xs"
             >
               Full Login Portal →
             </a>
@@ -675,21 +679,21 @@ export const InteractiveDemoPage: React.FC = () => {
       </header>
 
       {/* Role Privilege Inspector Header */}
-      <div className="bg-slate-800/80 border-b border-slate-700 px-4 py-2.5 text-xs text-slate-300 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div className="bg-slate-100/90 border-b border-slate-200 px-4 py-2 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-white text-sm flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+          <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
             {currentPrivilege.title}
           </span>
           <span className="text-slate-400">•</span>
-          <span className="text-slate-300">
+          <span className="text-slate-600">
             {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
               <>
-                <strong className="text-slate-100 font-semibold">Scope: </strong>
+                <strong className="text-slate-900 font-semibold">Scope: </strong>
                 {currentPrivilege.scopes.map(s => `${s.scopeType}: ${s.description}`).join(' • ')}
               </>
             ) : (
-              <span className="text-slate-300 font-medium">
+              <span className="text-slate-700 font-medium">
                 {tenant?.code === 'akshara-trial'
                   ? 'Akshara Global Trial Campus • School & PU College Units (Trial Pilot)'
                   : 'OUR SCHOOL Demonstration Campus • CBSE & State Board • Affiliation # 830192 (Live Demo)'}
@@ -699,17 +703,17 @@ export const InteractiveDemoPage: React.FC = () => {
         </div>
         {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
           <div className="flex items-center gap-3 text-[11px]">
-            <span className="text-emerald-400">
+            <span className="text-emerald-700">
               <strong>Can Edit:</strong> {currentPrivilege.canEdit.join(', ')}
             </span>
-            <span className="text-slate-500">|</span>
-            <span className="text-amber-400">
+            <span className="text-slate-400">|</span>
+            <span className="text-amber-700">
               <strong>Restriction:</strong> {currentPrivilege.restrictedActions[0]}
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-3 text-[11px] text-slate-400">
-            <span className="text-emerald-400 font-semibold">Academic Session: 2026-2027</span>
+          <div className="flex items-center gap-3 text-[11px] text-slate-500">
+            <span className="text-emerald-700 font-semibold">Academic Session: 2026-2027</span>
             <span>•</span>
             <span>Front Counter Terminal</span>
           </div>
@@ -728,8 +732,77 @@ export const InteractiveDemoPage: React.FC = () => {
           designerNavConfigs={designerNavConfigs}
         />
 
-        {/* Central Dynamic Content Screen */}
-        <main className="flex-1 bg-slate-900 overflow-y-auto p-4 sm:p-6 text-slate-100">
+        {/* Central Dynamic Content Screen with Clean Background */}
+        <main className="flex-1 bg-slate-50 overflow-y-auto p-4 sm:p-6 text-slate-900">
+
+          {/* ================================================================= */}
+          {/* ESKOOLY QUICK ACTIONS BAR */}
+          {/* ================================================================= */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Quick Actions</span>
+                <span className="text-[11px] text-slate-400 hidden md:inline">• Fast Operational Workflows</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateStudentModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="Direct Student Admission Form"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add Student</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCollectFeeModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="Front Counter Fee Collection & Receipt"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Collect Fee</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('daily-attendance')}
+                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="Mark Daily Class Attendance"
+                >
+                  <CalendarCheck className="w-3.5 h-3.5" />
+                  <span>Mark Attendance</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateClassModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="Add Classroom Section & Grade"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>+ Add Class</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateFacultyModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="Register Teacher or Employee"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>+ Add Employee</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('communication')}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  title="WhatsApp & SMS Communication"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Notice / SMS</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* ================================================================= */}
           {/* TAB 1: ROLE-BASED DASHBOARD OVERVIEW WORKSPACE */}
@@ -743,43 +816,43 @@ export const InteractiveDemoPage: React.FC = () => {
 
               {/* RBAC Access Boundaries Summary - Shown ONLY to Platform Super Admin & Backup Super Admin */}
               {(currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN') ? (
-                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-blue-400" />
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-600" />
                     Platform Security & Active Role Authorization Matrix
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                      <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Permitted Actions</p>
-                      <ul className="text-xs space-y-1.5 text-slate-300">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">Permitted Actions</p>
+                      <ul className="text-xs space-y-1.5 text-slate-700">
                         {currentPrivilege.canEdit.map((act, i) => (
                           <li key={i} className="flex items-start gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                             <span>{act}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                      <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Approval Powers</p>
-                      <ul className="text-xs space-y-1.5 text-slate-300">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">Approval Powers</p>
+                      <ul className="text-xs space-y-1.5 text-slate-700">
                         {currentPrivilege.canApprove.map((app, i) => (
                           <li key={i} className="flex items-start gap-1.5">
-                            <FileCheck className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                            <FileCheck className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
                             <span>{app}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                      <p className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">Security Restrictions</p>
-                      <ul className="text-xs space-y-1.5 text-slate-300">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <p className="text-xs font-bold text-rose-700 uppercase tracking-wider mb-2">Security Restrictions</p>
+                      <ul className="text-xs space-y-1.5 text-slate-700">
                         {currentPrivilege.restrictedActions.map((res, i) => (
                           <li key={i} className="flex items-start gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
                             <span>{res}</span>
                           </li>
                         ))}
@@ -789,42 +862,42 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
               ) : (
                 /* Institutional Operations Summary for Ordinary Roles */
-                <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-blue-400" />
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-blue-600" />
                         Campus Operations & Academic Live Highlights
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Term 1 (2026-2027) • Affiliated with CBSE & Karnataka Pre-University Board
                       </p>
                     </div>
-                    <span className="text-[11px] bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-3 py-1 rounded-full font-bold">
+                    <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-bold">
                       Session Active • All Streams Operating
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                      <p className="text-slate-400 font-medium">Class Attendance Today</p>
-                      <p className="text-lg font-bold text-emerald-400 mt-1">96.5%</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">1,348 of 1,396 students present</p>
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                      <p className="text-slate-500 font-medium">Class Attendance Today</p>
+                      <p className="text-lg font-bold text-emerald-600 mt-1">96.5%</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">1,348 of 1,396 students present</p>
                     </div>
-                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                      <p className="text-slate-400 font-medium">Term 1 Fee Realisation</p>
-                      <p className="text-lg font-bold text-blue-400 mt-1">₹85.4 Lakhs</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                      <p className="text-slate-500 font-medium">Term 1 Fee Realisation</p>
+                      <p className="text-lg font-bold text-blue-600 mt-1">₹85.4 Lakhs</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
                     </div>
-                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                      <p className="text-slate-400 font-medium">Ongoing Exam Cycles</p>
-                      <p className="text-lg font-bold text-amber-400 mt-1">4 Batches Active</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">NEET Foundation & Term Tests</p>
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                      <p className="text-slate-500 font-medium">Ongoing Exam Cycles</p>
+                      <p className="text-lg font-bold text-amber-600 mt-1">4 Batches Active</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">NEET Foundation & Term Tests</p>
                     </div>
-                    <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                      <p className="text-slate-400 font-medium">GPS Transport Tracking</p>
-                      <p className="text-lg font-bold text-teal-400 mt-1">8 Buses on Route</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Live geo-telemetry broadcasting</p>
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                      <p className="text-slate-500 font-medium">GPS Transport Tracking</p>
+                      <p className="text-lg font-bold text-teal-600 mt-1">8 Buses on Route</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Live geo-telemetry broadcasting</p>
                     </div>
                   </div>
                 </div>
@@ -841,19 +914,19 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'institution-control-centre' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-purple-950/40 p-6 rounded-2xl border border-purple-800/60">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-2xl border border-purple-200">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-400/40 mb-2">
-                    <Building2 className="w-3 h-3" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300 mb-2">
+                    <Building2 className="w-3 h-3 text-purple-700" />
                     Institution Super Admin Control Room
                   </div>
-                  <h1 className="text-2xl font-black text-white">Institution Management & Governance Centre</h1>
-                  <p className="text-xs text-purple-200 mt-1">
+                  <h1 className="text-2xl font-black text-slate-900">Institution Management & Governance Centre</h1>
+                  <p className="text-xs text-slate-600 mt-1">
                     Chairman & Director Executive Suite • Staff Role Delegations • Central Permission Matrix • Strategic Financial Oversight
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1.5 rounded-xl bg-purple-900/60 text-purple-200 border border-purple-700 text-xs font-bold">
+                  <span className="px-3 py-1.5 rounded-xl bg-white text-purple-800 border border-purple-200 text-xs font-bold shadow-xs">
                     {tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'))
                       ? 'Akshara Global Educational Trust'
                       : 'OUR SCHOOL Educational Trust'}
@@ -863,82 +936,82 @@ export const InteractiveDemoPage: React.FC = () => {
 
               {/* Executive Metrics Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Total Enrolled Students</span>
-                  <p className="text-2xl font-black text-white mt-1">1,396</p>
-                  <p className="text-xs text-slate-400 mt-0.5">School (680) • PU College (480) • Degree (236)</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                  <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Total Enrolled Students</span>
+                  <p className="text-2xl font-black text-slate-900 mt-1">1,396</p>
+                  <p className="text-xs text-slate-500 mt-0.5">School (680) • PU College (480) • Degree (236)</p>
                 </div>
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Gross Fee Realisation</span>
-                  <p className="text-2xl font-black text-emerald-400 mt-1">₹85.4 Lakhs</p>
-                  <p className="text-xs text-slate-400 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                  <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Gross Fee Realisation</span>
+                  <p className="text-2xl font-black text-emerald-600 mt-1">₹85.4 Lakhs</p>
+                  <p className="text-xs text-slate-500 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
                 </div>
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Faculty & Non-Teaching Staff</span>
-                  <p className="text-2xl font-black text-blue-400 mt-1">84 Staff</p>
-                  <p className="text-xs text-slate-400 mt-0.5">58 Teaching • 26 Administrative & Support</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                  <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">Faculty & Non-Teaching Staff</span>
+                  <p className="text-2xl font-black text-blue-600 mt-1">84 Staff</p>
+                  <p className="text-xs text-slate-500 mt-0.5">58 Teaching • 26 Administrative & Support</p>
                 </div>
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">NEET & Board Projection</span>
-                  <p className="text-2xl font-black text-amber-400 mt-1">98.4% Pass</p>
-                  <p className="text-xs text-slate-400 mt-0.5">62 Students targeting NEET &gt; 580+</p>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                  <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">NEET & Board Projection</span>
+                  <p className="text-2xl font-black text-amber-600 mt-1">98.4% Pass</p>
+                  <p className="text-xs text-slate-500 mt-0.5">62 Students targeting NEET &gt; 580+</p>
                 </div>
               </div>
 
               {/* Chairman Executive Direct Actions */}
-              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
-                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-purple-400" />
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-purple-600" />
                   Institutional Super Admin Governance Capabilities
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   As Chairman / Director, you hold institutional authority. Principal handles daily academic operations and exam approvals, while you control users, custom roles, campus permissions, custom fee heads, and dashboard layouts.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                    <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
-                      <Key className="w-4 h-4" />
+                  <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200 space-y-2">
+                    <div className="flex items-center gap-2 text-purple-900 font-bold text-sm">
+                      <Key className="w-4 h-4 text-purple-600" />
                       Central Permission Matrix
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600">
                       Configure granular action permissions (view, edit, approve, collect, publish) for all 18 institutional roles.
                     </p>
                     <button
                       onClick={() => setActiveTab('permissions-centre')}
-                      className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                      className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs"
                     >
                       Open Permission Matrix →
                     </button>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                    <div className="flex items-center gap-2 text-blue-300 font-bold text-sm">
-                      <Layout className="w-4 h-4" />
+                  <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2">
+                    <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
+                      <Layout className="w-4 h-4 text-blue-600" />
                       Dynamic Dashboard Designer
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600">
                       Control which sidebar menus are visible, locked, or completely hidden for Teachers, Students, and Parents.
                     </p>
                     <button
                       onClick={() => setActiveTab('dashboard-designer')}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs"
                     >
                       Open Dashboard Designer →
                     </button>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                    <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
-                      <CreditCard className="w-4 h-4" />
+                  <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+                      <CreditCard className="w-4 h-4 text-emerald-600" />
                       Financial Ledger & Statements
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600">
                       Review consolidated fee statements, audit ₹50k + ₹30k partial payments, and inspect receipt histories.
                     </p>
                     <button
                       onClick={() => { setActiveTab('fees'); setFeeSubTab('statement'); }}
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-xs"
                     >
                       View Consolidated Ledger →
                     </button>
@@ -950,7 +1023,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
           {activeTab === 'permissions-centre' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-purple-950/40 p-6 rounded-2xl border border-purple-800/60">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-2xl border border-purple-200">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-400/40 mb-2">
                     <Key className="w-3 h-3" />
@@ -970,7 +1043,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
               {/* Pending Permission Change Requests from Institutions */}
               {changeRequests.length > 0 && (
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                   <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center justify-between">
                     <span>Pending Permission Change Requests from Institution Admins ({changeRequests.filter(r => r.status === 'PENDING').length})</span>
                     <span className="text-[10px] text-slate-400 font-normal">Super Admin Approval Workflow</span>
@@ -978,7 +1051,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                   <div className="space-y-2">
                     {changeRequests.map((req) => (
-                      <div key={req.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div key={req.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                         <div>
                           <p className="font-bold text-white flex items-center gap-2">
                             <span>{req.requestedByName}</span>
@@ -1019,7 +1092,7 @@ export const InteractiveDemoPage: React.FC = () => {
               )}
 
               {/* Editable Action-Level Matrix */}
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
                     <Key className="w-4 h-4 text-purple-400" />
@@ -1033,7 +1106,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                         <th className="p-2.5 font-bold">Role</th>
                         <th className="p-2.5 font-bold text-center">View</th>
                         <th className="p-2.5 font-bold text-center">Create</th>
@@ -1052,7 +1125,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         const actions = rolePermissions[role];
                         const isSuper = role === 'SUPER_ADMIN';
                         return (
-                          <tr key={role} className="hover:bg-slate-900/60">
+                          <tr key={role} className="hover:bg-slate-50/80">
                             <td className="p-2.5 font-bold text-slate-200">
                               <span>{role.replace('_', ' ')}</span>
                               {isSuper && <span className="ml-1.5 text-[9px] bg-purple-900 text-purple-200 px-1.5 py-0.5 rounded">Lockout Protected</span>}
@@ -1079,7 +1152,7 @@ export const InteractiveDemoPage: React.FC = () => {
               </div>
 
               {/* Version History & Audited Rollback */}
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
                     <History className="w-4 h-4 text-blue-400" />
@@ -1090,7 +1163,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 <div className="space-y-2">
                   {permissionAudits.map((audit) => (
-                    <div key={audit.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                    <div key={audit.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                       <div>
                         <div className="flex items-center gap-2 font-bold text-white">
                           <span className="bg-purple-950 text-purple-300 px-2 py-0.5 rounded font-mono text-[10px]">
@@ -1147,7 +1220,7 @@ export const InteractiveDemoPage: React.FC = () => {
               </div>
 
               {/* Role Preview Switcher */}
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Preview Dashboard As:</span>
                   <select
@@ -1171,7 +1244,7 @@ export const InteractiveDemoPage: React.FC = () => {
               </div>
 
               {/* Designer Config Table */}
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
                   Navigation Tab Controls for {designerRolePreview}
                 </h3>
@@ -1244,7 +1317,7 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'examinations' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Institutional Examination Management System</h1>
                   <p className="text-xs text-slate-400 mt-1">
@@ -1302,7 +1375,7 @@ export const InteractiveDemoPage: React.FC = () => {
               )}
 
               {/* Category & Delivery Mode Filters */}
-              <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+              <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-xs text-xs">
                 <span className="font-bold text-slate-400 uppercase text-[11px]">Category:</span>
                 {(['ALL', 'Weekly Test', 'Unit Test', 'Half-Yearly', 'NEET Foundation', 'Model Exam'] as const).map((cat) => (
                   <button
@@ -1340,7 +1413,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   .filter(e => examCategoryFilter === 'ALL' || e.category === examCategoryFilter)
                   .filter(e => examModeFilter === 'ALL' || e.exam_mode === examModeFilter)
                   .map((exam) => (
-                    <div key={exam.id} className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-4">
+                    <div key={exam.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
                       {/* Header */}
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                         <div>
@@ -1454,7 +1527,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                               <th className="p-2.5">Date & Time</th>
                               <th className="p-2.5">Subject</th>
                               <th className="p-2.5">Hall / Room</th>
@@ -1466,7 +1539,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           </thead>
                           <tbody className="divide-y divide-slate-850">
                             {exam.schedules.map((sch) => (
-                              <tr key={sch.id} className="hover:bg-slate-900/50">
+                              <tr key={sch.id} className="hover:bg-slate-50/50">
                                 <td className="p-2.5 font-mono text-slate-300">
                                   {sch.exam_date} <span className="text-[10px] text-slate-500">{sch.start_time} - {sch.end_time}</span>
                                 </td>
@@ -1528,7 +1601,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
             return (
               <div className="space-y-6 max-w-6xl">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                   <div>
                     <h1 className="text-2xl font-black text-white">Advanced Student Progress Cards & Academic Analytics</h1>
                     <p className="text-xs text-slate-400 mt-1">
@@ -1576,7 +1649,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Sub-tab 1: Individual Exam Progress Card */}
                 {progressCardSubTab === 'individual' && indCard && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                     {/* Header Details */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                       <div>
@@ -1618,7 +1691,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-850">
                           {indCard.subjects.map((sub, idx) => (
-                            <tr key={idx} className="hover:bg-slate-900/60">
+                            <tr key={idx} className="hover:bg-slate-50/80">
                               <td className="px-4 py-3 font-bold text-white">{sub.subjectName}</td>
                               <td className="px-4 py-3 text-right font-mono text-slate-300">{sub.theoryObtained} / {sub.theoryMax}</td>
                               <td className="px-4 py-3 text-right font-mono text-slate-300">{sub.practicalMax > 0 ? `${sub.practicalObtained} / ${sub.practicalMax}` : '-'}</td>
@@ -1652,11 +1725,11 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Teacher Remarks & Approval Signatures */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Class Teacher Remarks:</span>
                         <p className="text-xs text-slate-200 italic">"{indCard.teacherRemarks}"</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] uppercase font-bold text-slate-400 block">Exam Controller Verification:</span>
                           <span className="text-xs font-bold text-white block mt-1">{indCard.controllerVerifiedBy}</span>
@@ -1664,7 +1737,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
                         <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
                       </div>
-                      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] uppercase font-bold text-slate-400 block">Principal Approval Seal:</span>
                           <span className="text-xs font-bold text-white block mt-1">{indCard.principalApprovedBy}</span>
@@ -1678,7 +1751,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Sub-tab 2: Annual Trajectory (+13% Gain) */}
                 {progressCardSubTab === 'consolidated' && consCard && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                       <div>
                         <h2 className="text-xl font-black text-white">Consolidated Annual Academic Trajectory</h2>
@@ -1695,7 +1768,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Progression Timeline Chart Simulation */}
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                       {consCard.trajectoryTrend.map((t, idx) => (
-                        <div key={idx} className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden">
+                        <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
                           <span className="text-[10px] text-slate-400 uppercase font-bold block">{t.examName}</span>
                           <p className="text-2xl font-black text-white mt-1">{t.percentage}%</p>
                           <span className="text-[10px] text-slate-500 font-mono block mt-0.5">{t.date}</span>
@@ -1729,7 +1802,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Sub-tab 3: NEET Foundation Analytics */}
                 {progressCardSubTab === 'competitive' && compRep && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                       <div>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 mb-1">
@@ -1748,22 +1821,22 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Question Attempt Matrix */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Questions</span>
                         <p className="text-2xl font-black text-white mt-1">{compRep.totalQuestions}</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Physics, Chem, Botany, Zoo</p>
                       </div>
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-emerald-400 block">Correct Answers (+4)</span>
                         <p className="text-2xl font-black text-emerald-400 mt-1">{compRep.correctAnswers}</p>
                         <p className="text-[10px] text-emerald-300 mt-0.5">+{compRep.correctMarks} Marks</p>
                       </div>
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-rose-400 block">Incorrect (-1)</span>
                         <p className="text-2xl font-black text-rose-400 mt-1">{compRep.incorrectAnswers}</p>
                         <p className="text-[10px] text-rose-300 mt-0.5">{compRep.negativeMarks} Negative Marks</p>
                       </div>
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Accuracy Ratio</span>
                         <p className="text-2xl font-black text-amber-400 mt-1">{compRep.accuracyPct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Unattempted: {compRep.unattemptedQuestions}</p>
@@ -1785,7 +1858,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-850">
                           {compRep.subjectBreakdown.map((s, idx) => (
-                            <tr key={idx} className="hover:bg-slate-900/60">
+                            <tr key={idx} className="hover:bg-slate-50/80">
                               <td className="px-4 py-3 font-bold text-white">{s.subject}</td>
                               <td className="px-4 py-3 text-center text-slate-300">{s.questions}</td>
                               <td className="px-4 py-3 text-center text-emerald-400 font-bold">{s.correct}</td>
@@ -1816,7 +1889,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 {/* 1. Select Login Role Dropdown */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
@@ -1866,7 +1939,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <span>2. User Account (Restricted to {loginRole})</span>
                     <span className="text-[10px] text-slate-400">Minimal Identifying Info</span>
                   </label>
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between mb-2">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-emerald-400">{selectedUserIdentity}</span>
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold">
                       Verified Active
@@ -1880,7 +1953,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       value={loginSearch}
                       onChange={(e) => setLoginSearch(e.target.value)}
                       placeholder={`Type 2+ characters to search ${loginRole}s...`}
-                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1904,7 +1977,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     type={showLoginPassword ? 'text' : 'password'}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -1932,7 +2005,7 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'academics' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Academic Structure & Subject Management</h1>
                   <p className="text-xs text-slate-400 mt-1">
@@ -1947,7 +2020,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">
                     Configured Subjects ({subjects.filter(s => !s.is_archived).length} Active)
@@ -1963,7 +2036,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     .map((subj, idx) => (
                       <div
                         key={subj.id}
-                        className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                        className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
                       >
                         <div className="flex items-center gap-3">
                           {/* Reordering Controls */}
@@ -2034,29 +2107,37 @@ export const InteractiveDemoPage: React.FC = () => {
           {activeTab === 'fees' && (
             <div className="space-y-6 max-w-7xl">
               {/* Header Banner */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs text-slate-900">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                    <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       Authoritative Finance & Ledger
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {currentRole === 'ACCOUNTANT' ? 'Cashier Desk Session' : `${currentRole} View`}
                     </span>
                   </div>
-                  <h1 className="text-2xl font-black text-white mt-1">
+                  <h1 className="text-2xl font-black text-slate-900 mt-1">
                     School-Defined Fees & Receipt Management
                   </h1>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Multi-Term Flexible Structures • Instant Multi-Format Thermal/A4 Receipts • Duplicate Anti-Fraud Watermarking • Consolidated & Aging Due Reports
                   </p>
                 </div>
 
                 {/* Sub-Tab Navigation Pills */}
-                <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowCollectFeeModal(true)}
+                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs mr-1"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    Collect Fee
+                  </button>
                   <button
                     onClick={() => handleOpenImportModal('FEES', 'Fee Master & Student Demands')}
-                    className="px-3 py-1.5 rounded-lg bg-teal-600/90 hover:bg-teal-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer mr-1"
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer mr-1"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     Import Fees
@@ -2182,7 +2263,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     )}
 
                     {/* Acceptance Test Control Banner */}
-                    <div className="bg-slate-950 p-6 rounded-2xl border-2 border-blue-500/40 space-y-4">
+                    <div className="bg-white p-6 rounded-2xl border-2 border-blue-200 space-y-4 shadow-xs">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div>
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 mb-1">
@@ -2281,7 +2362,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Student Selection Header & Details */}
-                    <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                         <div>
                           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
@@ -2290,7 +2371,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           <select
                             value={selectedStatementStudentId}
                             onChange={(e) => setSelectedStatementStudentId(e.target.value)}
-                            className="bg-slate-900 border border-slate-700 text-white font-bold text-sm px-3.5 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="bg-white border border-slate-200 text-slate-900 font-bold text-sm px-3.5 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="st-rahul">Rahul Kumar (AKG-2026-0152 • I PUC PCMB • Acceptance Test Student)</option>
                             <option value="st-2">Ananya Hegde (ADM-2026-002 • I PUC PCMB)</option>
@@ -2352,7 +2433,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           </thead>
                           <tbody className="divide-y divide-slate-850">
                             {statement.feeHeads.map((head) => (
-                              <tr key={head.feeHeadId} className="hover:bg-slate-900/60">
+                              <tr key={head.feeHeadId} className="hover:bg-slate-50/80">
                                 <td className="px-4 py-3 font-bold text-white">{head.feeHeadName}</td>
                                 <td className="px-4 py-3 text-slate-400">{head.category}</td>
                                 <td className="px-4 py-3 text-right font-mono text-slate-200">₹{head.annualFee.toLocaleString('en-IN')}</td>
@@ -2405,7 +2486,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-850">
                               {statement.receiptHistory.map((rcp) => (
-                                <tr key={rcp.id} className="hover:bg-slate-900/60">
+                                <tr key={rcp.id} className="hover:bg-slate-50/80">
                                   <td className="px-4 py-3 font-mono font-bold text-blue-400">{rcp.receipt_number}</td>
                                   <td className="px-4 py-3 text-slate-300">{rcp.payment_date}</td>
                                   <td className="px-4 py-3 text-slate-300">
@@ -2452,7 +2533,7 @@ export const InteractiveDemoPage: React.FC = () => {
               {feeSubTab === 'collection' && (
                 <div className="space-y-6">
                   {/* Searchable Multi-Head Fee Collection Counter */}
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-5 shadow-xl">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5 shadow-xl">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
                       <div>
                         <h2 className="text-base font-black text-white flex items-center gap-2">
@@ -2502,7 +2583,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                 : ['TUITION_FEE', 'SCIENCE_LAB_FEE', 'LIBRARY_FEE']);
                             }
                           }}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                         >
                           {students.map((st) => (
                             <option key={st.id} value={st.id} className="bg-slate-900 text-white">
@@ -2518,7 +2599,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <select
                           value={multiAcademicYear}
                           onChange={(e) => setMultiAcademicYear(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                         >
                           <option value="2026-2027">2026-2027 (Active Session)</option>
                           <option value="2027-2028">2027-2028 (Next Session)</option>
@@ -2531,7 +2612,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <select
                           value={multiTerm}
                           onChange={(e) => setMultiTerm(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                         >
                           <option value="TERM_1">Term 1 / Semester 1 (June-Aug)</option>
                           <option value="TERM_2">Term 2 / Semester 2 (Sept-Nov)</option>
@@ -2661,7 +2742,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-900/60">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                               <th className="p-3">Fee Head Title</th>
                               <th className="p-3">Category</th>
                               <th className="p-3">Configured Base</th>
@@ -2738,7 +2819,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             })}
                           </tbody>
                           <tfoot>
-                            <tr className="bg-slate-950 border-t border-slate-800 font-bold text-xs">
+                            <tr className="bg-slate-50 border-t border-slate-200 font-bold text-xs text-slate-800">
                               <td colSpan={4} className="p-3 text-slate-400 text-right uppercase">
                                 Total Collection in this Transaction:
                               </td>
@@ -2769,7 +2850,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         <select
                           value={multiPaymentMethod}
                           onChange={(e) => setMultiPaymentMethod(e.target.value as PaymentMethodType)}
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                         >
                           <option value="UPI">UPI / QR Code Scan</option>
                           <option value="CASH">Cash Counter Payment</option>
@@ -2785,7 +2866,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           value={multiTxnRef}
                           onChange={(e) => setMultiTxnRef(e.target.value)}
                           placeholder="e.g. UPI-UTR-90128471"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </div>
                       <div>
@@ -2795,7 +2876,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           value={multiNotes}
                           onChange={(e) => setMultiNotes(e.target.value)}
                           placeholder="e.g. Collected at main counter"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -2814,7 +2895,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
 
                   {/* Category Filter & Historical Ledger Invoices Table */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-slate-400 uppercase text-[11px]">Ledger Head Filter:</span>
                       {(['ALL', 'COLLEGE_FEE', 'LAB_FEE', 'HOSTEL_MESS_FEE', 'TRANSPORT_FEE', 'EXAM_FEE'] as const).map((head) => (
@@ -2838,7 +2919,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
 
                   {/* Student Ledger Invoices Table */}
-                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
                     <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <h2 className="text-sm font-bold text-white flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-blue-400" />
@@ -2851,7 +2932,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead>
-                          <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                             <th className="p-3">Invoice #</th>
                             <th className="p-3">Student & Admission</th>
                             <th className="p-3">Term / Head</th>
@@ -2867,7 +2948,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           {invoices
                             .filter(inv => feeCategoryFilter === 'ALL' || inv.fee_head === feeCategoryFilter)
                             .map((inv) => (
-                              <tr key={inv.id} className="hover:bg-slate-900/60 transition-colors">
+                              <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
                                 <td className="p-3 font-mono text-slate-300 font-bold">{inv.invoice_number}</td>
                                 <td className="p-3">
                                   <span className="font-bold text-white block">{inv.student_name}</span>
@@ -2930,7 +3011,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                   {/* Payment Collection Drawer / Form Modal */}
                   {selectedInvoiceForPayment && (
-                    <div className="bg-slate-950 p-6 rounded-2xl border-2 border-blue-500/50 shadow-2xl space-y-4">
+                    <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-xs space-y-4">
                       <div className="flex items-start justify-between border-b border-slate-800 pb-3">
                         <div>
                           <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
@@ -2979,7 +3060,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               max={selectedInvoiceForPayment.balance_amount}
                               value={paymentAmount}
                               onChange={(e) => setPaymentAmount(Math.min(selectedInvoiceForPayment.balance_amount, Math.max(1, Number(e.target.value))))}
-                              className="w-full bg-slate-900 border border-slate-700 text-white pl-8 pr-3 py-2 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full bg-white border border-slate-200 text-slate-900 pl-8 pr-3 py-2 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                           <div className="flex gap-2 mt-1.5">
@@ -3024,7 +3105,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             value={transactionRef}
                             onChange={(e) => setTransactionRef(e.target.value)}
                             placeholder="e.g. UPI/89210 or UTR987654321"
-                            className="w-full bg-slate-900 border border-slate-700 text-white px-3 py-2 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
@@ -3079,7 +3160,7 @@ export const InteractiveDemoPage: React.FC = () => {
               {feeSubTab === 'register' && (
                 <div className="space-y-4">
                   {/* Search and Filters */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
                     <div className="relative flex-1 max-w-md">
                       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                       <input
@@ -3087,7 +3168,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         value={receiptRegisterSearch}
                         onChange={(e) => setReceiptRegisterSearch(e.target.value)}
                         placeholder="Search by Receipt #, Student Name, or Admission ID..."
-                        className="w-full bg-slate-900 border border-slate-700 text-white pl-9 pr-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-white border border-slate-200 text-slate-900 pl-9 pr-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -3108,11 +3189,11 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
 
                   {/* Register Table */}
-                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead>
-                          <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                             <th className="p-3">Receipt #</th>
                             <th className="p-3">Student Name</th>
                             <th className="p-3">Payment Date</th>
@@ -3137,7 +3218,7 @@ export const InteractiveDemoPage: React.FC = () => {
                               return matchQ && matchMethod;
                             })
                             .map((rcp) => (
-                              <tr key={rcp.id} className="hover:bg-slate-900/60 transition-colors">
+                              <tr key={rcp.id} className="hover:bg-slate-50/80 transition-colors">
                                 <td className="p-3 font-mono font-bold text-amber-300">
                                   {rcp.receipt_number}
                                 </td>
@@ -3256,13 +3337,13 @@ export const InteractiveDemoPage: React.FC = () => {
                 return (
                   <div className="space-y-6">
                     {/* Report Controls Bar */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-slate-400 uppercase">Academic Year:</span>
                         <select
                           value={reportAcademicYear}
                           onChange={(e) => setReportAcademicYear(e.target.value)}
-                          className="bg-slate-900 border border-slate-700 text-white px-3 py-1.5 rounded-xl font-bold"
+                          className="bg-white border border-slate-200 text-slate-900 px-3 py-1.5 rounded-xl font-bold"
                         >
                           <option value="2026-2027">2026-2027 (Current)</option>
                           <option value="2025-2026">2025-2026</option>
@@ -3287,22 +3368,22 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Executive KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Total Expected Fee</span>
                         <p className="text-2xl font-black text-white font-mono mt-1">₹{totalExpected.toLocaleString()}</p>
                         <span className="text-[10px] text-slate-400 mt-1 block">Institutional Total Demand</span>
                       </div>
-                      <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider block">Total Fee Collected</span>
                         <p className="text-2xl font-black text-emerald-400 font-mono mt-1">₹{totalCollected.toLocaleString()}</p>
                         <span className="text-[10px] text-emerald-500 mt-1 block">{collectionPct}% of demand collected</span>
                       </div>
-                      <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span className="text-[11px] text-rose-400 font-bold uppercase tracking-wider block">Total Outstanding Balance</span>
                         <p className="text-2xl font-black text-rose-400 font-mono mt-1">₹{totalOutstanding.toLocaleString()}</p>
                         <span className="text-[10px] text-rose-500 mt-1 block">Pending across all terms</span>
                       </div>
-                      <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                         <span className="text-[11px] text-amber-400 font-bold uppercase tracking-wider block">Settlement Health</span>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold">{fullyPaid} Paid</span>
@@ -3313,14 +3394,14 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Category-Wise Breakdown Matrix */}
-                    <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
                       <div className="p-4 border-b border-slate-800 bg-slate-900/50">
                         <h3 className="text-sm font-bold text-white">Fee Head Category Wise Collection Breakdown</h3>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                               <th className="p-3">Fee Category Head</th>
                               <th className="p-3">Expected Amount</th>
                               <th className="p-3">Collected Amount</th>
@@ -3332,7 +3413,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             {Object.entries(catMap).map(([cat, d]) => {
                               const pct = d.expected > 0 ? Math.round((d.collected / d.expected) * 100) : 0;
                               return (
-                                <tr key={cat} className="hover:bg-slate-900/60">
+                                <tr key={cat} className="hover:bg-slate-50/80">
                                   <td className="p-3 font-bold text-white flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-blue-400"></span>
                                     {cat.replace('_', ' ')}
@@ -3390,13 +3471,13 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 return (
                   <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-slate-400 uppercase">Filter Status:</span>
                         <select
                           value={dueReportStatusFilter}
                           onChange={(e) => setDueReportStatusFilter(e.target.value)}
-                          className="bg-slate-900 border border-slate-700 text-white px-3 py-1.5 rounded-xl font-bold"
+                          className="bg-white border border-slate-200 text-slate-900 px-3 py-1.5 rounded-xl font-bold"
                         >
                           <option value="ALL">All Outstanding Dues</option>
                           <option value="OVERDUE">Strictly Overdue Only</option>
@@ -3420,11 +3501,11 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
                               <th className="p-3">Student Name</th>
                               <th className="p-3">Admission #</th>
                               <th className="p-3">Class / Level</th>
@@ -3444,7 +3525,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                 const d = new Date(inv.due_date);
                                 const overdueDays = Math.max(0, Math.floor((today.getTime() - d.getTime()) / (1000 * 3600 * 24)));
                                 return (
-                                  <tr key={inv.id} className="hover:bg-slate-900/60">
+                                  <tr key={inv.id} className="hover:bg-slate-50/80">
                                     <td className="p-3">
                                       <button
                                         type="button"
@@ -3519,7 +3600,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {feeStructures.map((fs) => (
-                      <div key={fs.id} className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                      <div key={fs.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                         <div className="flex items-start justify-between border-b border-slate-800/80 pb-3">
                           <div>
                             <span className="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
@@ -3563,7 +3644,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           </h4>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             {fs.fee_heads.map((h) => (
-                              <div key={h.head_code} className="bg-slate-900/40 p-2 rounded-lg border border-slate-850 flex items-center justify-between">
+                              <div key={h.head_code} className="bg-slate-900/40 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
                                 <span className="text-slate-300 text-[11px] truncate pr-2">{h.title}</span>
                                 <span className="font-mono font-bold text-slate-200 shrink-0">₹{h.amount.toLocaleString()}</span>
                               </div>
@@ -3605,7 +3686,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* Format Switcher */}
-                      <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
                         <button
                           onClick={() => setReceiptPrintLayout('A4')}
                           className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
@@ -4054,7 +4135,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
             return (
               <div className="space-y-6 max-w-6xl">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                   <div>
                     <h1 className="text-2xl font-black text-white">Smart Data Migration & Bulk Ingest Centre</h1>
                     <p className="text-xs text-slate-400 mt-1">
@@ -4101,7 +4182,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Wizard Step 1: Upload Source Data */}
                 {migrationStep === 1 && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 1: Upload Source Master File</h3>
                     <p className="text-xs text-slate-400">
                       Supported formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx), Scanned PDF (OCR Extraction), and JSON.
@@ -4124,7 +4205,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Wizard Step 2: Intelligent Column Mapping */}
                 {migrationStep === 2 && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 2: Smart Column Alias Mapping</h3>
                     <p className="text-xs text-slate-400">
                       The migration engine automatically matches non-standard legacy header names to institutional ERP fields.
@@ -4141,7 +4222,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-850">
                           {batch.columnMappings.map((m, idx) => (
-                            <tr key={idx} className="hover:bg-slate-900/60">
+                            <tr key={idx} className="hover:bg-slate-50/80">
                               <td className="px-4 py-3 font-mono font-bold text-amber-300">{m.sourceHeader}</td>
                               <td className="px-4 py-3 font-bold text-blue-400">{m.targetField}</td>
                               <td className="px-4 py-3">
@@ -4168,14 +4249,14 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Wizard Step 3: Identity Resolution & Duplicate Prevention */}
                 {migrationStep === 3 && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 3: Identity Resolution & Duplicate Candidates</h3>
                     <p className="text-xs text-slate-400">
                       Detected 12 exact duplicates and 8 probable matches against existing enrolled students.
                     </p>
                     <div className="space-y-3">
                       {batch.duplicateCandidates.map((c) => (
-                        <div key={c.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                        <div key={c.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                           <div>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                               c.matchType === 'EXACT_DUPLICATE' ? 'bg-rose-950 text-rose-300' : 'bg-amber-950 text-amber-300'
@@ -4219,18 +4300,18 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Wizard Step 4: Validation Preview */}
                 {migrationStep === 4 && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider">Step 4: Pre-Commit Validation Summary</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-slate-400 uppercase font-bold">Total Ingest Records</span>
                         <p className="text-2xl font-black text-white mt-1">{batch.totalRecords}</p>
                       </div>
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-emerald-400 uppercase font-bold">Clean New Admissions</span>
                         <p className="text-2xl font-black text-emerald-400 mt-1">{batch.cleanNewRecordsCount}</p>
                       </div>
-                      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-amber-400 uppercase font-bold">Resolved Duplicates</span>
                         <p className="text-2xl font-black text-amber-400 mt-1">{batch.exactMatchesCount + batch.probableMatchesCount}</p>
                       </div>
@@ -4248,7 +4329,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                 {/* Wizard Step 5: Ingest Execution & Audit */}
                 {migrationStep === 5 && (
-                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4 text-center">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 text-center">
                     <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
                     <h3 className="text-lg font-black text-white">Ready for Production Ingestion</h3>
                     <p className="text-xs text-slate-400 max-w-md mx-auto">
@@ -4268,7 +4349,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
           {activeTab === 'transport' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Transport Fleet & Live GPS Tracking</h1>
                   <p className="text-xs text-slate-400 mt-1">
@@ -4279,7 +4360,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {transportRoutes.map((rt) => (
-                  <div key={rt.id} className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div key={rt.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                     <div className="flex items-start justify-between border-b border-slate-800/80 pb-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -4365,7 +4446,7 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'admissions' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Admissions Pipeline</h1>
                   <p className="text-xs text-slate-400 mt-1">Application Ingestion • Verification • Approval</p>
@@ -4374,7 +4455,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
               <div className="space-y-3">
                 {admissions.map((adm) => (
-                  <div key={adm.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div key={adm.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-[10px] bg-slate-800 text-blue-300 px-2 py-0.5 rounded font-bold">
@@ -4408,50 +4489,52 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'students' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
-                  <h1 className="text-2xl font-black text-white">Student Information System (SIS)</h1>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <h1 className="text-2xl font-black text-slate-900">Student Information System (SIS)</h1>
+                  <p className="text-xs text-slate-500 mt-1">
                     Enrolled Directory across School, PU College & Degree College • Click any student to launch full 360° Profile
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => setShowCreateStudentModal(true)}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    Enrol New Student
+                    <Plus className="w-4 h-4" />
+                    + Add Student
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleOpenImportModal('STUDENTS', 'Admissions / Student Roster')}
-                    className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    Import Students
+                    Import CSV/Excel
                   </button>
-                  <span className="text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3 py-1.5 rounded-xl">
+                  <span className="text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 px-3.5 py-2 rounded-xl">
                     {students.length} Enrolled Students
                   </span>
                 </div>
               </div>
 
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase text-[10px]">
-                      <th className="p-3">Admission #</th>
-                      <th className="p-3">Student Name</th>
-                      <th className="p-3">Level & Class</th>
-                      <th className="p-3">Section / Stream</th>
-                      <th className="p-3">Guardian Contact</th>
-                      <th className="p-3">Attendance</th>
-                      <th className="p-3">Fee Dues</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3 text-right">360° Drilldown</th>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
+                      <th className="p-3.5">Admission #</th>
+                      <th className="p-3.5">Student Name</th>
+                      <th className="p-3.5">Level & Class</th>
+                      <th className="p-3.5">Section / Stream</th>
+                      <th className="p-3.5">Guardian Contact</th>
+                      <th className="p-3.5">Attendance</th>
+                      <th className="p-3.5">Fee Dues</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right">360° Drilldown</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-850">
+                  <tbody className="divide-y divide-slate-100">
                     {students.map((st) => (
                       <tr
                         key={st.id}
@@ -4459,38 +4542,35 @@ export const InteractiveDemoPage: React.FC = () => {
                           setSelected360Student(st);
                           setIs360DrawerOpen(true);
                         }}
-                        className="hover:bg-slate-900/90 cursor-pointer transition-colors group"
+                        className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
                       >
-                        <td className="p-3 font-mono text-indigo-300 font-bold group-hover:text-indigo-200">
+                        <td className="p-3.5 font-mono text-blue-600 font-bold group-hover:underline">
                           {st.admission_number}
                         </td>
-                        <td className="p-3 font-bold text-white group-hover:text-teal-300">
+                        <td className="p-3.5 font-bold text-slate-900 group-hover:text-blue-600">
                           {st.first_name} {st.last_name}
                         </td>
-                        <td className="p-3 text-slate-300">{st.institution_level} - {st.class_name}</td>
-                        <td className="p-3 text-slate-400">{st.section_or_stream}</td>
-                        <td className="p-3 text-slate-300">{st.guardian_name} ({st.guardian_phone})</td>
-                        <td className="p-3 font-mono text-emerald-400 font-bold">{st.attendance_pct}%</td>
-                        <td className="p-3 font-mono font-bold text-amber-400">
-                          ₹{st.fee_balance.toLocaleString('en-IN')}
+                        <td className="p-3.5 text-slate-700">{st.class_name}</td>
+                        <td className="p-3.5 text-slate-600">{st.section_or_stream}</td>
+                        <td className="p-3.5 text-slate-600">
+                          <div className="font-medium text-slate-900">{st.guardian_name}</div>
+                          <div className="text-[11px] text-slate-400">{st.guardian_phone}</div>
                         </td>
-                        <td className="p-3">
-                          <span className="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-800/50">
+                        <td className="p-3.5 font-bold text-emerald-600">{st.attendance_pct || 95}%</td>
+                        <td className={`p-3.5 font-mono font-bold ${(st.fee_balance || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          ₹{(st.fee_balance || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                             {st.status}
                           </span>
                         </td>
-                        <td className="p-3 text-right">
+                        <td className="p-3.5 text-right">
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelected360Student(st);
-                              setIs360DrawerOpen(true);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 text-xs font-bold border border-slate-200 transition-colors"
                           >
-                            <span>Inspect 360°</span>
-                            <ArrowRight className="w-3 h-3" />
+                            Inspect 360° →
                           </button>
                         </td>
                       </tr>
@@ -4506,7 +4586,7 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'staff' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Faculty & Staff Directory</h1>
                   <p className="text-xs text-slate-400 mt-1">Teaching and Operational Staff Profiles</p>
@@ -4534,13 +4614,13 @@ export const InteractiveDemoPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {staffMembers.map((st) => (
-                  <div key={st.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                  <div key={st.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between text-xs">
                     <div>
                       <h4 className="font-bold text-white text-sm">{st.name}</h4>
                       <p className="text-blue-400 mt-0.5">{st.designation || st.role}</p>
                       <p className="text-[11px] text-slate-400 mt-1">Dept: {st.dept} • {st.email}</p>
                     </div>
-                    <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 font-mono px-2 py-1 rounded">
+                    <span className="text-[10px] bg-slate-50 border border-slate-200 text-slate-300 font-mono px-2 py-1 rounded">
                       {st.employee_id}
                     </span>
                   </div>
@@ -4554,18 +4634,18 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* ================================================================= */}
           {activeTab === 'timetable' && (
             <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
                 <div>
                   <h1 className="text-2xl font-black text-white">Weekly Academic Timetable</h1>
                   <p className="text-xs text-slate-400 mt-1">Period Allocations • Lab Sessions • Classroom Schedules</p>
                 </div>
               </div>
 
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
                 <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">I PUC - Science (PCMB Batch A) Schedule:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
                   {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-                    <div key={day} className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+                    <div key={day} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                       <p className="font-bold text-white text-sm border-b border-slate-800 pb-1">{day}</p>
                       <div className="space-y-1.5 text-[11px]">
                         <div className="p-1.5 rounded bg-slate-850 text-slate-200">
@@ -4672,7 +4752,7 @@ export const InteractiveDemoPage: React.FC = () => {
       {/* Schedule New Exam Modal */}
       {showExamModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="max-w-md w-full bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
+          <div className="max-w-md w-full bg-white border border-slate-200 shadow-xs rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
             <h3 className="text-base font-black text-white">Schedule New Institutional Examination</h3>
             
             <form onSubmit={handleCreateExamSubmit} className="space-y-3">
@@ -4683,7 +4763,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   required
                   value={newExamTitle}
                   onChange={(e) => setNewExamTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -4693,7 +4773,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   <select
                     value={newExamCategory}
                     onChange={(e) => setNewExamCategory(e.target.value as InstitutionalExamCategory)}
-                    className="w-full px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="Weekly Test">Weekly Test</option>
                     <option value="Unit Test">Unit Test</option>
@@ -4713,7 +4793,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   <select
                     value={newExamMode}
                     onChange={(e) => setNewExamMode(e.target.value as ExamDeliveryMode)}
-                    className="w-full px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="Offline (Paper-based)">Offline (Paper-based)</option>
                     <option value="Internal Online">Internal Online CBT</option>
@@ -4729,7 +4809,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   required
                   value={newExamClass}
                   onChange={(e) => setNewExamClass(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -4756,7 +4836,7 @@ export const InteractiveDemoPage: React.FC = () => {
       {/* Permission Change Request Modal */}
       {showChangeReqModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="max-w-md w-full bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
+          <div className="max-w-md w-full bg-white border border-slate-200 shadow-xs rounded-3xl p-6 shadow-2xl space-y-4 text-xs">
             <h3 className="text-base font-black text-white">Submit Privilege Request to Super Admin</h3>
             <p className="text-slate-400">
               Institution Admins cannot grant permissions directly. Requests are submitted to the Platform Super Admin for audit and approval.
@@ -4768,7 +4848,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <select
                   value={reqRole}
                   onChange={(e) => setReqRole(e.target.value as UserRoleType)}
-                  className="w-full px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none cursor-pointer"
+                  className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none cursor-pointer"
                 >
                   <option value="EXAM_CONTROLLER">Examination Controller</option>
                   <option value="TEACHER">Faculty / Teacher</option>
@@ -4782,7 +4862,7 @@ export const InteractiveDemoPage: React.FC = () => {
                 <select
                   value={reqAction}
                   onChange={(e) => setReqAction(e.target.value as FineGrainedAction)}
-                  className="w-full px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none cursor-pointer"
+                  className="w-full px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none cursor-pointer"
                 >
                   <option value="publish">publish (Publish examination results)</option>
                   <option value="export">export (Export student ledgers & reports)</option>
@@ -4797,7 +4877,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   rows={3}
                   value={reqJustification}
                   onChange={(e) => setReqJustification(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-white focus:outline-none"
                 />
               </div>
 
@@ -4886,6 +4966,26 @@ export const InteractiveDemoPage: React.FC = () => {
         onClose={() => setShowCreateFacultyModal(false)}
         onSuccess={(staff) => {
           setModuleImportToast(`Faculty added successfully: ${staff.name} (${staff.employee_id})`);
+          setTimeout(() => setModuleImportToast(null), 5000);
+        }}
+      />
+
+      {/* Collect Fee Modal */}
+      <CollectFeeModal
+        isOpen={showCollectFeeModal}
+        onClose={() => setShowCollectFeeModal(false)}
+        onSuccess={(rcp) => {
+          setModuleImportToast(`Fee collected successfully! Receipt ${rcp.receipt_number} generated for ${rcp.student_name}.`);
+          setTimeout(() => setModuleImportToast(null), 5000);
+        }}
+      />
+
+      {/* Add Class / Section Modal */}
+      <CreateClassModal
+        isOpen={showCreateClassModal}
+        onClose={() => setShowCreateClassModal(false)}
+        onSuccess={() => {
+          setModuleImportToast(`New academic class section created successfully.`);
           setTimeout(() => setModuleImportToast(null), 5000);
         }}
       />

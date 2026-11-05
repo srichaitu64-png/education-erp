@@ -557,13 +557,13 @@ export const InstitutionDashboard: React.FC = () => {
               <p className="text-xs text-gray-500 mt-1 mb-4">Centralized governance for primary schools, PU college campuses, and degree colleges.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-                  <h4 className="font-bold text-sm text-gray-900">Akshara Global Main Campus</h4>
-                  <p className="text-xs text-gray-500 mt-1">JP Nagar, Bengaluru • School & PU College</p>
+                  <h4 className="font-bold text-sm text-gray-900">{tenant?.name || 'OUR SCHOOL'} Main Campus</h4>
+                  <p className="text-xs text-gray-500 mt-1">Campus Ground, Bengaluru • School & PU Units</p>
                   <span className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Main Campus</span>
                 </div>
                 <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-                  <h4 className="font-bold text-sm text-gray-900">Akshara Degree College Campus</h4>
-                  <p className="text-xs text-gray-500 mt-1">Whitefield, Bengaluru • Degree & PG Programs</p>
+                  <h4 className="font-bold text-sm text-gray-900">{tenant?.name || 'OUR SCHOOL'} Extended Campus</h4>
+                  <p className="text-xs text-gray-500 mt-1">Science & Technology Block • Laboratories & Sports</p>
                   <span className="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 text-gray-700">Affiliated Campus</span>
                 </div>
               </div>

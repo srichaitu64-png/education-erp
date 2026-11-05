@@ -138,7 +138,7 @@ export const LaboratoryManagementView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs font-semibold mb-2">
             <FlaskConical className="w-3.5 h-3.5 text-blue-400" />
@@ -162,25 +162,25 @@ export const LaboratoryManagementView: React.FC = () => {
 
       {/* KPI Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Laboratories</p>
           <p className="text-2xl font-black text-white mt-1">{laboratories.length}</p>
           <p className="text-[10px] text-blue-400 font-medium mt-0.5">Physics, Chem, Bio, CS, Elec</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Items</p>
           <p className="text-2xl font-black text-white mt-1">{labInventory.length}</p>
           <p className="text-[10px] text-emerald-400 font-medium mt-0.5">Tracked under master register</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Valuation</p>
           <p className="text-2xl font-black text-emerald-400 mt-1">₹{(totalInventoryValue / 100000).toFixed(2)}L</p>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">₹{totalInventoryValue.toLocaleString('en-IN')}</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Low-Stock Alerts</p>
           <p className={`text-2xl font-black mt-1 ${lowStockItems.length > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
             {lowStockItems.length}
@@ -188,7 +188,7 @@ export const LaboratoryManagementView: React.FC = () => {
           <p className="text-[10px] text-amber-300 font-medium mt-0.5">Below reorder threshold</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Calibration Due</p>
           <p className={`text-2xl font-black mt-1 ${maintenanceItems.length > 0 ? 'text-purple-400' : 'text-slate-400'}`}>
             {maintenanceItems.length}
@@ -196,7 +196,7 @@ export const LaboratoryManagementView: React.FC = () => {
           <p className="text-[10px] text-purple-300 font-medium mt-0.5">Inspection scheduled</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock Movements</p>
           <p className="text-2xl font-black text-blue-400 mt-1">{labMovements.length}</p>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">Immutable audit logs</p>
@@ -285,7 +285,7 @@ export const LaboratoryManagementView: React.FC = () => {
                 placeholder="Search material ID, name, rack..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -294,7 +294,7 @@ export const LaboratoryManagementView: React.FC = () => {
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                   <tr>
                     <th className="p-4">Material / Item</th>
                     <th className="p-4">Laboratory</th>
@@ -423,7 +423,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   const it = labInventory.find(i => i.id === e.target.value);
                   if (it) setSelectedItemForQR(it);
                 }}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 {labInventory.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -532,8 +532,8 @@ export const LaboratoryManagementView: React.FC = () => {
             )}
 
             {/* Item Live Details Card */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-850 pb-2">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                 <div>
                   <h3 className="text-sm font-black text-white">{selectedItemForQR.name}</h3>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">Asset Code: {selectedItemForQR.id}</p>
@@ -578,7 +578,7 @@ export const LaboratoryManagementView: React.FC = () => {
             {/* Quick Actions Forms */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Action 1: Issue Item to Faculty/Student */}
-              <form onSubmit={handleIssueSubmit} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <form onSubmit={handleIssueSubmit} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
                   <ArrowRight className="w-3.5 h-3.5" /> Issue to Practical Batch
                 </h4>
@@ -625,7 +625,7 @@ export const LaboratoryManagementView: React.FC = () => {
               </form>
 
               {/* Action 2: Return or Record Consumption */}
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 flex flex-col justify-between">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Return Custody / Consume
@@ -688,7 +688,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="p-3.5">Movement ID</th>
                   <th className="p-3.5">Item Name</th>
@@ -750,7 +750,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {labInventory.filter(i => i.category === 'REUSABLE_EQUIPMENT' || i.category === 'COMPUTING_HARDWARE').map((eq) => (
-              <div key={eq.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div key={eq.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-bold text-white">{eq.name}</h3>
@@ -778,7 +778,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-850">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
                   <button
                     onClick={() => {
                       recordMaintenance(eq.id, '2027-11-04', 'OPERATIONAL');
@@ -812,7 +812,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
             {labExperiments.map((exp) => (
-              <div key={exp.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div key={exp.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">
                     {exp.subject}
@@ -840,7 +840,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   </ul>
                 </div>
 
-                <div className="pt-2 border-t border-slate-850 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono">
                   <span>Schedule: {exp.scheduleDate}</span>
                 </div>
               </div>
@@ -852,7 +852,7 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* Register Material Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
                 <FlaskConical className="w-4 h-4 text-blue-400" />
@@ -870,7 +870,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   placeholder="e.g. Digital Spectrophotometer 340-1000nm"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -880,7 +880,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   <select
                     value={newItemLabId}
                     onChange={(e) => setNewItemLabId(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {laboratories.map(l => (
                       <option key={l.id} value={l.id}>{l.name.split(' ')[0]} ({l.type})</option>
@@ -893,7 +893,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   <select
                     value={newItemCategory}
                     onChange={(e) => setNewItemCategory(e.target.value as any)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="REUSABLE_EQUIPMENT">Reusable Equipment</option>
                     <option value="CONSUMABLE_CHEMICAL">Consumable Chemical</option>
@@ -912,7 +912,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     min="1"
                     value={newItemStock}
                     onChange={(e) => setNewItemStock(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
 
@@ -923,7 +923,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     min="1"
                     value={newItemMinStock}
                     onChange={(e) => setNewItemMinStock(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
 
@@ -934,7 +934,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     min="0"
                     value={newItemPrice}
                     onChange={(e) => setNewItemPrice(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
               </div>
@@ -946,7 +946,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     type="text"
                     value={newItemLocation}
                     onChange={(e) => setNewItemLocation(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -956,7 +956,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     type="text"
                     value={newItemUnit}
                     onChange={(e) => setNewItemUnit(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>

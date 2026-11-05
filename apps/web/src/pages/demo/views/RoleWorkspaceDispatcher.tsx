@@ -18,11 +18,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
   currentRole,
   onNavigateTab
 }) => {
-  const { academicSections, staffDuties, exams, feeSnapshots } = useDemoStore();
+  const { academicSections, staffDuties, exams, feeSnapshots, students, staffMembers, receipts, attendance } = useDemoStore();
 
-  // Unified Vibrant Enterprise Token Classes
-  const cardCls = "bg-slate-950/80 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4 text-slate-100 backdrop-blur-sm";
-  const headerCls = "bg-gradient-to-r from-[#172B4D] via-slate-900 to-[#172B4D] rounded-2xl p-6 text-white border border-slate-700/80 shadow-2xl";
+  // Unified Clean & Neat Enterprise Token Classes
+  const cardCls = "bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4 text-slate-800";
+  const headerCls = "bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white border border-slate-800 shadow-md";
 
   switch (currentRole) {
     // =========================================================================
@@ -201,6 +201,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
           </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -328,6 +443,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
           </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -450,6 +680,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
           </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -566,6 +911,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 <p className="text-[11px] text-amber-800">
                   All submissions are attributed with your operator badge and require Controller/Principal verification before publishing.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
               </div>
             </div>
           </div>
@@ -820,6 +1280,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
           </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -940,6 +1515,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
           </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
 
@@ -1030,6 +1720,121 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
                 >
                   Fee Management →
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* eSkooly Operational & Demographics Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Widget 1: Attendance & Operations Progress */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-emerald-600" />
+                  Today's Attendance & Operations
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Live
+                </span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Students Present Today</span>
+                    <span className="font-bold text-slate-900">96.4% ({students.length > 0 ? Math.round(students.length * 0.96) : 0} enrolled)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '96.4%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Faculty & Staff Present</span>
+                    <span className="font-bold text-slate-900">98.1% ({staffMembers.length || 18} staff on duty)</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '98.1%' }}></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between mb-1 text-slate-600">
+                    <span>Fee Recovery Rate</span>
+                    <span className="font-bold text-slate-900">88.5% (₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')})</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '88.5%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Student Demographics (eSkooly Boy/Girl Ratio) */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Student Demographics
+                </h3>
+                <span className="text-[11px] text-slate-500 font-bold">Total: {students.length}</span>
+              </div>
+              <div className="space-y-4 text-xs pt-1">
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 block">Boys</span>
+                    <span className="text-xl font-black text-blue-900">
+                      {students.filter(s => s.gender === 'MALE').length || Math.round(students.length * 0.52)}
+                    </span>
+                    <span className="text-[10px] text-blue-600 block mt-0.5">52% Ratio</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
+                    <span className="text-[10px] uppercase font-bold text-rose-600 block">Girls</span>
+                    <span className="text-xl font-black text-rose-900">
+                      {students.filter(s => s.gender === 'FEMALE').length || Math.round(students.length * 0.48)}
+                    </span>
+                    <span className="text-[10px] text-rose-600 block mt-0.5">48% Ratio</span>
+                  </div>
+                </div>
+                <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="bg-blue-600 h-2.5" style={{ width: '52%' }}></div>
+                  <div className="bg-rose-500 h-2.5" style={{ width: '48%' }}></div>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Boys (52%)</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Girls (48%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Quick Collections & Actions */}
+            <div className={cardCls}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Fee Ledger & Receipts
+                </h3>
+                <button onClick={() => onNavigateTab('fees')} className="text-xs text-blue-600 font-bold hover:underline">
+                  View Ledger →
+                </button>
+              </div>
+              <div className="space-y-3 text-xs pt-1">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Issued Receipts</span>
+                    <span className="font-bold text-slate-900 text-sm">{receipts.length} Official Receipts</span>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                    Settled
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Collections Realized</span>
+                    <span className="font-bold text-emerald-700 text-sm font-mono">
+                      ₹{receipts.reduce((s, r) => s + (r.amount_paid || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Cash, UPI, Cheque</span>
+                </div>
               </div>
             </div>
           </div>

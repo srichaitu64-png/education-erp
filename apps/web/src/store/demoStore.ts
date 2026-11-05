@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { api } from '../services/api';
 
 // ---------------------------------------------------------------------------
@@ -1359,6 +1360,13 @@ interface DemoState {
   customFeeHeads: FeeHeadDefinition[];
   addCustomFeeHead: (head: Omit<FeeHeadDefinition, 'id'>) => { success: boolean; message: string };
   collectMultiHeadFee: (payload: MultiHeadFeeCollectionPayload) => DemoFeeReceipt;
+  collectQuickFee: (params: {
+    studentId: string;
+    amount: number;
+    paymentMethod: PaymentMethodType;
+    transactionRef?: string;
+    notes?: string;
+  }) => DemoFeeReceipt;
   reprintReceipt: (receiptId: string) => DemoFeeReceipt;
   logReceiptAction: (
     receiptNumber: string,
@@ -3440,7 +3448,9 @@ const initialMigrationBatches: MigrationBatch[] = [
   }
 ];
 
-export const useDemoStore = create<DemoState>((set, get) => ({
+export const useDemoStore = create<DemoState>()(
+  persist(
+    (set, get) => ({
   currentRole: 'PRINCIPAL',
   switchRole: (role) => set({ currentRole: role }),
 
@@ -3569,11 +3579,67 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   // Actions
   addStudent: (data) => {
     const localId = `st-${Date.now()}`;
+    let feeBalance = Number(data.fee_balance) || 0;
+    if (feeBalance <= 0) {
+      if (data.institution_level === 'PU College') feeBalance = 70000;
+      else if (data.institution_level === 'Degree College') feeBalance = 55000;
+      else feeBalance = 45000;
+    }
+
     const newStudent: DemoStudent = {
       id: localId,
       ...data,
+      fee_balance: feeBalance,
+      attendance_pct: data.attendance_pct || 100.0,
+      status: data.status || 'ACTIVE',
     };
-    set((state) => ({ students: [newStudent, ...state.students] }));
+
+    // Auto-generate initial fee invoice
+    const invNumber = `INV-2026-${Date.now().toString().slice(-4)}`;
+    const newInvoice: DemoFeeInvoice = {
+      id: `inv-${localId}`,
+      invoice_number: invNumber,
+      admission_number: data.admission_number,
+      student_name: `${data.first_name} ${data.last_name}`,
+      class_name: `${data.institution_level ? data.institution_level + ' - ' : ''}${data.class_name}`,
+      academic_year: data.academic_year || '2026-2027',
+      term_code: 'TERM_1',
+      term_name: 'Term 1 / Annual Fee',
+      fee_head: 'COLLEGE_FEE',
+      fee_title: 'Annual Tuition & Academic Composite Fee',
+      total_amount: feeBalance,
+      paid_amount: 0,
+      balance_amount: feeBalance,
+      status: 'UNPAID',
+      due_date: '2026-12-31',
+      breakdown: [
+        { head_code: 'COLLEGE_FEE', title: 'Tuition Fee', amount: Math.round(feeBalance * 0.7) },
+        { head_code: 'LAB_FEE', title: 'Laboratory / Digital Learning', amount: Math.round(feeBalance * 0.15) },
+        { head_code: 'EXAM_FEE', title: 'Examinations & Assessments', amount: Math.round(feeBalance * 0.1) },
+        { head_code: 'TRANSPORT_FEE', title: 'Sports & Amenities', amount: Math.round(feeBalance * 0.05) },
+      ]
+    };
+
+    // Auto-generate daily attendance record
+    const newAttendance: DemoAttendanceRecord = {
+      student_id: localId,
+      student_name: `${data.first_name} ${data.last_name}`,
+      roll_number: data.roll_number || '01',
+      class_name: `${data.institution_level} - ${data.class_name}`,
+      status: 'PRESENT',
+    };
+
+    set((state) => ({
+      students: [newStudent, ...state.students],
+      invoices: [newInvoice, ...state.invoices],
+      attendance: [newAttendance, ...state.attendance],
+      academicSections: state.academicSections.map((sec) =>
+        (sec.class_name.toLowerCase().includes(data.class_name.toLowerCase()) ||
+         data.class_name.toLowerCase().includes(sec.class_name.toLowerCase()))
+          ? { ...sec, enrolled_count: sec.enrolled_count + 1 }
+          : sec
+      ),
+    }));
 
     // Real API integration
     if (localStorage.getItem('access_token')) {
@@ -3587,9 +3653,9 @@ export const useDemoStore = create<DemoState>((set, get) => ({
         roll_number: data.roll_number,
         guardian_name: data.guardian_name,
         guardian_phone: data.guardian_phone,
-        fee_balance: data.fee_balance,
-        attendance_pct: data.attendance_pct,
-        status: data.status,
+        fee_balance: feeBalance,
+        attendance_pct: data.attendance_pct || 100.0,
+        status: data.status || 'ACTIVE',
       }).then((res) => {
         if (res.data?.id) {
           set((state) => ({
@@ -3710,7 +3776,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       const newStatus = newBalance <= 0.01 ? 'PAID' : 'PARTIAL';
 
       const receiptCount = state.receipts.length + 1;
-      const receiptNumber = `RCP-AKSH-2026-${1000 + receiptCount}`;
+      const receiptNumber = `RCP-OS-2026-${1000 + receiptCount}`;
       const txnRef =
         transactionRef || `${paymentMethod.slice(0, 3)}/2026/${Date.now().toString().slice(-6)}`;
 
@@ -3762,11 +3828,11 @@ export const useDemoStore = create<DemoState>((set, get) => ({
         collected_by: state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`,
         allocations: finalAllocations,
         institution_branding: {
-          institution_name: 'Akshara Global Educational Institutions',
-          affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-          address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
           phone: '+91 80 2345 6789',
-          email: 'accounts@akshara.erp.in',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
           receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
         },
         qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${amount}`,
@@ -3787,6 +3853,15 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       };
 
       return {
+        students: state.students.map((s) => {
+          if (s.admission_number === inv.admission_number) {
+            return {
+              ...s,
+              fee_balance: Math.max(0, (s.fee_balance || 0) - amount),
+            };
+          }
+          return s;
+        }),
         invoices: state.invoices.map((i) =>
           i.id === invoiceId
             ? {
@@ -3876,11 +3951,11 @@ export const useDemoStore = create<DemoState>((set, get) => ({
         collected_by: payload.collected_by || (state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`),
         allocations: allocations,
         institution_branding: {
-          institution_name: 'Akshara Global Educational Institutions',
-          affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-          address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
           phone: '+91 80 2345 6789',
-          email: 'accounts@akshara.erp.in',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
           receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
         },
         qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${totalPaid}`,
@@ -3901,6 +3976,127 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       };
 
       return {
+        students: state.students.map((s) => {
+          if (s.id === payload.student_id || s.admission_number === payload.admission_number) {
+            return {
+              ...s,
+              fee_balance: Math.max(0, (s.fee_balance || 0) - totalPaid),
+            };
+          }
+          return s;
+        }),
+        invoices: state.invoices.map((i) => {
+          if (i.admission_number === payload.admission_number || i.student_name === payload.student_name) {
+            const paid = (i.paid_amount || 0) + totalPaid;
+            const bal = Math.max(0, i.total_amount - paid);
+            return {
+              ...i,
+              paid_amount: paid,
+              balance_amount: bal,
+              status: bal <= 0.01 ? 'PAID' : 'PARTIAL',
+              last_payment_date: now.toISOString().split('T')[0],
+            };
+          }
+          return i;
+        }),
+        receipts: [generatedReceipt!, ...state.receipts],
+        receiptAudits: [newAudit, ...state.receiptAudits],
+      };
+    });
+
+    return generatedReceipt!;
+  },
+
+  collectQuickFee: ({ studentId, amount, paymentMethod, transactionRef, notes }) => {
+    let generatedReceipt: DemoFeeReceipt | null = null;
+    const now = new Date();
+    const formattedDate =
+      now.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' ' +
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) +
+      ' IST';
+
+    set((state) => {
+      const student = state.students.find((s) => s.id === studentId || s.admission_number === studentId);
+      if (!student) return state;
+
+      const previousBalance = student.fee_balance || 0;
+      const currentBalance = Math.max(0, previousBalance - amount);
+      const receiptCount = state.receipts.length + 1;
+      const receiptNumber = `RCP-OS-2026-${1000 + receiptCount}`;
+      const txnRef = transactionRef || `${paymentMethod.slice(0, 3)}/2026/${Date.now().toString().slice(-6)}`;
+
+      generatedReceipt = {
+        id: `rcp-${Date.now()}`,
+        receipt_number: receiptNumber,
+        invoice_id: `inv-${student.id}`,
+        invoice_number: `INV-2026-${Date.now().toString().slice(-4)}`,
+        student_id: student.id,
+        student_name: `${student.first_name} ${student.last_name}`,
+        admission_number: student.admission_number,
+        class_name: `${student.institution_level ? student.institution_level + ' - ' : ''}${student.class_name}`,
+        academic_year: student.academic_year || '2026-2027',
+        term_code: 'TERM_1',
+        term_name: 'Tuition & Composite Fee',
+        amount_paid: amount,
+        previous_balance: previousBalance,
+        current_balance: currentBalance,
+        payment_method: paymentMethod,
+        transaction_reference: txnRef,
+        payment_date: formattedDate,
+        collected_by: state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`,
+        allocations: [
+          {
+            head: 'COLLEGE_FEE',
+            title: 'Tuition Fee Settlement',
+            allocated: amount,
+            remaining: currentBalance,
+          },
+        ],
+        institution_branding: {
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          phone: '+91 80 2345 6789',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
+          receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
+        },
+        qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${amount}`,
+        reprint_count: 0,
+        is_duplicate: false,
+        status: 'CONFIRMED',
+        notes: notes || `Quick fee payment collected via ${paymentMethod}`,
+      };
+
+      const newAudit: ReceiptAuditLogItem = {
+        id: `aud-${Date.now()}`,
+        receipt_number: receiptNumber,
+        action: 'GENERATED',
+        performed_by: state.currentRole,
+        role: state.currentRole,
+        timestamp: formattedDate,
+        details: { amount, paymentMethod, student_name: `${student.first_name} ${student.last_name}` },
+      };
+
+      return {
+        students: state.students.map((s) =>
+          s.id === student.id ? { ...s, fee_balance: currentBalance } : s
+        ),
+        invoices: state.invoices.map((inv) =>
+          inv.admission_number === student.admission_number
+            ? {
+                ...inv,
+                paid_amount: (inv.paid_amount || 0) + amount,
+                balance_amount: Math.max(0, inv.total_amount - ((inv.paid_amount || 0) + amount)),
+                status: (inv.paid_amount || 0) + amount >= inv.total_amount ? 'PAID' : 'PARTIAL',
+                last_payment_date: now.toISOString().split('T')[0],
+              }
+            : inv
+        ),
         receipts: [generatedReceipt!, ...state.receipts],
         receiptAudits: [newAudit, ...state.receiptAudits],
       };
@@ -5154,4 +5350,25 @@ export const useDemoStore = create<DemoState>((set, get) => ({
       feeSnapshots: initialFeeSnapshots,
     });
   },
-}));
+}),
+    {
+      name: 'educationos_demo_storage_v2',
+      partialize: (state) => ({
+        currentRole: state.currentRole,
+        tenantScope: state.tenantScope,
+        students: state.students,
+        invoices: state.invoices,
+        receipts: state.receipts,
+        receiptAudits: state.receiptAudits,
+        feeStructures: state.feeStructures,
+        attendance: state.attendance,
+        academicSections: state.academicSections,
+        staffMembers: state.staffMembers,
+        exams: state.exams,
+        marks: state.marks,
+        admissions: state.admissions,
+        customFeeHeads: state.customFeeHeads,
+      }),
+    }
+  )
+);

@@ -84,7 +84,7 @@ export const PlatformSuperAdminView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-2">
             <ShieldAlert className="w-3.5 h-3.5 text-purple-400" />
@@ -108,37 +108,37 @@ export const PlatformSuperAdminView: React.FC = () => {
 
       {/* KPI Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Institutions</p>
           <p className="text-2xl font-black text-white mt-1">1,248</p>
           <p className="text-[10px] text-purple-400 font-medium mt-0.5">Across 18 States in India</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Tenants</p>
           <p className="text-2xl font-black text-emerald-400 mt-1">1,180</p>
           <p className="text-[10px] text-emerald-300 font-medium mt-0.5">42 Trials • 26 Suspended</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Monthly Revenue (MRR)</p>
           <p className="text-2xl font-black text-blue-400 mt-1">₹48.5L</p>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">ARR: ₹5.82 Crores</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Students</p>
           <p className="text-2xl font-black text-white mt-1">4.82 Lakhs</p>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">24,500+ Faculty members</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Support Sessions</p>
           <p className="text-2xl font-black text-amber-400 mt-1">{supportTickets.length}</p>
           <p className="text-[10px] text-amber-300 font-medium mt-0.5">Consent-gated audit</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">System Health</p>
           <p className="text-2xl font-black text-emerald-400 mt-1">99.98%</p>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">Zero cross-tenant leaks</p>
@@ -202,7 +202,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                 placeholder="Search tenant ID, school name, city..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           </div>
@@ -210,7 +210,7 @@ export const PlatformSuperAdminView: React.FC = () => {
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                   <tr>
                     <th className="p-4">Tenant Identity</th>
                     <th className="p-4">Type & Location</th>
@@ -322,7 +322,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                   placeholder="e.g. Delhi Public Academy & Pre-University College"
                   value={provName}
                   onChange={(e) => setProvName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -332,7 +332,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                   <select
                     value={provType}
                     onChange={(e) => setProvType(e.target.value as any)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="COMPOSITE_GROUP">Composite School & College</option>
                     <option value="SCHOOL">K-12 School</option>
@@ -346,7 +346,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                   <select
                     value={provPlan}
                     onChange={(e) => setProvPlan(e.target.value as any)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="ENTERPRISE">Enterprise (All Features & Channels)</option>
                     <option value="PRO">Pro (Standard + Labs)</option>
@@ -364,7 +364,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                     required
                     value={provState}
                     onChange={(e) => setProvState(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
 
@@ -375,7 +375,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                     required
                     value={provCity}
                     onChange={(e) => setProvCity(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
               </div>
@@ -387,7 +387,7 @@ export const PlatformSuperAdminView: React.FC = () => {
                   min="100"
                   value={provCapacity}
                   onChange={(e) => setProvCapacity(Number(e.target.value))}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
@@ -411,7 +411,7 @@ export const PlatformSuperAdminView: React.FC = () => {
               </p>
 
               {provisionSuccess ? (
-                <div className="mt-4 p-5 rounded-2xl bg-slate-950 border border-emerald-500/40 space-y-3">
+                <div className="mt-4 p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3 text-slate-800">
                   <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
                     <CheckCircle2 className="w-4 h-4" /> Tenant Successfully Provisioned!
                   </div>
@@ -428,9 +428,9 @@ export const PlatformSuperAdminView: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-850">
+                  <div className="pt-2 border-t border-slate-200">
                     <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Single-Use Chairman Activation URL:</span>
-                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[10px] text-blue-300 break-all select-all">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 font-mono text-[10px] text-blue-300 break-all select-all">
                       {provisionSuccess.activationLink}
                     </div>
                   </div>
@@ -471,7 +471,7 @@ export const PlatformSuperAdminView: React.FC = () => {
               const isApproved = tkt.status === 'APPROVED_ACTIVE';
 
               return (
-                <div key={tkt.id} className="p-5 rounded-2xl bg-slate-950 border border-slate-850 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div key={tkt.id} className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2.5">
                       <span className="font-mono font-bold text-xs text-purple-400">{tkt.id}</span>
@@ -552,7 +552,7 @@ export const PlatformSuperAdminView: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="p-3.5">Procurement Item</th>
                   <th className="p-3.5">Vendor / Cloud Provider</th>

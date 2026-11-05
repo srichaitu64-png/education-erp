@@ -175,34 +175,34 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
   return (
     <>
       {/* Mobile Hamburger Button */}
-      <div className="md:hidden bg-[#172B4D] text-white p-3 flex items-center justify-between border-b border-slate-700">
+      <div className="md:hidden bg-white text-slate-900 p-3 flex items-center justify-between border-b border-slate-200 shadow-xs">
         <div className="flex items-center gap-2">
           <div className={`w-7 h-7 rounded-lg ${brandBg} flex items-center justify-center font-bold text-xs text-white`}>{brandInitial}</div>
           <span className="font-bold text-xs">{brandName}</span>
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-1.5 rounded-lg bg-slate-800 text-slate-200"
+          className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200"
         >
           {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container - Clean & Neat White Theme (eSkooly Style) */}
       <aside
-        className={`w-full md:w-64 bg-[#172B4D] text-slate-200 border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto transition-all ${
+        className={`w-full md:w-64 bg-white text-slate-700 border-r border-slate-200/90 flex flex-col shrink-0 overflow-y-auto transition-all ${
           isMobileOpen ? 'block' : 'hidden md:flex'
         }`}
       >
         {/* Campus / Institution Brand Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl ${brandBg} text-white font-black flex items-center justify-center text-sm shadow-md`}>
+            <div className={`w-9 h-9 rounded-xl ${brandBg} text-white font-black flex items-center justify-center text-sm shadow-sm`}>
               {brandInitial}
             </div>
             <div>
-              <h2 className="text-xs font-black text-white uppercase tracking-wider">{brandName}</h2>
-              <span className="text-[10px] text-slate-400">{brandSub}</span>
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">{brandName}</h2>
+              <span className="text-[10px] text-slate-500 font-medium">{brandSub}</span>
             </div>
           </div>
         </div>
@@ -221,13 +221,13 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
                 {/* Group Header with Subtle Toggle */}
                 <button
                   onClick={() => toggleGroup(group.id)}
-                  className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 transition-colors cursor-pointer group"
+                  className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors cursor-pointer group"
                 >
-                  <span className="group-hover:text-blue-400 transition-colors">{group.title}</span>
+                  <span className="group-hover:text-blue-600 transition-colors">{group.title}</span>
                   {isExpanded ? (
-                    <ChevronDown className="w-3 h-3 text-slate-500 group-hover:text-slate-300" />
+                    <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600" />
                   ) : (
-                    <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-slate-300" />
+                    <ChevronRight className="w-3 h-3 text-slate-400 group-hover:text-slate-600" />
                   )}
                 </button>
 
@@ -246,14 +246,14 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
                             onClick={() => {
                               alert(`🔒 Subscription / Permission Locked:\n\n${lockInfo.reason}`);
                             }}
-                            className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 bg-slate-900/40 border border-slate-800/60 hover:bg-slate-850 transition-all cursor-not-allowed"
+                            className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 transition-all cursor-not-allowed"
                             title={lockInfo.reason}
                           >
                             <div className="flex items-center gap-2.5 truncate">
-                              <Icon className="w-4 h-4 text-slate-500 shrink-0" />
+                              <Icon className="w-4 h-4 text-slate-400 shrink-0" />
                               <span className="truncate">{item.label}</span>
                             </div>
-                            <span className="text-[9px] bg-amber-950 text-amber-400 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+                            <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1">
                               <Lock className="w-2.5 h-2.5" /> Locked
                             </span>
                           </button>
@@ -269,16 +269,16 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
                           }}
                           className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             isActive
-                              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-black'
-                              : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                              ? 'bg-blue-600 text-white shadow-sm font-black'
+                              : 'text-slate-600 hover:bg-blue-50/70 hover:text-blue-700'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate">
-                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                             <span className="truncate">{item.label}</span>
                           </div>
                           {item.badge && (
-                            <span className="text-[9px] bg-purple-900 text-purple-200 px-1.5 py-0.5 rounded font-bold uppercase">
+                            <span className="text-[9px] bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.5 rounded font-bold uppercase">
                               {item.badge}
                             </span>
                           )}
@@ -293,11 +293,11 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
         </nav>
 
         {/* Bottom Current Role Badge */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+        <div className="p-3 border-t border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2 text-xs">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-400 truncate">Logged in as:</span>
-            <strong className="text-white font-mono text-[11px] truncate">{currentRole}</strong>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-slate-500 truncate">Logged in as:</span>
+            <strong className="text-slate-900 font-mono text-[11px] truncate">{currentRole}</strong>
           </div>
         </div>
       </aside>

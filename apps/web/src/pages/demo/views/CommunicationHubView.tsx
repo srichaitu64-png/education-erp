@@ -78,7 +78,7 @@ export const CommunicationHubView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-2">
             <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
@@ -91,7 +91,7 @@ export const CommunicationHubView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
+          <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> All Gateways Active
           </span>
         </div>
@@ -172,7 +172,7 @@ export const CommunicationHubView: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-2.5 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Phone Number ID</span>
                 <span className="text-slate-200 font-mono">109283746152840 (Institutional Official WhatsApp)</span>
@@ -219,7 +219,7 @@ export const CommunicationHubView: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-2.5 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Bot Username</span>
                 <span className="text-blue-300 font-bold font-mono">@AksharaGlobal_Bot</span>
@@ -266,7 +266,7 @@ export const CommunicationHubView: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-2.5 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Header / Sender ID</span>
                 <span className="text-amber-300 font-bold font-mono">AKSHRA (DLT Principal ID: 110156)</span>
@@ -305,7 +305,7 @@ export const CommunicationHubView: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-2.5 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">From Address</span>
                 <span className="text-purple-300 font-bold font-mono">notifications@akshara.edu.in</span>
@@ -424,7 +424,7 @@ export const CommunicationHubView: React.FC = () => {
             </div>
 
             {/* Language Switcher */}
-            <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
               {[
                 { code: 'EN', label: 'English' },
                 { code: 'KN', label: 'ಕನ್ನಡ (Kannada)' },
@@ -459,7 +459,7 @@ export const CommunicationHubView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 text-xs text-slate-200 leading-relaxed font-sans">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-sans">
                   {tmpl.content}
                 </div>
 
@@ -506,7 +506,7 @@ export const CommunicationHubView: React.FC = () => {
                       className={`py-2 rounded-xl font-bold uppercase text-[11px] transition-colors cursor-pointer border ${
                         testChannel === ch
                           ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800'
+                          : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
                       }`}
                     >
                       {ch}
@@ -522,7 +522,7 @@ export const CommunicationHubView: React.FC = () => {
                   required
                   value={testRecipientName}
                   onChange={(e) => setTestRecipientName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -533,7 +533,7 @@ export const CommunicationHubView: React.FC = () => {
                   required
                   value={testRecipientContact}
                   onChange={(e) => setTestRecipientContact(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -544,7 +544,7 @@ export const CommunicationHubView: React.FC = () => {
                   required
                   value={testMessage}
                   onChange={(e) => setTestMessage(e.target.value)}
-                  className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs leading-relaxed"
+                  className="w-full mt-1 p-3 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs leading-relaxed"
                 />
               </div>
 
@@ -571,7 +571,7 @@ export const CommunicationHubView: React.FC = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                   <tr>
                     <th className="p-3">Recipient</th>
                     <th className="p-3">Channel</th>

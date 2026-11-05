@@ -117,80 +117,80 @@ const STATIC_PREVIEW_DIRECTORY = [
     },
   },
   {
-    identifiers: ['principal', 'principal@akshara.edu.in', 'emp-prin-01'],
+    identifiers: ['principal', 'principal@ourschool.edu.in', 'emp-prin-01'],
     pass: ['PrincipalSecurePassword2026!', 'demo123'],
     destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Dr. Ramesh Kumar (Principal)',
-    email: 'principal@akshara.edu.in',
+    fullName: 'Dr. Ramesh Kumar (Principal, OUR SCHOOL)',
+    email: 'principal@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['accountant', 'accountant@akshara.edu.in', 'emp-acc-01'],
+    identifiers: ['accountant', 'accountant@ourschool.edu.in', 'emp-acc-01'],
     pass: ['AccountantSecure2026!', 'demo123'],
     destination: '/demo?role=ACCOUNTANT',
     role: 'ACCOUNTANT',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Venkatesh Iyer (Senior Accountant)',
-    email: 'accountant@akshara.edu.in',
+    fullName: 'Venkatesh Iyer (Senior Accountant, OUR SCHOOL)',
+    email: 'accountant@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['exams', 'exams@akshara.edu.in', 'emp-exam-01'],
+    identifiers: ['exams', 'exams@ourschool.edu.in', 'emp-exam-01'],
     pass: ['ExamController2026!', 'demo123'],
     destination: '/demo?role=EXAM_CONTROLLER',
     role: 'EXAM_CONTROLLER',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Prof. Ananth Murthy (Exam Controller)',
-    email: 'exams@akshara.edu.in',
+    fullName: 'Prof. Ananth Murthy (Exam Controller, OUR SCHOOL)',
+    email: 'exams@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['teacher', 'teacher.physics@akshara.edu.in', 'emp-tch-01'],
+    identifiers: ['teacher', 'teacher.physics@ourschool.edu.in', 'emp-tch-01'],
     pass: ['TeacherPhysics2026!', 'demo123'],
     destination: '/demo?role=TEACHER',
     role: 'TEACHER',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Lakshmi Prasad (Physics Faculty)',
-    email: 'teacher.physics@akshara.edu.in',
+    fullName: 'Lakshmi Prasad (Physics Faculty, OUR SCHOOL)',
+    email: 'teacher.physics@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['librarian', 'librarian@akshara.edu.in', 'emp-lib-01'],
+    identifiers: ['librarian', 'librarian@ourschool.edu.in', 'emp-lib-01'],
     pass: ['LibrarianSecure2026!', 'demo123'],
     destination: '/demo?role=LIBRARIAN',
     role: 'LIBRARIAN',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'V. S. Rao (Chief Librarian)',
-    email: 'librarian@akshara.edu.in',
+    fullName: 'V. S. Rao (Chief Librarian, OUR SCHOOL)',
+    email: 'librarian@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['student', 'student.rahul@akshara.edu.in', 'adm-2026-001'],
+    identifiers: ['student', 'student.rahul@ourschool.edu.in', 'adm-2026-001'],
     pass: ['StudentRahul2026!', 'demo123'],
     destination: '/demo?role=STUDENT',
     role: 'STUDENT',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Rahul Kumar (Class I PUC Science)',
-    email: 'student.rahul@akshara.edu.in',
+    fullName: 'Rahul Kumar (Class I PUC Science, OUR SCHOOL)',
+    email: 'student.rahul@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
   {
-    identifiers: ['parent', 'parent.rahul@akshara.edu.in', 'par-2026-001'],
+    identifiers: ['parent', 'parent.rahul@ourschool.edu.in', 'par-2026-001'],
     pass: ['ParentRahul2026!', 'demo123'],
     destination: '/demo?role=PARENT',
     role: 'PARENT',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Ramesh Kumar (Parent of Rahul)',
-    email: 'parent.rahul@akshara.edu.in',
+    fullName: 'Ramesh Kumar (Parent of Rahul, OUR SCHOOL)',
+    email: 'parent.rahul@ourschool.edu.in',
     tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
   },
 ];
@@ -198,7 +198,7 @@ const STATIC_PREVIEW_DIRECTORY = [
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { switchRole } = useDemoStore();
+  const { switchRole, setTenantScope } = useDemoStore();
 
   // Controlled form state
   const [usernameOrId, setUsernameOrId] = useState('');
@@ -287,8 +287,8 @@ export const LoginPage: React.FC = () => {
         const matched = STATIC_PREVIEW_DIRECTORY.find((acc) => {
           const idMatch = acc.identifiers.includes(normalizedInput);
           const passMatch = Array.isArray(acc.pass)
-            ? acc.pass.includes(password)
-            : acc.pass === password;
+            ? acc.pass.includes(password) || acc.pass.some(p => p.toLowerCase() === password.toLowerCase())
+            : acc.pass === password || (acc.pass as string).toLowerCase() === password.toLowerCase();
           return idMatch && passMatch;
         });
 
@@ -311,9 +311,15 @@ export const LoginPage: React.FC = () => {
             ],
           };
 
-          await login('preview_access_token', 'preview_refresh_token', mockUser);
+          try {
+            await login('preview_access_token', 'preview_refresh_token', mockUser);
+          } catch (loginErr) {
+            console.warn('Preview login profile sync note:', loginErr);
+          }
+
           if ((matched as any).tenant) {
             useAuthStore.setState({ tenant: (matched as any).tenant });
+            setTenantScope((matched as any).tenant.code || 'our-school-demo');
           }
           if (matched.role) {
             switchRole(matched.role as UserRoleType);
@@ -385,6 +391,52 @@ export const LoginPage: React.FC = () => {
             <span>{errorMessage}</span>
           </div>
         )}
+
+        {/* Quick Demo Credentials Helper */}
+        <div className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+            <span>⚡ Quick Demo Credentials</span>
+            <span className="text-[10px] text-blue-400">1-Click Fill</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('superadmin');
+                setPassword('SuperAdmin@2026!');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white font-bold border border-slate-700 text-center transition-all truncate"
+              title="Super Admin: superadmin / SuperAdmin@2026!"
+            >
+              🌐 Super Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('admin');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="OUR SCHOOL Demo: admin / demo123"
+            >
+              🏫 Demo School
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('chairman@akshara-trial.edu.in');
+                setPassword('Chairman@2026!');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Akshara 30-Day Trial (Clean Canvas)"
+            >
+              🎓 Trial Pilot
+            </button>
+          </div>
+        </div>
 
         {/* Universal Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
