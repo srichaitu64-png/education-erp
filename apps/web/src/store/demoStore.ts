@@ -160,7 +160,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['All campus policies & settings', 'Create institution users & assign custom roles', 'Central Permission Matrix for campus', 'Dashboard Designer layout & menu visibility', 'Configure custom fee heads', 'Strategic budget allocation'],
     canApprove: ['Exceptional fee concessions & waivers', 'Staff recruitments & promotions', 'High-value refunds & write-offs', 'Annual academic results publication'],
     restrictedActions: ['Isolated to institutional tenant; cannot alter SaaS platform tenancy licenses or cloud billing'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Global Educational Group' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'OUR SCHOOL Educational Group' }]
   },
   DIRECTOR: {
     role: 'DIRECTOR',
@@ -170,7 +170,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Staff directory', 'Campus operations', 'Institution fee heads'],
     canApprove: ['Budget disbursements', 'Policy implementations'],
     restrictedActions: ['Cannot alter multi-tenant SaaS policies'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Campus Operational Management' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'Campus Operational Management' }]
   },
   MANAGING_DIRECTOR: {
     role: 'MANAGING_DIRECTOR',
@@ -180,7 +180,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Institution governance', 'Executive reporting'],
     canApprove: ['Major capital contracts', 'Strategic fee frameworks'],
     restrictedActions: ['Cannot modify platform database engine'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Executive Board Governance' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'Executive Board Governance' }]
   },
   TRUSTEE: {
     role: 'TRUSTEE',
@@ -190,7 +190,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Trust compliance declarations', 'Audit reviews'],
     canApprove: ['Annual institutional balance sheet & trust reports'],
     restrictedActions: ['Read-only operational access; cannot enter daily marks or attendance'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Board of Trustees Oversight' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'Board of Trustees Oversight' }]
   },
   BACKUP_SUPER_ADMIN: {
     role: 'BACKUP_SUPER_ADMIN',
@@ -228,7 +228,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Curriculum & subjects', 'Staff profiles', 'Fee structures', 'Institution settings'],
     canApprove: ['Student admissions', 'Staff leave requests', 'Department budgets'],
     restrictedActions: ['CANNOT create, modify or grant permissions. Must submit requests to Platform Super Admin'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Global Campus' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'OUR SCHOOL Campus' }]
   },
   PRINCIPAL: {
     role: 'PRINCIPAL',
@@ -244,7 +244,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     restrictedActions: [
       'STRICTLY PROHIBITED from modifying role permissions, editing the Central Permission Matrix, altering dashboard layouts, or modifying fee heads (Reserved for Chairman / Director & Super Admin)'
     ],
-    scopes: [{ scopeType: 'campus', scopeValue: 'MAIN_CAMPUS', description: 'Main Campus & All Academic Streams' }]
+    scopes: [{ scopeType: 'campus', scopeValue: 'MAIN_CAMPUS', description: 'OUR SCHOOL Main Campus & Units' }]
   },
   ADMISSION_OFFICER: {
     role: 'ADMISSION_OFFICER',
@@ -254,7 +254,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Prospective student enquiries', 'Entrance test verification', 'Application dossiers'],
     canApprove: ['Provisional admission clearance (Stage 1)'],
     restrictedActions: ['LOCKED from financial ledger modification and examination marks entry'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Campus Admissions Department' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'OUR SCHOOL Admissions Department' }]
   },
   HR_MANAGER: {
     role: 'HR_MANAGER',
@@ -264,7 +264,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Faculty biodata, qualifications, biometric leaves, service registers', 'Payroll roster'],
     canApprove: ['Staff leave applications'],
     restrictedActions: ['LOCKED from student grades, fee transactions, and platform permissions'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Faculty & Non-Teaching Staff Cadre' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'OUR SCHOOL Faculty & Staff Cadre' }]
   },
   LECTURER: {
     role: 'LECTURER',
@@ -324,7 +324,7 @@ export const ROLE_PRIVILEGES: Record<UserRoleType, RolePrivilegeInfo> = {
     canEdit: ['Fee collection', 'Payment allocations', 'Issue digital receipts'],
     canApprove: ['Payment reconciliations', 'Request exceptional fee refunds (Dual Approval required)'],
     restrictedActions: ['LOCKED from editing marks, examinations, attendance, or student academic data; cannot grant permissions'],
-    scopes: [{ scopeType: 'tenant', scopeValue: 'akshara', description: 'Akshara Accounts Ledger' }]
+    scopes: [{ scopeType: 'tenant', scopeValue: 'our-school', description: 'OUR SCHOOL Accounts Ledger' }]
   },
   EXAM_CONTROLLER: {
     role: 'EXAM_CONTROLLER',
@@ -426,6 +426,10 @@ export interface DemoStudent {
   attendance_pct: number;
   status: 'ACTIVE' | 'INACTIVE';
   custom_fields?: Record<string, string>;
+  is_hostel_opted?: boolean;
+  hostel_wing?: string;
+  is_transport_opted?: boolean;
+  transport_route_id?: string;
 }
 
 export interface DemoStaffMember {
@@ -1823,14 +1827,14 @@ export const initialCommChannels: CommunicationChannelConfig[] = [
   },
   {
     id: 'telegram',
-    name: 'Telegram Bot API (@AksharaGlobal_Bot)',
+    name: 'Telegram Bot API (@OurSchool_Bot)',
     isEnabled: true,
     status: 'CONNECTED',
     lastPingTime: '5 mins ago (Latency: 88ms)',
     credentials: {
       botToken: '7182940215:AAH47q9xL1-zYk98V2b...[Verified Active]',
-      botUsername: '@AksharaGlobal_Bot',
-      targetChannelOrChatId: '@akshara_official_alerts'
+      botUsername: '@OurSchool_Bot',
+      targetChannelOrChatId: '@ourschool_official_alerts'
     }
   },
   {
@@ -1840,7 +1844,7 @@ export const initialCommChannels: CommunicationChannelConfig[] = [
     status: 'CONNECTED',
     lastPingTime: '10 mins ago',
     credentials: {
-      senderId: 'AKSHRA',
+      senderId: 'OURSCH',
       apiKey: 'tx_live_891723...[DLT Principal ID 110156]'
     }
   },
@@ -1864,7 +1868,7 @@ export const initialCommTemplates: CommunicationTemplate[] = [
     title: 'Exam Schedule Publication Notice',
     language: 'EN',
     channel: 'whatsapp',
-    content: 'Dear {{parent_name}}, the official timetable for {{exam_name}} (Academic Year {{academic_year}}) for your ward {{student_name}} (Class: {{class_name}}) has been published. Exams commence on {{start_date}}. View full schedule and download hall ticket at: {{portal_url}} - Akshara Global Campus.',
+    content: 'Dear {{parent_name}}, the official timetable for {{exam_name}} (Academic Year {{academic_year}}) for your ward {{student_name}} (Class: {{class_name}}) has been published. Exams commence on {{start_date}}. View full schedule and download hall ticket at: {{portal_url}} - OUR SCHOOL Campus.',
     placeholders: ['parent_name', 'exam_name', 'academic_year', 'student_name', 'class_name', 'start_date', 'portal_url'],
     providerApproved: true
   },
@@ -1874,7 +1878,7 @@ export const initialCommTemplates: CommunicationTemplate[] = [
     title: 'ಪರೀಕ್ಷಾ ವೇಳಾಪಟ್ಟಿ ಪ್ರಕಟಣೆ (Kannada)',
     language: 'KN',
     channel: 'whatsapp',
-    content: 'ಗೌರವಾನ್ವಿತ {{parent_name}} ಅವರೇ, ನಿಮ್ಮ ಮಗು {{student_name}} (ತರಗತಿ: {{class_name}}) ಅವರ {{exam_name}} ವೇಳಾಪಟ್ಟಿ ಪ್ರಕಟಿಸಲಾಗಿದೆ. ಪರೀಕ್ಷೆಗಳು {{start_date}} ರಂದು ಪ್ರಾರಂಭವಾಗುತ್ತವೆ. ಪೂರ್ಣ ವೇಳಾಪಟ್ಟಿಯನ್ನು ಇಲ್ಲಿ ವೀಕ್ಷಿಸಿ: {{portal_url}} - ಅಕ್ಷರ ಗ್ಲೋಬಲ್ ಶಿಕ್ಷಣ ಸಂಸ್ಥೆ.',
+    content: 'ಗೌರವಾನ್ವಿತ {{parent_name}} ಅವರೇ, ನಿಮ್ಮ ಮಗು {{student_name}} (ತರಗತಿ: {{class_name}}) ಅವರ {{exam_name}} ವೇಳಾಪಟ್ಟಿ ಪ್ರಕಟಿಸಲಾಗಿದೆ. ಪರೀಕ್ಷೆಗಳು {{start_date}} ರಂದು ಪ್ರಾರಂಭವಾಗುತ್ತವೆ. ಪೂರ್ಣ ವೇಳಾಪಟ್ಟಿಯನ್ನು ಇಲ್ಲಿ ವೀಕ್ಷಿಸಿ: {{portal_url}} - ಅವರ್ ಸ್ಕೂಲ್ ಶಿಕ್ಷಣ ಸಂಸ್ಥೆ.',
     placeholders: ['parent_name', 'student_name', 'class_name', 'exam_name', 'start_date', 'portal_url'],
     providerApproved: true
   },
@@ -1884,7 +1888,7 @@ export const initialCommTemplates: CommunicationTemplate[] = [
     title: 'Instant Fee Payment Receipt & Confirmation',
     language: 'EN',
     channel: 'whatsapp',
-    content: 'Namaste {{parent_name}}, thank you for the payment of ₹{{amount_paid}} towards {{fee_heads}} for {{student_name}} (Adm: {{admission_no}}). Receipt No: {{receipt_no}} has been generated. Download authenticated receipt: {{receipt_link}}. Remaining Due Balance: ₹{{balance_due}}. - Accounts Dept, Akshara Global.',
+    content: 'Namaste {{parent_name}}, thank you for the payment of ₹{{amount_paid}} towards {{fee_heads}} for {{student_name}} (Adm: {{admission_no}}). Receipt No: {{receipt_no}} has been generated. Download authenticated receipt: {{receipt_link}}. Remaining Due Balance: ₹{{balance_due}}. - Accounts Dept, OUR SCHOOL.',
     placeholders: ['parent_name', 'amount_paid', 'fee_heads', 'student_name', 'admission_no', 'receipt_no', 'receipt_link', 'balance_due'],
     providerApproved: true
   },
@@ -1942,7 +1946,7 @@ export const initialCommDeliveryLogs: CommunicationDeliveryLog[] = [
 export const initialPlatformTenants: PlatformTenant[] = [
   {
     id: 'TEN-2026-001',
-    name: 'Akshara Global Composite School & PU College',
+    name: 'OUR SCHOOL Composite Group (Demo Sandbox)',
     type: 'COMPOSITE_GROUP',
     state: 'Karnataka',
     city: 'Bengaluru',
@@ -1952,9 +1956,9 @@ export const initialPlatformTenants: PlatformTenant[] = [
     staffCount: 184,
     mrrAmount: 95000,
     renewalDate: '2027-08-31',
-    chairmanEmail: 'chairman@akshara.edu.in',
+    chairmanEmail: 'chairman@ourschool.edu.in',
     activeCampuses: 3,
-    customDomain: 'erp.akshara.edu.in',
+    customDomain: 'demo.educationos.in',
     consentSupportActive: false
   },
   {
@@ -2027,7 +2031,7 @@ export const initialSupportTickets: TechnicalSupportTicket[] = [
   {
     id: 'TKT-8902',
     tenantId: 'TEN-2026-001',
-    tenantName: 'Akshara Global Composite School',
+    tenantName: 'OUR SCHOOL Composite Group',
     category: 'DATABASE_MIGRATION',
     requestedScope: 'DIAGNOSTICS_ONLY',
     requestedDurationHours: 4,
@@ -2249,7 +2253,9 @@ export const initialStudents: DemoStudent[] = [
     pincode: '560038',
     fee_balance: 0,
     attendance_pct: 96.5,
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    is_hostel_opted: false,
+    is_transport_opted: false,
   },
   {
     id: 'st-2',
@@ -2277,7 +2283,10 @@ export const initialStudents: DemoStudent[] = [
     pincode: '560003',
     fee_balance: 12500,
     attendance_pct: 92.0,
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    is_hostel_opted: false,
+    is_transport_opted: true,
+    transport_route_id: 'ROUTE_104',
   },
   {
     id: 'st-3',
@@ -2305,7 +2314,10 @@ export const initialStudents: DemoStudent[] = [
     pincode: '560011',
     fee_balance: 25000,
     attendance_pct: 94.2,
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    is_hostel_opted: true,
+    hostel_wing: 'Cauvery Hostel - Room 204',
+    is_transport_opted: false,
   }
 ];
 
@@ -2408,11 +2420,11 @@ const initialReceipts: DemoFeeReceipt[] = [
       { head: 'LABORATORY', title: 'Science Lab Fee', allocated: 5000, remaining: 0 }
     ],
     institution_branding: {
-      institution_name: 'Akshara Global Educational Institutions',
-      affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-      address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+      institution_name: 'OUR SCHOOL (Demo Campus)',
+      affiliation: 'Central Board of Secondary Education • Affiliation # 830192',
+      address: 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001',
       phone: '+91 80 2345 6789',
-      email: 'accounts@akshara.erp.in',
+      email: 'accounts@ourschool.edu.in',
       receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal'
     },
     qr_verification_code: 'VERIFY:RECEIPT:RCP-AKSH-2026-1001:UPI89210:35000',
@@ -2444,11 +2456,11 @@ const initialReceipts: DemoFeeReceipt[] = [
       { head: 'EXAM_FEE', title: 'State Pre-University Board Exam Fee', allocated: 3500, remaining: 0 }
     ],
     institution_branding: {
-      institution_name: 'Akshara Global Educational Institutions',
-      affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-      address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+      institution_name: 'OUR SCHOOL (Demo Campus)',
+      affiliation: 'Central Board of Secondary Education • Affiliation # 830192',
+      address: 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001',
       phone: '+91 80 2345 6789',
-      email: 'accounts@akshara.erp.in',
+      email: 'accounts@ourschool.edu.in',
       receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal'
     },
     qr_verification_code: 'VERIFY:RECEIPT:RCP-AKSH-2026-1002:CSH0042:3500',
@@ -2484,7 +2496,7 @@ const initialFeeStructures: DemoFeeStructure[] = [
   {
     id: 'fs-school-10',
     institution_type: 'School',
-    institution_name: 'Akshara High School',
+    institution_name: 'OUR SCHOOL High School',
     academic_year: '2026-2027',
     class_or_stream: 'Class 10 (Secondary)',
     term_count: 3,
@@ -2508,7 +2520,7 @@ const initialFeeStructures: DemoFeeStructure[] = [
   {
     id: 'fs-pu-science',
     institution_type: 'PU College',
-    institution_name: 'Akshara Pre-University College',
+    institution_name: 'OUR SCHOOL Pre-University College',
     academic_year: '2026-2027',
     class_or_stream: 'I PUC - PCMB (Integrated NEET/JEE)',
     term_count: 2,
@@ -2773,7 +2785,7 @@ const initialTransportRoutes: TransportRoute[] = [
       { stop_name: 'JP Nagar 6th Phase Depot', scheduled_time: '07:30 AM', student_count: 8, is_passed: true },
       { stop_name: 'Sarakki Signal', scheduled_time: '07:45 AM', student_count: 12, is_passed: true },
       { stop_name: 'Vega City Mall Junction', scheduled_time: '08:00 AM', student_count: 9, is_passed: false },
-      { stop_name: 'Akshara Global Main Campus Gate', scheduled_time: '08:25 AM', student_count: 0, is_passed: false },
+      { stop_name: 'OUR SCHOOL Main Campus Gate', scheduled_time: '08:25 AM', student_count: 0, is_passed: false },
     ],
   },
   {
@@ -2793,7 +2805,7 @@ const initialTransportRoutes: TransportRoute[] = [
       { stop_name: 'ITPB Main Gate Whitefield', scheduled_time: '07:15 AM', student_count: 15, is_passed: true },
       { stop_name: 'Marathahalli Multiplex', scheduled_time: '07:40 AM', student_count: 14, is_passed: false },
       { stop_name: 'Bellandur EcoSpace', scheduled_time: '08:05 AM', student_count: 11, is_passed: false },
-      { stop_name: 'Akshara Global Main Campus Gate', scheduled_time: '08:30 AM', student_count: 0, is_passed: false },
+      { stop_name: 'OUR SCHOOL Main Campus Gate', scheduled_time: '08:30 AM', student_count: 0, is_passed: false },
     ],
   },
 ];
@@ -3589,6 +3601,22 @@ export const useDemoStore = create<DemoState>()(
       else feeBalance = 45000;
     }
 
+    const baseFee = feeBalance;
+    const breakdown = [
+      { head_code: 'COLLEGE_FEE', title: 'Tuition Fee', amount: Math.round(baseFee * 0.6) },
+      { head_code: 'LAB_FEE', title: 'Laboratory / Digital Learning', amount: Math.round(baseFee * 0.15) },
+      { head_code: 'EXAM_FEE', title: 'Examinations & Assessments', amount: Math.round(baseFee * 0.1) },
+      { head_code: 'LIBRARY_FEE', title: 'Sports & Library Development', amount: Math.round(baseFee * 0.05) },
+    ];
+    if (data.is_transport_opted) {
+      breakdown.push({ head_code: 'TRANSPORT_FEE', title: 'Campus Bus Transport Service', amount: 16000 });
+      feeBalance += 16000;
+    }
+    if (data.is_hostel_opted) {
+      breakdown.push({ head_code: 'HOSTEL_FEE', title: 'Hostel Accommodation & Mess', amount: 35000 });
+      feeBalance += 35000;
+    }
+
     const newStudent: DemoStudent = {
       id: localId,
       ...data,
@@ -3615,12 +3643,7 @@ export const useDemoStore = create<DemoState>()(
       balance_amount: feeBalance,
       status: 'UNPAID',
       due_date: '2026-12-31',
-      breakdown: [
-        { head_code: 'COLLEGE_FEE', title: 'Tuition Fee', amount: Math.round(feeBalance * 0.7) },
-        { head_code: 'LAB_FEE', title: 'Laboratory / Digital Learning', amount: Math.round(feeBalance * 0.15) },
-        { head_code: 'EXAM_FEE', title: 'Examinations & Assessments', amount: Math.round(feeBalance * 0.1) },
-        { head_code: 'TRANSPORT_FEE', title: 'Sports & Amenities', amount: Math.round(feeBalance * 0.05) },
-      ]
+      breakdown,
     };
 
     // Auto-generate daily attendance record
@@ -3632,10 +3655,24 @@ export const useDemoStore = create<DemoState>()(
       status: 'PRESENT',
     };
 
+    const newDailyDetail: DemoDailyAttendanceDetail = {
+      id: `att-d-${localId}`,
+      student_id: localId,
+      student_name: `${data.first_name} ${data.last_name}`,
+      admission_number: data.admission_number,
+      roll_number: data.roll_number || '01',
+      class_name: data.class_name,
+      section_code: (data.section_or_stream || 'A').replace(/Section /i, ''),
+      stream: data.section_or_stream,
+      status: 'PRESENT',
+      attendance_date: new Date().toISOString().split('T')[0],
+    };
+
     set((state) => ({
       students: [newStudent, ...state.students],
       invoices: [newInvoice, ...state.invoices],
       attendance: [newAttendance, ...state.attendance],
+      detailedDailyAttendance: [newDailyDetail, ...state.detailedDailyAttendance],
       academicSections: state.academicSections.map((sec) =>
         (sec.class_name.toLowerCase().includes(data.class_name.toLowerCase()) ||
          data.class_name.toLowerCase().includes(sec.class_name.toLowerCase()))
@@ -4251,14 +4288,33 @@ export const useDemoStore = create<DemoState>()(
     set((state) => {
       const updated = [...state.detailedDailyAttendance];
       for (const item of records) {
-        const idx = updated.findIndex((r) => r.student_id === item.student_id && r.attendance_date === date);
+        const idx = updated.findIndex(
+          (r) => (r.student_id === item.student_id || r.admission_number === item.student_id) && r.attendance_date === date
+        );
         if (idx >= 0) {
           updated[idx] = {
             ...updated[idx],
             status: item.status,
             late_minutes: item.late_minutes ?? updated[idx].late_minutes,
-            absence_reason: item.reason ?? updated[idx].absence_reason
+            absence_reason: item.reason ?? updated[idx].absence_reason,
           };
+        } else {
+          const student = state.students.find(
+            (s) => s.id === item.student_id || s.admission_number === item.student_id
+          );
+          updated.push({
+            id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            student_id: item.student_id,
+            student_name: student ? `${student.first_name} ${student.last_name}` : 'Student',
+            admission_number: student?.admission_number || item.student_id,
+            roll_number: student?.roll_number || '01',
+            class_name: student?.class_name || sectionId,
+            section_code: student?.section_or_stream?.replace(/Section /i, '') || 'A',
+            status: item.status,
+            attendance_date: date,
+            late_minutes: item.late_minutes,
+            absence_reason: item.reason,
+          });
         }
       }
       return { detailedDailyAttendance: updated };
@@ -4949,7 +5005,7 @@ export const useDemoStore = create<DemoState>()(
     const details = channelId === 'whatsapp' 
       ? 'Meta Graph API v19.0 Authenticated • Verified Phone Number ID: ' + (channel.credentials.phoneNumberId || '109283746152840')
       : channelId === 'telegram'
-      ? 'Telegram Bot API 7.0 Authenticated • @AksharaGlobal_Bot Webhook OK'
+      ? 'Telegram Bot API 7.0 Authenticated • @OurSchool_Bot Webhook OK'
       : 'Provider Gateway Connected Successfully';
 
     return {
@@ -5234,7 +5290,7 @@ export const useDemoStore = create<DemoState>()(
         class_name: st.class_name,
         section_code: payload.sectionCode || 'A',
         exam_title: payload.examTitle,
-        exam_centre: 'Akshara Global Campus • Hall B-204',
+        exam_centre: 'OUR SCHOOL Campus • Hall B-204',
         room_number: `Room ${101 + (idx % 4)}`,
         seat_number: `Seat #${idx + 1}`,
         eligibility_status: eligibility,

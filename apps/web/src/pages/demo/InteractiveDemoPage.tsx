@@ -3802,7 +3802,9 @@ export const InteractiveDemoPage: React.FC = () => {
                               <span>Student / Parent</span>
                             </div>
                             <div className="text-center">
-                              <span className="font-bold text-slate-800 uppercase block mb-1">Akshara Accounts Dept</span>
+                              <span className="font-bold text-slate-800 uppercase block mb-1">
+                                {tenant?.code === 'akshara-trial' ? 'Akshara Accounts Dept' : 'OUR SCHOOL Accounts Dept'}
+                              </span>
                               <div className="w-28 border-b border-slate-900 mb-1"></div>
                               <span>Authorized Signatory Seal</span>
                             </div>
@@ -4549,6 +4551,20 @@ export const InteractiveDemoPage: React.FC = () => {
                         </td>
                         <td className="p-3.5 font-bold text-slate-900 group-hover:text-blue-600">
                           {st.first_name} {st.last_name}
+                          {(st.is_hostel_opted || st.is_transport_opted) && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {st.is_hostel_opted && (
+                                <span className="text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded">
+                                  Hostel
+                                </span>
+                              )}
+                              {st.is_transport_opted && (
+                                <span className="text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded">
+                                  Transport
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="p-3.5 text-slate-700">{st.class_name}</td>
                         <td className="p-3.5 text-slate-600">{st.section_or_stream}</td>

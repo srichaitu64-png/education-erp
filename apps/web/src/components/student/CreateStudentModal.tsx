@@ -12,7 +12,10 @@ import {
   Phone,
   FileText,
   Eye,
-  EyeOff
+  EyeOff,
+  Bus,
+  Building,
+  Check
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useDemoStore, DemoStudent } from '../../store/demoStore';
@@ -32,13 +35,13 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
   const { addStudent } = useDemoStore();
   const { tenant } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState<'personal' | 'guardian' | 'academic' | 'address' | 'custom'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'guardian' | 'academic' | 'address' | 'facilities'>('personal');
   const [showAadhaar, setShowAadhaar] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Form State
+  // Auto-generated unique admission and roll numbers
   const autoAdmNo = `ADM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
   const autoRollNo = `${Math.floor(100 + Math.random() * 900)}`;
   const autoPenNo = `PEN-KA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -87,9 +90,13 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
     second_language: 'Kannada / Hindi',
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
 
-    // Custom Fields
-    custom_bus_route: '',
-    custom_hostel_wing: '',
+    // Facilities & Optional Services (Single Master Record)
+    is_transport_opted: false,
+    custom_bus_route: 'Route 104: JP Nagar -> Jayanagar -> Campus',
+    pickup_point: 'Main Road Cross',
+    is_hostel_opted: false,
+    custom_hostel_wing: 'Cauvery Block (Twin Sharing)',
+    hostel_room: 'Room 204',
     custom_sports_house: 'Cauvery House',
   });
 
@@ -119,7 +126,7 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
     }
 
     if (!formData.guardian_name.trim() || !formData.guardian_phone.trim()) {
-      setErrorMessage('Guardian / Parent name and contact number are mandatory.');
+      setErrorMessage('Guardian / Parent name and contact phone number are mandatory.');
       return;
     }
 
@@ -164,6 +171,10 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
         fee_balance: 0,
         attendance_pct: 100.0,
         status: 'ACTIVE',
+        is_transport_opted: formData.is_transport_opted,
+        transport_route_id: formData.is_transport_opted ? formData.custom_bus_route : undefined,
+        is_hostel_opted: formData.is_hostel_opted,
+        hostel_wing: formData.is_hostel_opted ? `${formData.custom_hostel_wing} - ${formData.hostel_room}` : undefined,
         custom_fields: {
           bus_route: formData.custom_bus_route,
           hostel_wing: formData.custom_hostel_wing,
@@ -171,10 +182,10 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
         },
       };
 
-      // 1. Add to client store for immediate UI reactivity
+      // 1. Add to unified client master store
       addStudent(newStudent);
 
-      // 2. Persist to PostgreSQL backend if authenticated
+      // 2. Persist to backend if token present
       if (localStorage.getItem('access_token')) {
         try {
           await api.post('/academic/students', {
@@ -209,20 +220,20 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
             status: 'ACTIVE',
           });
         } catch (apiErr) {
-          console.warn('Real backend sync skipped / cached locally:', apiErr);
+          console.warn('Real backend sync cached locally in sandbox:', apiErr);
         }
       }
 
-      setSuccessMessage(`✓ Student ${newStudent.first_name} ${newStudent.last_name} successfully enrolled! (Adm #: ${newStudent.admission_number})`);
+      setSuccessMessage(`✓ Student ${newStudent.first_name} ${newStudent.last_name} enrolled successfully! (Adm #: ${newStudent.admission_number}). Master record synchronized across Fees, Attendance & Exams.`);
       if (onSuccess) {
         onSuccess(newStudent);
       }
 
       setTimeout(() => {
         onClose();
-      }, 1200);
+      }, 1500);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to enroll student. Please check input details.');
+      setErrorMessage(err.message || 'An error occurred while enrolling the student.');
     } finally {
       setIsSubmitting(false);
     }
@@ -230,7 +241,8 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full my-auto overflow-hidden shadow-2xl flex flex-col max-h-[90vh] text-slate-900">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full my-auto overflow-hidden shadow-2xl flex flex-col max-h-[92vh] text-slate-900">
+        
         {/* Modal Header */}
         <div className="p-5 sm:p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
@@ -239,13 +251,13 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-900">Direct Student Enrolment Form</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Standard Template
+                <h2 className="text-lg font-black text-slate-900">Single Master Admission Form</h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Admissions Master Truth
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Register new student into {tenant?.name || 'EducationOS'} • Synchronizes across Attendance, Fees & Exams
+              <p className="text-xs text-slate-600 mt-0.5">
+                Enter student information once • Automatically synchronizes with Fee Management, Attendance, and Examinations
               </p>
             </div>
           </div>
@@ -257,72 +269,47 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
           </button>
         </div>
 
-        {/* Category Step Tabs */}
-        <div className="flex items-center gap-1 p-2 bg-slate-100/80 border-b border-slate-200 text-xs font-bold overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('personal')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'personal' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            1. Personal Info
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('guardian')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'guardian' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            <Phone className="w-3.5 h-3.5" />
-            2. Parents & Contact
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('academic')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'academic' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            3. Academic & Identifiers
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('address')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'address' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            4. Address Details
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('custom')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-              activeTab === 'custom' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            5. Custom Fields
-          </button>
+        {/* Step Navigation Pills */}
+        <div className="flex items-center gap-1.5 p-2 bg-slate-100 border-b border-slate-200 text-xs font-bold overflow-x-auto">
+          {[
+            { id: 'personal', label: '1. Personal Info', icon: Users },
+            { id: 'guardian', label: '2. Parents & Contact', icon: Phone },
+            { id: 'academic', label: '3. Academic & Identifiers', icon: BookOpen },
+            { id: 'address', label: '4. Address Details', icon: MapPin },
+            { id: 'facilities', label: '5. Facilities (Hostel / Bus)', icon: Sparkles },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isCurrent = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  isCurrent
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Modal Form Content */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -330,51 +317,51 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
           {/* TAB 1: PERSONAL INFORMATION */}
           {activeTab === 'personal' && (
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-400" /> Personal Details
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" /> Student Personal Details
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">First Name *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">First Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
                     placeholder="e.g. Aarav"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Middle Name</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Middle Name</label>
                   <input
                     type="text"
                     value={formData.middle_name}
                     onChange={(e) => handleChange('middle_name', e.target.value)}
                     placeholder="e.g. Rajesh"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Surname / Last Name *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Surname / Last Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
                     placeholder="e.g. Sharma"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Gender *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Gender *</label>
                   <select
                     value={formData.gender}
                     onChange={(e: any) => handleChange('gender', e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
@@ -382,21 +369,21 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Date of Birth *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Date of Birth *</label>
                   <input
                     type="date"
                     required
                     value={formData.date_of_birth}
                     onChange={(e) => handleChange('date_of_birth', e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Blood Group</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Blood Group</label>
                   <select
                     value={formData.blood_group}
                     onChange={(e) => handleChange('blood_group', e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
                       <option key={bg} value={bg}>{bg}</option>
@@ -405,11 +392,11 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase">Aadhaar # (Encrypted)</label>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">Aadhaar (Encrypted)</label>
                     <button
                       type="button"
                       onClick={() => setShowAadhaar(!showAadhaar)}
-                      className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
                     >
                       {showAadhaar ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                       {showAadhaar ? 'Mask' : 'View'}
@@ -420,7 +407,7 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                     value={formData.aadhaar_number}
                     onChange={(e) => handleChange('aadhaar_number', e.target.value.replace(/\D/g, '').slice(0, 12))}
                     placeholder="12 digit Aadhaar"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -430,86 +417,86 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
           {/* TAB 2: PARENT & GUARDIAN INFORMATION */}
           {activeTab === 'guardian' && (
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Phone className="w-4 h-4 text-emerald-400" /> Parent & Guardian Contact Information
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-emerald-600" /> Parent & Guardian Contact Information
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Father's Full Name</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Father's Full Name</label>
                   <input
                     type="text"
                     value={formData.father_name}
                     onChange={(e) => handleChange('father_name', e.target.value)}
                     placeholder="e.g. Rajesh Sharma"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Father's Mobile Number</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Father's Mobile Number</label>
                   <input
                     type="text"
                     value={formData.father_mobile}
                     onChange={(e) => handleChange('father_mobile', e.target.value)}
                     placeholder="+91 98450 12345"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Mother's Full Name</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Mother's Full Name</label>
                   <input
                     type="text"
                     value={formData.mother_name}
                     onChange={(e) => handleChange('mother_name', e.target.value)}
                     placeholder="e.g. Sunita Sharma"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Mother's Mobile Number</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Mother's Mobile Number</label>
                   <input
                     type="text"
                     value={formData.mother_mobile}
                     onChange={(e) => handleChange('mother_mobile', e.target.value)}
                     placeholder="+91 98450 12346"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Primary Guardian Name *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Primary Guardian Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.guardian_name}
                     onChange={(e) => handleChange('guardian_name', e.target.value)}
                     placeholder="Primary contact person"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Guardian Phone / WhatsApp *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Guardian Phone / WhatsApp *</label>
                   <input
                     type="text"
                     required
                     value={formData.guardian_phone}
                     onChange={(e) => handleChange('guardian_phone', e.target.value)}
                     placeholder="+91 98450 12345"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Parent Email</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Parent Email</label>
                   <input
                     type="email"
                     value={formData.parent_email}
                     onChange={(e) => handleChange('parent_email', e.target.value)}
                     placeholder="parent@domain.com"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -519,17 +506,17 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
           {/* TAB 3: ACADEMIC INFORMATION & IDENTIFIERS */}
           {activeTab === 'academic' && (
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-purple-400" /> Academic Unit & Identity Numbers
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-purple-600" /> Academic Unit & Identity Numbers
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Academic Unit *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Academic Unit *</label>
                   <select
                     value={formData.institution_level}
                     onChange={(e: any) => handleChange('institution_level', e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
                     <option value="School">School Unit (CBSE / State)</option>
                     <option value="PU College">PU College (Pre-University)</option>
@@ -537,89 +524,89 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Class / Grade *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Class / Grade *</label>
                   <input
                     type="text"
                     required
                     value={formData.class_name}
                     onChange={(e) => handleChange('class_name', e.target.value)}
                     placeholder="e.g. Class 10 or I PUC"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Section / Stream *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Section / Stream *</label>
                   <input
                     type="text"
                     required
                     value={formData.section_or_stream}
                     onChange={(e) => handleChange('section_or_stream', e.target.value)}
                     placeholder="e.g. Section A or PCMB (Science)"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Unique Identifiers Grid */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              {/* Unique Identifiers Box */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">
                   Preserved Unique Identifiers (Government / Board Standards)
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Admission Number</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Admission Number</label>
                     <input
                       type="text"
                       required
                       value={formData.admission_number}
                       onChange={(e) => handleChange('admission_number', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Roll Number</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Roll Number</label>
                     <input
                       type="text"
                       required
                       value={formData.roll_number}
                       onChange={(e) => handleChange('roll_number', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PEN (Permanent Edu #)</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">PEN (Permanent Edu #)</label>
                     <input
                       type="text"
                       value={formData.pen_number}
                       onChange={(e) => handleChange('pen_number', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Board Registration #</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Board Registration #</label>
                     <input
                       type="text"
                       value={formData.registration_number}
                       onChange={(e) => handleChange('registration_number', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">OMR Number</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">OMR Number</label>
                     <input
                       type="text"
                       value={formData.omr_number}
                       onChange={(e) => handleChange('omr_number', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Academic Year</label>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Academic Year</label>
                     <input
                       type="text"
                       value={formData.academic_year}
                       onChange={(e) => handleChange('academic_year', e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -630,106 +617,195 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
           {/* TAB 4: ADDRESS DETAILS */}
           {activeTab === 'address' && (
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-cyan-400" /> Residential & Permanent Address
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-cyan-600" /> Residential & Permanent Address
               </h3>
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">House / Building & Street</label>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">House / Building & Street</label>
                 <input
                   type="text"
                   value={formData.door_street}
                   onChange={(e) => handleChange('door_street', e.target.value)}
                   placeholder="e.g. #42, 5th Cross, Malleshwaram"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">City / Town</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">City / Town</label>
                   <input
                     type="text"
                     value={formData.city_town}
                     onChange={(e) => handleChange('city_town', e.target.value)}
                     placeholder="Bengaluru"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">State</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">State</label>
                   <input
                     type="text"
                     value={formData.state}
                     onChange={(e) => handleChange('state', e.target.value)}
                     placeholder="Karnataka"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">PIN Code</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">PIN Code</label>
                   <input
                     type="text"
                     value={formData.pincode}
                     onChange={(e) => handleChange('pincode', e.target.value)}
                     placeholder="560001"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 5: CUSTOM FIELDS */}
-          {activeTab === 'custom' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" /> Institution-Specific Custom Fields
+          {/* TAB 5: FACILITIES & OPTIONAL SERVICES */}
+          {activeTab === 'facilities' && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Enrolled Facilities & Service Opt-Ins
                 </h3>
-                <span className="text-[10px] text-slate-500">Configurable per tenancy</span>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Selecting these facilities automatically provisions corresponding fee ledger heads in the Finance module.
+                </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Bus Route / Stop</label>
-                  <input
-                    type="text"
-                    value={formData.custom_bus_route}
-                    onChange={(e) => handleChange('custom_bus_route', e.target.value)}
-                    placeholder="Route 104 - Gate 2"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+
+              {/* Transport Service Card */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                formData.is_transport_opted ? 'bg-blue-50/60 border-blue-300' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                      <Bus className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">Campus Transport Service</h4>
+                      <p className="text-[11px] text-slate-500">Fleet bus pickup & drop with real-time GPS tracking</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_transport_opted}
+                      onChange={(e) => handleChange('is_transport_opted', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">Hostel Room / Wing</label>
-                  <input
-                    type="text"
-                    value={formData.custom_hostel_wing}
-                    onChange={(e) => handleChange('custom_hostel_wing', e.target.value)}
-                    placeholder="Block B - Room 204"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+
+                {formData.is_transport_opted && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-3 border-t border-blue-200 animate-in fade-in">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Assigned Bus Route</label>
+                      <input
+                        type="text"
+                        value={formData.custom_bus_route}
+                        onChange={(e) => handleChange('custom_bus_route', e.target.value)}
+                        placeholder="Route 104 - JP Nagar"
+                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Pickup Stop / Junction</label>
+                      <input
+                        type="text"
+                        value={formData.pickup_point}
+                        onChange={(e) => handleChange('pickup_point', e.target.value)}
+                        placeholder="Main Road Cross"
+                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Hostel Facility Card */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                formData.is_hostel_opted ? 'bg-purple-50/60 border-purple-300' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                      <Building className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">Residential Hostel & Mess</h4>
+                      <p className="text-[11px] text-slate-500">Boarding room, dining mess & residential study hours</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_hostel_opted}
+                      onChange={(e) => handleChange('is_hostel_opted', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">House / Sports Cohort</label>
-                  <input
-                    type="text"
-                    value={formData.custom_sports_house}
-                    onChange={(e) => handleChange('custom_sports_house', e.target.value)}
-                    placeholder="Cauvery House"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
+
+                {formData.is_hostel_opted && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-3 border-t border-purple-200 animate-in fade-in">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Hostel Block / Wing</label>
+                      <input
+                        type="text"
+                        value={formData.custom_hostel_wing}
+                        onChange={(e) => handleChange('custom_hostel_wing', e.target.value)}
+                        placeholder="Cauvery Wing (Twin Sharing)"
+                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Room Number</label>
+                      <input
+                        type="text"
+                        value={formData.hostel_room}
+                        onChange={(e) => handleChange('hostel_room', e.target.value)}
+                        placeholder="Room 204"
+                        className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sports / Cohort House */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Sports & Cultural House</label>
+                <select
+                  value={formData.custom_sports_house}
+                  onChange={(e) => handleChange('custom_sports_house', e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                >
+                  <option value="Cauvery House">Cauvery House (Blue)</option>
+                  <option value="Ganga House">Ganga House (Red)</option>
+                  <option value="Yamuna House">Yamuna House (Yellow)</option>
+                  <option value="Krishna House">Krishna House (Green)</option>
+                </select>
               </div>
             </div>
           )}
 
-          {/* Form Actions */}
+          {/* Form Actions Footer */}
           <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50 -mx-6 -mb-6 mt-6 rounded-b-3xl">
             <div className="flex items-center gap-2">
               {activeTab !== 'personal' && (
                 <button
                   type="button"
                   onClick={() => {
-                    const tabs: Array<'personal' | 'guardian' | 'academic' | 'address' | 'custom'> = ['personal', 'guardian', 'academic', 'address', 'custom'];
+                    const tabs: Array<'personal' | 'guardian' | 'academic' | 'address' | 'facilities'> = [
+                      'personal', 'guardian', 'academic', 'address', 'facilities'
+                    ];
                     const idx = tabs.indexOf(activeTab);
                     if (idx > 0) setActiveTab(tabs[idx - 1]);
                   }}
@@ -738,43 +814,41 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   ← Back
                 </button>
               )}
-              {activeTab !== 'custom' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const tabs: Array<'personal' | 'guardian' | 'academic' | 'address' | 'custom'> = ['personal', 'guardian', 'academic', 'address', 'custom'];
-                    const idx = tabs.indexOf(activeTab);
-                    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1]);
-                  }}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Next Step →
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 shadow-md shadow-blue-600/30 flex items-center gap-1.5 cursor-pointer"
-              >
-                {isSubmitting ? (
-                  <span>Enrolling Student...</span>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4" />
-                    <span>Complete Enrolment</span>
-                  </>
-                )}
-              </button>
+
+              {activeTab !== 'facilities' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tabs: Array<'personal' | 'guardian' | 'academic' | 'address' | 'facilities'> = [
+                      'personal', 'guardian', 'academic', 'address', 'facilities'
+                    ];
+                    const idx = tabs.indexOf(activeTab);
+                    if (idx < tabs.length - 1) setActiveTab(tabs[idx + 1]);
+                  }}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all cursor-pointer"
+                >
+                  Next Step →
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Check className="w-4 h-4" />
+                  {isSubmitting ? 'Enrolling...' : 'Confirm & Complete Enrolment'}
+                </button>
+              )}
             </div>
           </div>
         </form>

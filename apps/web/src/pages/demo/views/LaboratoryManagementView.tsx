@@ -441,7 +441,7 @@ export const LaboratoryManagementView: React.FC = () => {
                     AG
                   </div>
                   <span className="font-black text-[11px] uppercase tracking-wider text-slate-900">
-                    Akshara Global ERP
+                    OUR SCHOOL ERP
                   </span>
                 </div>
                 <span className="text-[9px] font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">

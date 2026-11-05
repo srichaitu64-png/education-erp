@@ -270,7 +270,7 @@ export const SharedImportWizardModal: React.FC<SharedImportWizardModalProps> = (
                 Shared Migration Engine
               </span>
               <span className="text-xs text-slate-400 font-medium">
-                Tenant: <strong>Akshara Educational Group</strong>
+                Tenant: <strong>OUR SCHOOL Demonstration Group</strong>
               </span>
             </div>
             <h2 className="text-xl font-black text-white">{currentModConfig.title}</h2>

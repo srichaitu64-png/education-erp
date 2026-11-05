@@ -222,7 +222,7 @@ export const CommunicationHubView: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">Bot Username</span>
-                <span className="text-blue-300 font-bold font-mono">@AksharaGlobal_Bot</span>
+                <span className="text-blue-300 font-bold font-mono">@OurSchool_Bot</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">Bot Father Token</span>
@@ -230,7 +230,7 @@ export const CommunicationHubView: React.FC = () => {
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">Broadcast Channel / Chat ID</span>
-                <span className="text-slate-900 font-mono font-bold">@akshara_official_alerts (Verified School Channel)</span>
+                <span className="text-slate-900 font-mono font-bold">@ourschool_official_alerts (Verified School Channel)</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">Webhook Listener</span>
