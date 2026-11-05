@@ -19,7 +19,7 @@ export const FaqPage: React.FC = () => {
     },
     {
       q: 'Can every school use its own logo, colors, and custom domain?',
-      a: 'Yes! Every institution configures its brand colors, logo, receipt headers, and report-card templates. Institutions on Professional and Enterprise plans can also link their own custom CNAME domain (e.g., portal.akshara.edu.in).',
+      a: 'Yes! Every institution configures its brand colors, logo, receipt headers, and report-card templates. Institutions on Professional and Enterprise plans can also link their own custom CNAME domain (e.g., portal.yourschool.edu.in).',
     },
     {
       q: 'Can we migrate existing student and fee data from Excel?',

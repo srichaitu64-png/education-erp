@@ -6,7 +6,7 @@ export const TestimonialsPage: React.FC = () => {
     {
       name: 'Dr. Ramesh Kumar',
       role: 'Principal & Director',
-      institution: 'Akshara Global School & College, Bengaluru',
+      institution: 'National Model School & PU College, Bengaluru',
       type: 'Composite School & PU College (1,850 Students)',
       quote: 'EduOmni’s offline synchronization completely removed our morning attendance bottleneck. Even during heavy monsoon broadband outages, our 40 teachers mark attendance on their phones and it syncs without losing a single record.',
       impact: '100% on-time roll-call compliance and ₹8.5L in recovered fee arrears within 60 days.',

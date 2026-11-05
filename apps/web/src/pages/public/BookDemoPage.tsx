@@ -276,7 +276,7 @@ export const BookDemoPage: React.FC = () => {
                     required
                     value={form.institutionName}
                     onChange={(e) => setForm({ ...form, institutionName: e.target.value })}
-                    placeholder="e.g. Akshara Global School & PU College"
+                    placeholder="e.g. Greenwood High School or Delhi Public School"
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   />
                 </div>

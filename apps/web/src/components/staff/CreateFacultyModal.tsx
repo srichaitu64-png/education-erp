@@ -409,3 +409,4 @@ export const CreateFacultyModal: React.FC<CreateFacultyModalProps> = ({
     </div>
   );
 };
+

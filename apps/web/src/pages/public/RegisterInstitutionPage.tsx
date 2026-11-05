@@ -198,7 +198,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between text-xs">
                   <div>
                     <div className="font-bold text-white">Dr. R. K. Hegde</div>
-                    <div className="text-gray-400">Principal, Akshara Global Pre-University</div>
+                    <div className="text-gray-400">Principal, Vidya Niketan Pre-University</div>
                   </div>
                   <span className="px-2.5 py-1 rounded bg-blue-900/60 text-blue-300 font-mono">1,450 Students</span>
                 </div>
@@ -218,7 +218,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                       Congratulations! Your tenant workspace has been provisioned at:
                     </p>
                     <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl font-mono text-sm font-bold text-blue-800 max-w-sm mx-auto">
-                      https://{formData.subdomain || 'akshara'}.eduomni.in
+                      https://{formData.subdomain || 'myschool'}.educationos.in
                     </div>
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <button
@@ -261,7 +261,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                           <input
                             type="text"
                             required
-                            placeholder="e.g. Akshara PU College"
+                            placeholder="e.g. Greenwood PU College"
                             value={formData.institutionName}
                             onChange={handleNameChange}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold"
@@ -278,13 +278,13 @@ export const RegisterInstitutionPage: React.FC = () => {
                           <input
                             type="text"
                             required
-                            placeholder="akshara"
+                            placeholder="greenwood-pu"
                             value={formData.subdomain}
                             onChange={(e) => setFormData({ ...formData, subdomain: e.target.value.toLowerCase().trim() })}
                             className="flex-1 px-3.5 py-2.5 rounded-l-xl border border-r-0 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono font-bold text-blue-700"
                           />
                           <span className="px-3.5 py-2.5 bg-gray-100 border border-gray-300 rounded-r-xl text-xs font-bold text-gray-500">
-                            .eduomni.in
+                            .educationos.in
                           </span>
                         </div>
                         <p className="text-[11px] text-gray-400 mt-1">This will be your institution's permanent URL and tenant identifier.</p>

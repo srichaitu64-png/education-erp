@@ -25,13 +25,225 @@ import {
   ChevronRight,
   HelpCircle,
   Clock,
-  Zap
+  Zap,
+  BookOpen,
+  Receipt,
+  Plus,
+  ExternalLink,
+  FileCheck
 } from 'lucide-react';
+
+interface MockInstitution {
+  id: string;
+  name: string;
+  subdomain: string;
+  url: string;
+  type: string;
+  levelBadge: string;
+  affiliation: string;
+  badge: string;
+  initial: string;
+  badgeColor: string;
+  themeColor: 'emerald' | 'blue' | 'purple';
+  studentsCount: string;
+  studentsSub: string;
+  attendanceRate: string;
+  attendanceSub: string;
+  feeCollection: string;
+  feeSub: string;
+  pendingApprovals: number;
+  pendingSub: string;
+  studentsList: Array<{
+    id: string;
+    name: string;
+    classLevel: string;
+    stream: string;
+    guardian: string;
+    phone: string;
+    attendance: string;
+    dues: string;
+    status: 'ACTIVE' | 'PENDING';
+  }>;
+}
+
+const MOCK_INSTITUTIONS: Record<string, MockInstitution> = {
+  our_school: {
+    id: 'our_school',
+    name: 'OUR SCHOOL (Demonstration Campus)',
+    subdomain: 'demo',
+    url: 'https://demo.educationos.in/dashboard',
+    type: 'Composite School & PU College',
+    levelBadge: 'K-10 / 12 & PU College',
+    affiliation: 'CBSE Affiliation #830192 • Karnataka PU Board • Academic Year 2026–2027',
+    badge: 'ACTIVE DEMO • Sandbox Isolated',
+    initial: 'O',
+    badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    themeColor: 'emerald',
+    studentsCount: '3 Demonstration Students',
+    studentsSub: 'Aarav, Ananya & Rahul (Pre-populated Demo Data)',
+    attendanceRate: '96.5%',
+    attendanceSub: 'Biometric Roll Call Finalized',
+    feeCollection: '₹37,500',
+    feeSub: 'Term 2 Fee Receipts Auto-Reconciled',
+    pendingApprovals: 3,
+    pendingSub: 'Admissions & Hall Tickets',
+    studentsList: [
+      {
+        id: 'OUR-2026-0101',
+        name: 'Aarav Sharma',
+        classLevel: 'Class 10-A',
+        stream: 'Secondary (CBSE)',
+        guardian: 'Rajesh Sharma',
+        phone: '+91 98450 12345',
+        attendance: '96.5%',
+        dues: '₹0 (Settled)',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'OUR-2026-0102',
+        name: 'Ananya Hegde',
+        classLevel: 'I PUC',
+        stream: 'PCMB (Science)',
+        guardian: 'Venkatesh Hegde',
+        phone: '+91 98450 23456',
+        attendance: '92.0%',
+        dues: '₹12,500 Due',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'OUR-2026-0103',
+        name: 'Rahul Kumar',
+        classLevel: 'II PUC',
+        stream: 'PCMB (Science)',
+        guardian: 'Ramesh Kumar',
+        phone: '+91 98450 99887',
+        attendance: '94.2%',
+        dues: '₹25,000 Due',
+        status: 'ACTIVE'
+      }
+    ]
+  },
+  apex_pu: {
+    id: 'apex_pu',
+    name: 'Apex Composite Pre-University College',
+    subdomain: 'apex-pu',
+    url: 'https://apex.educationos.in/dashboard',
+    type: 'Senior Secondary & Pre-University',
+    levelBadge: 'I & II PUC (Science & Commerce)',
+    affiliation: 'Karnataka State PU Board • College Code #0834 • Bengaluru',
+    badge: 'White-Label Production Tenant',
+    initial: 'A',
+    badgeColor: 'bg-blue-50 text-blue-800 border-blue-300',
+    themeColor: 'blue',
+    studentsCount: '1,420 Enrolled Students',
+    studentsSub: '98.8% Academic Retention',
+    attendanceRate: '97.1%',
+    attendanceSub: '1,379 Present • Practical Lab Batches',
+    feeCollection: '₹4,85,000',
+    feeSub: 'CET/NEET Coaching & Lab Dues',
+    pendingApprovals: 8,
+    pendingSub: 'Physics Lab Duty Slips',
+    studentsList: [
+      {
+        id: 'APX-2026-0412',
+        name: 'Divya R. Murthy',
+        classLevel: 'I PUC',
+        stream: 'PCMC (Electronics)',
+        guardian: 'R. Murthy',
+        phone: '+91 97410 55123',
+        attendance: '98.0%',
+        dues: '₹0 (Settled)',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'APX-2026-0589',
+        name: 'Kiran G. Rao',
+        classLevel: 'II PUC',
+        stream: 'PCMB (Science)',
+        guardian: 'Ganesh Rao',
+        phone: '+91 98800 66234',
+        attendance: '95.5%',
+        dues: '₹8,000 Due',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'APX-2026-0720',
+        name: 'Pooja Kulkarni',
+        classLevel: 'II PUC',
+        stream: 'Commerce (EBAC)',
+        guardian: 'Nitin Kulkarni',
+        phone: '+91 99001 77345',
+        attendance: '96.2%',
+        dues: '₹14,500 Due',
+        status: 'ACTIVE'
+      }
+    ]
+  },
+  vidya_degree: {
+    id: 'vidya_degree',
+    name: 'Vidya Niketan Institute of Higher Education',
+    subdomain: 'vidyaniketan',
+    url: 'https://vidyaniketan.educationos.in/dashboard',
+    type: 'Autonomous Degree College & University',
+    levelBadge: 'UG & PG (NEP 2020 Semester Credits)',
+    affiliation: 'State University Affiliated • NAAC A++ Accredited • Mysuru',
+    badge: 'White-Label Production Tenant',
+    initial: 'V',
+    badgeColor: 'bg-purple-50 text-purple-800 border-purple-300',
+    themeColor: 'purple',
+    studentsCount: '3,850 Enrolled Scholars',
+    studentsSub: '6 Departments • Autonomous Credit Bank',
+    attendanceRate: '95.4%',
+    attendanceSub: 'RFID Smart-Card Biometric Feed',
+    feeCollection: '₹14,20,000',
+    feeSub: 'Semester Exam Fees & Hostel Accounts',
+    pendingApprovals: 14,
+    pendingSub: 'Degree Supplementary Clearances',
+    studentsList: [
+      {
+        id: 'VNI-2026-1044',
+        name: 'Siddharth Nair',
+        classLevel: 'B.Sc Semester 4',
+        stream: 'Computer Science (AI & ML)',
+        guardian: 'K. Nair',
+        phone: '+91 98450 44556',
+        attendance: '97.2%',
+        dues: '₹0 (Settled)',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'VNI-2026-1218',
+        name: 'Meera Deshmukh',
+        classLevel: 'B.Com Semester 6',
+        stream: 'Corporate Accounting',
+        guardian: 'Anand Deshmukh',
+        phone: '+91 99800 33445',
+        attendance: '94.8%',
+        dues: '₹18,000 Due',
+        status: 'ACTIVE'
+      },
+      {
+        id: 'VNI-2026-1590',
+        name: 'Tanmay V. Joshi',
+        classLevel: 'MCA Semester 2',
+        stream: 'Cloud Computing & Cyber Security',
+        guardian: 'Vivek Joshi',
+        phone: '+91 97420 11223',
+        attendance: '96.0%',
+        dues: '₹22,500 Due',
+        status: 'ACTIVE'
+      }
+    ]
+  }
+};
 
 export const HomePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'school' | 'pu' | 'degree'>('school');
+  const [activeInstitutionKey, setActiveInstitutionKey] = useState<string>('our_school');
   const [activePortalRole, setActivePortalRole] = useState<'principal' | 'accountant' | 'teacher' | 'parent'>('principal');
   const [billingCycle, setBillingCycle] = useState<'annual' | 'monthly'>('annual');
+
+  const currentInst = MOCK_INSTITUTIONS[activeInstitutionKey] || MOCK_INSTITUTIONS.our_school;
 
   return (
     <div className="space-y-24 pb-20 overflow-hidden">
@@ -98,159 +310,420 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* Interactive Live ERP Dashboard Preview Card */}
-          <div className="mt-14 relative max-w-6xl mx-auto">
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur-xl opacity-20 transform -rotate-1"></div>
-            <div className="relative bg-white rounded-3xl border border-gray-200/80 shadow-2xl overflow-hidden">
-              {/* Fake Browser Toolbar */}
-              <div className="bg-gray-100/90 px-6 py-3.5 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                  <span className="ml-3 text-xs font-mono text-gray-500 bg-white px-3 py-1 rounded-md border border-gray-200 flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-emerald-600" /> https://akshara.eduomni.in/dashboard
+          <div className="mt-14 max-w-6xl mx-auto">
+            {/* Multi-Tenant Campus Showcase Switcher Bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 px-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                  Switch Multi-Tenant Architecture:
+                </span>
+                <div className="inline-flex p-1 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner">
+                  {[
+                    { key: 'our_school', label: 'OUR SCHOOL (Live Demo)', icon: School },
+                    { key: 'apex_pu', label: 'Apex PU College (PU Board)', icon: Building },
+                    { key: 'vidya_degree', label: 'Vidya Niketan University (NEP)', icon: Building2 },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const isSelected = activeInstitutionKey === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setActiveInstitutionKey(item.key)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white text-blue-700 shadow-sm border border-slate-200/90 font-black'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-semibold">Kernel PostgreSQL RLS Isolation</span>
+              </div>
+            </div>
+
+            <div className="relative bg-white rounded-3xl border border-slate-200/90 shadow-2xl shadow-slate-900/10 overflow-hidden">
+              {/* Modern macOS Browser Frame Header */}
+              <div className="bg-slate-100/90 px-6 py-3.5 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="w-3 h-3 rounded-full bg-rose-400 border border-rose-500/20"></div>
+                  <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500/20"></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-400 border border-emerald-500/20"></div>
+                  <span className="ml-3 text-xs font-mono text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 flex items-center gap-1.5 shadow-xs">
+                    <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{currentInst.url}</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Live Instance</span>
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${currentInst.badgeColor}`}>
+                    {currentInst.badge}
+                  </span>
+                  <Link
+                    to="/demo"
+                    className="text-xs font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                  >
+                    <span>Launch Live Interactive Demo</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
 
               {/* Role Switcher Toolbar inside the Preview */}
-              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-gray-500 mr-2 uppercase tracking-wider">Preview Role:</span>
+              <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-500 mr-2 uppercase tracking-wider">Inspect Role Workspace:</span>
                   {[
-                    { id: 'principal', label: 'Principal / Admin' },
-                    { id: 'accountant', label: 'Accountant' },
-                    { id: 'teacher', label: 'Faculty / Teacher' },
-                    { id: 'parent', label: 'Parent Portal' },
+                    { id: 'principal', label: '👑 Principal & Admin' },
+                    { id: 'accountant', label: '💳 Fee & Accounts Ledger' },
+                    { id: 'teacher', label: '📝 Faculty & Marks Entry' },
+                    { id: 'parent', label: '👨‍👩‍👧 Parent Portal' },
                   ].map((role) => (
                     <button
                       key={role.id}
                       onClick={() => setActivePortalRole(role.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         activePortalRole === role.id
                           ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          : 'bg-white text-slate-700 hover:bg-slate-200/60 border border-slate-200'
                       }`}
                     >
                       {role.label}
                     </button>
                   ))}
                 </div>
-                <Link
-                  to="/demo"
-                  className="text-xs font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  Open Sandbox Sandbox &rarr;
-                </Link>
+                <span className="text-xs text-slate-400 font-medium hidden md:inline">
+                  {currentInst.levelBadge}
+                </span>
               </div>
 
               {/* Dynamic Preview Viewport */}
-              <div className="p-6 lg:p-8 bg-slate-50/50">
+              <div className="p-6 lg:p-8 bg-slate-50/50 space-y-6">
+                {/* Institution Identity Banner */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+                  <div className="flex items-center gap-3.5">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md ${
+                        currentInst.themeColor === 'emerald'
+                          ? 'bg-emerald-600'
+                          : currentInst.themeColor === 'blue'
+                          ? 'bg-blue-600'
+                          : 'bg-purple-600'
+                      }`}
+                    >
+                      {currentInst.initial}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 tracking-tight">{currentInst.name}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">{currentInst.affiliation}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-extrabold">
+                      {currentInst.levelBadge}
+                    </span>
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-extrabold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                      All Modules Operational
+                    </span>
+                  </div>
+                </div>
+
+                {/* 1. Principal & Leadership View */}
                 {activePortalRole === 'principal' && (
                   <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-gray-200">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">Akshara Global School & College</h3>
-                        <p className="text-xs text-gray-500">Academic Year 2026–27 • CBSE & State Board • Main Campus</p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Enrolled Directory</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{currentInst.studentsCount}</p>
+                        <p className="text-xs text-emerald-600 font-medium mt-1">{currentInst.studentsSub}</p>
                       </div>
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-extrabold">
-                        All Modules Operational
-                      </span>
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Today's Attendance</p>
+                        <p className="text-2xl font-black text-emerald-600 mt-1">{currentInst.attendanceRate}</p>
+                        <p className="text-xs text-slate-400 mt-1">{currentInst.attendanceSub}</p>
+                      </div>
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Collections (Today)</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{currentInst.feeCollection}</p>
+                        <p className="text-xs text-blue-600 font-medium mt-1">{currentInst.feeSub}</p>
+                      </div>
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Pending Approvals</p>
+                        <p className="text-2xl font-black text-amber-600 mt-1">{currentInst.pendingApprovals}</p>
+                        <p className="text-xs text-slate-400 mt-1">{currentInst.pendingSub}</p>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Enrolled Students</p>
-                        <p className="text-2xl font-black text-gray-950 mt-1">1,240</p>
-                        <p className="text-xs text-emerald-600 font-semibold mt-1">98.4% Retention</p>
+                    {/* Live Enrolled Students Table */}
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                      <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-blue-600" />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                            Enrolled Student Roster • Active RLS Context
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to="/demo"
+                            className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Enrol Student in Demo</span>
+                          </Link>
+                        </div>
                       </div>
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Today's Attendance</p>
-                        <p className="text-2xl font-black text-emerald-600 mt-1">96.2%</p>
-                        <p className="text-xs text-gray-400 mt-1">1,193 present • 47 absent</p>
-                      </div>
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Fee Collection (Today)</p>
-                        <p className="text-2xl font-black text-gray-950 mt-1">₹3,45,000</p>
-                        <p className="text-xs text-blue-600 font-semibold mt-1">UPI, Gateway & Cash</p>
-                      </div>
-                      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <p className="text-xs text-gray-500 uppercase font-medium">Pending Approvals</p>
-                        <p className="text-2xl font-black text-amber-600 mt-1">8</p>
-                        <p className="text-xs text-gray-400 mt-1">Admissions & Leave</p>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-600">
+                          <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase font-bold tracking-wider border-b border-slate-200">
+                            <tr>
+                              <th className="px-5 py-3">Admission #</th>
+                              <th className="px-5 py-3">Student Name</th>
+                              <th className="px-5 py-3">Class / Stream</th>
+                              <th className="px-5 py-3">Guardian Contact</th>
+                              <th className="px-5 py-3">Attendance</th>
+                              <th className="px-5 py-3">Fee Status</th>
+                              <th className="px-5 py-3 text-right">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {currentInst.studentsList.map((st) => (
+                              <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="px-5 py-3 font-mono font-bold text-blue-700">{st.id}</td>
+                                <td className="px-5 py-3 font-bold text-slate-900">{st.name}</td>
+                                <td className="px-5 py-3">{st.classLevel} • {st.stream}</td>
+                                <td className="px-5 py-3">{st.guardian} ({st.phone})</td>
+                                <td className="px-5 py-3 font-bold text-emerald-600">{st.attendance}</td>
+                                <td className="px-5 py-3 font-mono font-semibold text-slate-700">{st.dues}</td>
+                                <td className="px-5 py-3 text-right">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                    {st.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* 2. Accountant / Fee Daybook View */}
                 {activePortalRole === 'accountant' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-gray-900">Finance & Fee Collection Daybook</h3>
-                      <span className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-bold">Auto-Reconciled</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Fee Invoices Billed</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">₹75,000</p>
+                        <p className="text-xs text-emerald-600 font-medium mt-1">Tuition, Science Lab & Activity</p>
+                      </div>
+                      <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Collections Realized</p>
+                        <p className="text-2xl font-black text-emerald-600 mt-1">₹37,500</p>
+                        <p className="text-xs text-blue-600 font-medium mt-1">Razorpay, UPI & Front Counter</p>
+                      </div>
+                      <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Ledger Reconciliation</p>
+                        <p className="text-2xl font-black text-blue-600 mt-1">100% Settled</p>
+                        <p className="text-xs text-slate-400 mt-1">Double-Entry Audit Compliant</p>
+                      </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                          <p className="text-xs text-emerald-800 font-semibold uppercase">Total Collected (Nov)</p>
-                          <p className="text-xl font-black text-emerald-900 mt-0.5">₹42,80,000</p>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">Fee Invoices & Statements Breakdown</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">Automated multi-head allocation and printed receipt numbering</p>
                         </div>
-                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <p className="text-xs text-amber-800 font-semibold uppercase">Pending Dues (Term 2)</p>
-                          <p className="text-xl font-black text-amber-900 mt-0.5">₹6,15,000</p>
+                        <Link
+                          to="/demo?role=ACCOUNTANT"
+                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                        >
+                          <Receipt className="w-3.5 h-3.5" />
+                          <span>Open Fee Daybook in Demo</span>
+                        </Link>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                          <div>
+                            <span className="font-mono font-bold text-blue-700">INV-2026-0091</span>
+                            <span className="font-bold text-slate-900 ml-2">Aarav Sharma (Class 10-A)</span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Tuition & Computer Science Fee • Term 2</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-bold text-slate-900">₹20,000 Total</span>
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
+                              Paid • Receipt #RCP-1001
+                            </span>
+                          </div>
                         </div>
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-xs text-blue-800 font-semibold uppercase">Razorpay Settlements</p>
-                          <p className="text-xl font-black text-blue-900 mt-0.5">Instant Webhook Verified</p>
+
+                        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                          <div>
+                            <span className="font-mono font-bold text-blue-700">INV-2026-0092</span>
+                            <span className="font-bold text-slate-900 ml-2">Ananya Hegde (I PUC PCMB)</span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Pre-University Science & Physics Lab Practical</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-bold text-amber-700">₹12,500 Balance Due</span>
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px]">
+                              Partial (₹12,500 Paid)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                          <div>
+                            <span className="font-mono font-bold text-blue-700">INV-2026-0093</span>
+                            <span className="font-bold text-slate-900 ml-2">Rahul Kumar (II PUC PCMB)</span>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Senior Science Tuition & Practical Board Assessment</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-bold text-red-700">₹25,000 Balance Due</span>
+                            <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded font-bold text-[10px]">
+                              Partial (₹20,000 Paid)
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-500">Every payment transaction is immutable and logged in the double-entry financial ledger.</p>
                     </div>
                   </div>
                 )}
 
+                {/* 3. Teacher / Faculty View */}
                 {activePortalRole === 'teacher' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-gray-900">Faculty Workspace • Class 10-A Science</h3>
-                      <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold">Draft Marks Entry Active</span>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                      <p className="text-sm font-semibold text-gray-800 mb-2">Mid-Term Physics Assessment (Max: 100)</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-xs">
-                          <span className="font-bold text-gray-800">Aarav Sharma (Roll 101)</span>
-                          <span className="font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">94/100 (Grade A+)</span>
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">
+                            Faculty Marks Register • Mid-Term Theory & Practical Assessment
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Course: Physics & Science Laboratory • Max Marks: 100 (70 Theory + 30 Practical)
+                          </p>
                         </div>
-                        <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-xs">
-                          <span className="font-bold text-gray-800">Ananya Hegde (Roll 102)</span>
-                          <span className="font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">88/100 (Grade A)</span>
-                        </div>
+                        <Link
+                          to="/demo?role=TEACHER"
+                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Open Marks Register in Demo</span>
+                        </Link>
+                      </div>
+
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-600">
+                          <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase font-bold tracking-wider border-b border-slate-200">
+                            <tr>
+                              <th className="px-4 py-3">Roll #</th>
+                              <th className="px-4 py-3">Student Name</th>
+                              <th className="px-4 py-3">Theory (Max: 70)</th>
+                              <th className="px-4 py-3">Practical (Max: 30)</th>
+                              <th className="px-4 py-3">Total / 100</th>
+                              <th className="px-4 py-3">Grade</th>
+                              <th className="px-4 py-3 text-right">Approval Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            <tr className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3 font-mono font-bold">101</td>
+                              <td className="px-4 py-3 font-bold text-slate-900">Aarav Sharma</td>
+                              <td className="px-4 py-3 font-mono">68 / 70</td>
+                              <td className="px-4 py-3 font-mono">26 / 30</td>
+                              <td className="px-4 py-3 font-mono font-black text-emerald-700">94 / 100</td>
+                              <td className="px-4 py-3 font-extrabold text-emerald-700">A+ (Outstanding)</td>
+                              <td className="px-4 py-3 text-right">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                  Approved
+                                </span>
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3 font-mono font-bold">102</td>
+                              <td className="px-4 py-3 font-bold text-slate-900">Ananya Hegde</td>
+                              <td className="px-4 py-3 font-mono">60 / 70</td>
+                              <td className="px-4 py-3 font-mono">28 / 30</td>
+                              <td className="px-4 py-3 font-mono font-black text-emerald-700">88 / 100</td>
+                              <td className="px-4 py-3 font-extrabold text-emerald-700">A (Distinction)</td>
+                              <td className="px-4 py-3 text-right">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                  Approved
+                                </span>
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3 font-mono font-bold">103</td>
+                              <td className="px-4 py-3 font-bold text-slate-900">Rahul Kumar</td>
+                              <td className="px-4 py-3 font-mono">65 / 70</td>
+                              <td className="px-4 py-3 font-mono">27 / 30</td>
+                              <td className="px-4 py-3 font-mono font-black text-emerald-700">92 / 100</td>
+                              <td className="px-4 py-3 font-extrabold text-emerald-700">A+ (Outstanding)</td>
+                              <td className="px-4 py-3 text-right">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                  Approved
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* 4. Parent Self-Service Portal View */}
                 {activePortalRole === 'parent' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-gray-900">Parent Portal • Student: Aarav Sharma (Class 10-A)</h3>
-                      <span className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-bold">Verified Guardian</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded-xl border border-gray-200">
-                        <p className="text-xs text-gray-500 uppercase font-semibold">Attendance Record</p>
-                        <p className="text-xl font-bold text-emerald-600 mt-1">96.5% Present</p>
-                        <p className="text-xs text-gray-400 mt-1">Eligible for Board Exams</p>
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">
+                            Parent Self-Service Portal • Student: Aarav Sharma (Class 10-A)
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Authenticated Guardian: Rajesh Sharma • Admission #: OUR-2026-0101
+                          </p>
+                        </div>
+                        <Link
+                          to="/demo?role=PARENT"
+                          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                        >
+                          <Smartphone className="w-3.5 h-3.5" />
+                          <span>Test Parent Portal in Demo</span>
+                        </Link>
                       </div>
-                      <div className="bg-white p-4 rounded-xl border border-gray-200">
-                        <p className="text-xs text-gray-500 uppercase font-semibold">Term 2 Fee Status</p>
-                        <p className="text-xl font-bold text-emerald-600 mt-1">₹0.00 Outstanding (Fully Settled)</p>
-                        <p className="text-xs text-blue-600 mt-1 font-semibold">Download Receipt #REC-2026-9182</p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <p className="text-xs text-slate-500 font-bold uppercase">Attendance Record</p>
+                          <p className="text-xl font-black text-emerald-600 mt-1">96.5% Present</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Eligible for Board Exams</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <p className="text-xs text-slate-500 font-bold uppercase">Term 2 Fee Status</p>
+                          <p className="text-xl font-black text-emerald-600 mt-1">₹0.00 Dues</p>
+                          <p className="text-[11px] text-blue-600 font-bold mt-0.5">Receipt #RCP-1001 Settled</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <p className="text-xs text-slate-500 font-bold uppercase">Examination Hall Ticket</p>
+                          <p className="text-xl font-black text-blue-600 mt-1">Issued & Verified</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Room 3 • Desk #14</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <p className="text-xs text-slate-500 font-bold uppercase">Latest Assessment</p>
+                          <p className="text-xl font-black text-emerald-600 mt-1">94% (Grade A+)</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Class Rank #1 in Science</p>
+                        </div>
                       </div>
                     </div>
                   </div>
