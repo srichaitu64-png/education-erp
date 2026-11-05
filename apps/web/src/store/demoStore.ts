@@ -447,17 +447,34 @@ export interface DemoStaffMember {
   employment_type?: 'PERMANENT' | 'CONTRACT' | 'PROBATION';
 }
 
+export type AdmissionStage =
+  | 'ENQUIRY'
+  | 'APPLICATION_STARTED'
+  | 'SUBMITTED'
+  | 'DOCUMENT_VERIFICATION'
+  | 'UNDER_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'WAITLISTED'
+  | 'ADMISSION_CONFIRMED';
+
 export interface DemoAdmission {
   id: string;
   application_number: string;
   applicant_name: string;
   level: string;
   target_class: string;
+  stream_or_comb?: string;
   parent_name: string;
   parent_phone: string;
   parent_email: string;
   submission_date: string;
-  status: 'PENDING' | 'VERIFIED' | 'APPROVED' | 'REJECTED';
+  stage?: AdmissionStage;
+  status: 'PENDING' | 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'CONFIRMED';
+  assigned_section?: string;
+  assigned_roll_number?: string;
+  source?: string;
+  documents_verified?: boolean;
 }
 
 export type FeeHeadType = string;
@@ -1286,6 +1303,36 @@ export interface AcademicSubject {
   is_archived: boolean;
 }
 
+export interface MasterSubjectItem {
+  id: string;
+  code: string;
+  name: string;
+  category: 'Language' | 'Core Science' | 'Core Commerce' | 'Arts & Humanities' | 'Vocational' | 'Elective';
+  has_practical: boolean;
+  default_theory_max: number;
+  default_practical_max: number;
+  credits?: number;
+  is_active: boolean;
+  description?: string;
+}
+
+export interface CurriculumMappingItem {
+  id: string;
+  institution_level: 'School' | 'PU College' | 'Degree College';
+  class_name: string;
+  stream?: string;
+  academic_year: string;
+  subject_code: string;
+  subject_name: string;
+  category: string;
+  is_compulsory: boolean;
+  theory_max: number;
+  practical_max: number;
+  passing_marks: number;
+  internal_assessment_max?: number;
+  assigned_teacher?: string;
+}
+
 export interface TransportRoute {
   id: string;
   route_code: string;
@@ -1333,6 +1380,8 @@ interface DemoState {
   marks: DemoExamMarks[];
   exams: DemoExam[];
   subjects: AcademicSubject[];
+  masterSubjectCatalogue: MasterSubjectItem[];
+  curriculumMappings: CurriculumMappingItem[];
   transportRoutes: TransportRoute[];
   externalProviders: ExternalExamProvider[];
 
@@ -1352,6 +1401,8 @@ interface DemoState {
   addStudent: (student: Omit<DemoStudent, 'id'>) => void;
   createAdmission: (app: Omit<DemoAdmission, 'id' | 'application_number' | 'submission_date' | 'status'>) => void;
   approveAdmission: (id: string) => void;
+  updateAdmissionStage: (id: string, stage: AdmissionStage) => void;
+  confirmAdmissionAndActivate: (id: string, targetClass?: string, section?: string) => { studentId: string; admissionNumber: string };
   collectFee: (invoiceId: string, amount: number) => { receiptNumber: string };
   collectFeeWithReceipt: (params: {
     invoiceId: string;
@@ -1394,6 +1445,16 @@ interface DemoState {
   addSubject: (subj: Omit<AcademicSubject, 'id' | 'is_archived'>) => void;
   archiveSubject: (subjectId: string) => void;
   reorderSubjects: (fromIndex: number, toIndex: number) => void;
+
+  // Master Subject Catalogue & Curriculum Mapping Actions
+  addMasterSubject: (item: Omit<MasterSubjectItem, 'id' | 'is_active'>) => void;
+  updateMasterSubject: (id: string, updates: Partial<MasterSubjectItem>) => void;
+  archiveMasterSubject: (id: string) => void;
+  loadStandardMasterCatalogueTemplate: () => void;
+  mapSubjectToClass: (mapping: Omit<CurriculumMappingItem, 'id'>) => void;
+  removeSubjectFromClass: (mappingId: string) => void;
+  updateCurriculumAssessment: (mappingId: string, updates: Partial<CurriculumMappingItem>) => void;
+  resetTrialData: () => void;
 
   // Transport Tracking Simulator
   toggleTripStatus: (routeId: string) => void;
@@ -2322,9 +2383,9 @@ export const initialStudents: DemoStudent[] = [
 ];
 
 const initialAdmissions: DemoAdmission[] = [
-  { id: 'adm-101', application_number: 'APP-2026-891', applicant_name: 'Tanvi Deshmukh', level: 'School', target_class: 'Class 6', parent_name: 'Sanjay Deshmukh', parent_phone: '+91 99001 11223', parent_email: 'sanjay@example.com', submission_date: '2026-11-01', status: 'PENDING' },
-  { id: 'adm-102', application_number: 'APP-2026-892', applicant_name: 'Karan Rao', level: 'PU College', target_class: 'I PUC - PCMC', parent_name: 'Girish Rao', parent_phone: '+91 99001 22334', parent_email: 'girish@example.com', submission_date: '2026-11-02', status: 'VERIFIED' },
-  { id: 'adm-103', application_number: 'APP-2026-893', applicant_name: 'Sneha Kulkarni', level: 'PU College', target_class: 'I PUC - PCMB', parent_name: 'Nitin Kulkarni', parent_phone: '+91 99001 33445', parent_email: 'nitin@example.com', submission_date: '2026-11-03', status: 'APPROVED' },
+  { id: 'adm-101', application_number: 'APP-2026-891', applicant_name: 'Tanvi Deshmukh', level: 'School', target_class: 'Class 6', stream_or_comb: 'Secondary', parent_name: 'Sanjay Deshmukh', parent_phone: '+91 99001 11223', parent_email: 'sanjay@example.com', submission_date: '2026-11-01', stage: 'DOCUMENT_VERIFICATION', status: 'PENDING', source: 'Direct Walk-in' },
+  { id: 'adm-102', application_number: 'APP-2026-892', applicant_name: 'Karan Rao', level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMC', parent_name: 'Girish Rao', parent_phone: '+91 99001 22334', parent_email: 'girish@example.com', submission_date: '2026-11-02', stage: 'UNDER_REVIEW', status: 'VERIFIED', source: 'Online Application' },
+  { id: 'adm-103', application_number: 'APP-2026-893', applicant_name: 'Sneha Kulkarni', level: 'PU College', target_class: 'I PUC', stream_or_comb: 'PCMB', parent_name: 'Nitin Kulkarni', parent_phone: '+91 99001 33445', parent_email: 'nitin@example.com', submission_date: '2026-11-03', stage: 'APPROVED', status: 'APPROVED', source: 'Entrance Merit List' },
 ];
 
 export const initialInvoices: DemoFeeInvoice[] = [
@@ -2754,6 +2815,52 @@ const initialExams: DemoExam[] = [
       { id: 'sch-8', subject: 'All Board Papers Pre-Mock', exam_date: '2026-12-05', start_time: '09:00 AM', end_time: '12:00 PM', room: 'TCS Authorized Center', invigilator: 'TCS Invigilator Lead', theory_max: 100, practical_max: 0, passing_marks: 35 },
     ],
   }
+];
+
+export const initialMasterSubjects: MasterSubjectItem[] = [
+  { id: 'ms-1', code: 'ENG-101', name: 'English Core', category: 'Language', has_practical: false, default_theory_max: 100, default_practical_max: 0, credits: 4, is_active: true, description: 'First Language & Literature' },
+  { id: 'ms-2', code: 'KAN-102', name: 'Kannada Language', category: 'Language', has_practical: false, default_theory_max: 100, default_practical_max: 0, credits: 4, is_active: true, description: 'Regional Second Language' },
+  { id: 'ms-3', code: 'HIN-103', name: 'Hindi Core', category: 'Language', has_practical: false, default_theory_max: 100, default_practical_max: 0, credits: 4, is_active: true, description: 'National Language Option' },
+  { id: 'ms-4', code: 'PHY-201', name: 'Physics', category: 'Core Science', has_practical: true, default_theory_max: 70, default_practical_max: 30, credits: 4, is_active: true, description: 'Mechanics, Electromagnetism & Lab' },
+  { id: 'ms-5', code: 'CHEM-202', name: 'Chemistry', category: 'Core Science', has_practical: true, default_theory_max: 70, default_practical_max: 30, credits: 4, is_active: true, description: 'Inorganic, Organic & Lab' },
+  { id: 'ms-6', code: 'MATH-203', name: 'Mathematics', category: 'Core Science', has_practical: false, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'Calculus, Algebra & Internal Assessment' },
+  { id: 'ms-7', code: 'BIO-204', name: 'Biology', category: 'Core Science', has_practical: true, default_theory_max: 70, default_practical_max: 30, credits: 4, is_active: true, description: 'Botany, Zoology & Lab Specimens' },
+  { id: 'ms-8', code: 'CS-205', name: 'Computer Science', category: 'Vocational', has_practical: true, default_theory_max: 70, default_practical_max: 30, credits: 4, is_active: true, description: 'Python, SQL & Computing Lab' },
+  { id: 'ms-9', code: 'ACC-301', name: 'Accountancy', category: 'Core Commerce', has_practical: false, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'Financial Statements & Partnership Accounts' },
+  { id: 'ms-10', code: 'BST-302', name: 'Business Studies', category: 'Core Commerce', has_practical: false, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'Principles of Management & Finance' },
+  { id: 'ms-11', code: 'ECO-303', name: 'Economics', category: 'Core Commerce', has_practical: false, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'Microeconomics, Macroeconomics & Indian Economy' },
+  { id: 'ms-12', code: 'SCI-091', name: 'General Science & Lab', category: 'Core Science', has_practical: true, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'Secondary Integrated Science (Class 10)' },
+  { id: 'ms-13', code: 'SOC-092', name: 'Social Science', category: 'Arts & Humanities', has_practical: false, default_theory_max: 80, default_practical_max: 20, credits: 4, is_active: true, description: 'History, Civics, Geography & Economics' },
+];
+
+export const initialCurriculumMappings: CurriculumMappingItem[] = [
+  // Class 10 (School)
+  { id: 'cm-1', institution_level: 'School', class_name: 'Class 10', stream: 'Secondary (CBSE)', academic_year: '2026-2027', subject_code: 'ENG-101', subject_name: 'English Core', category: 'Language', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 33, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-2', institution_level: 'School', class_name: 'Class 10', stream: 'Secondary (CBSE)', academic_year: '2026-2027', subject_code: 'KAN-102', subject_name: 'Kannada Language', category: 'Language', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 33, assigned_teacher: 'Mr. B. Nayak' },
+  { id: 'cm-3', institution_level: 'School', class_name: 'Class 10', stream: 'Secondary (CBSE)', academic_year: '2026-2027', subject_code: 'MATH-203', subject_name: 'Mathematics', category: 'Core Science', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 33, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-4', institution_level: 'School', class_name: 'Class 10', stream: 'Secondary (CBSE)', academic_year: '2026-2027', subject_code: 'SCI-091', subject_name: 'General Science & Lab', category: 'Core Science', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 33, assigned_teacher: 'Dr. Anita Rao' },
+  { id: 'cm-5', institution_level: 'School', class_name: 'Class 10', stream: 'Secondary (CBSE)', academic_year: '2026-2027', subject_code: 'SOC-092', subject_name: 'Social Science', category: 'Arts & Humanities', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 33, assigned_teacher: 'Mr. R. Bhat' },
+
+  // I PUC (PCMB - PU College)
+  { id: 'cm-6', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'ENG-101', subject_name: 'English Core', category: 'Language', is_compulsory: true, theory_max: 100, practical_max: 0, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-7', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'PHY-201', subject_name: 'Physics', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Dr. V. Murthy' },
+  { id: 'cm-8', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'CHEM-202', subject_name: 'Chemistry', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Prof. S. Joshi' },
+  { id: 'cm-9', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'MATH-203', subject_name: 'Mathematics', category: 'Core Science', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-10', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'BIO-204', subject_name: 'Biology', category: 'Core Science', is_compulsory: false, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Dr. Anita Rao' },
+
+  // I PUC (PCMC - PU College)
+  { id: 'cm-11', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMC', academic_year: '2026-2027', subject_code: 'ENG-101', subject_name: 'English Core', category: 'Language', is_compulsory: true, theory_max: 100, practical_max: 0, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-12', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMC', academic_year: '2026-2027', subject_code: 'PHY-201', subject_name: 'Physics', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Dr. V. Murthy' },
+  { id: 'cm-13', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMC', academic_year: '2026-2027', subject_code: 'CHEM-202', subject_name: 'Chemistry', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Prof. S. Joshi' },
+  { id: 'cm-14', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMC', academic_year: '2026-2027', subject_code: 'MATH-203', subject_name: 'Mathematics', category: 'Core Science', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-15', institution_level: 'PU College', class_name: 'I PUC', stream: 'PCMC', academic_year: '2026-2027', subject_code: 'CS-205', subject_name: 'Computer Science', category: 'Vocational', is_compulsory: false, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Mr. Arvind G.' },
+
+  // II PUC (PCMB - PU College)
+  { id: 'cm-16', institution_level: 'PU College', class_name: 'II PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'ENG-101', subject_name: 'English Core', category: 'Language', is_compulsory: true, theory_max: 100, practical_max: 0, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-17', institution_level: 'PU College', class_name: 'II PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'PHY-201', subject_name: 'Physics', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Dr. V. Murthy' },
+  { id: 'cm-18', institution_level: 'PU College', class_name: 'II PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'CHEM-202', subject_name: 'Chemistry', category: 'Core Science', is_compulsory: true, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Prof. S. Joshi' },
+  { id: 'cm-19', institution_level: 'PU College', class_name: 'II PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'MATH-203', subject_name: 'Mathematics', category: 'Core Science', is_compulsory: true, theory_max: 80, practical_max: 20, passing_marks: 35, assigned_teacher: 'Mrs. K. Swamy' },
+  { id: 'cm-20', institution_level: 'PU College', class_name: 'II PUC', stream: 'PCMB', academic_year: '2026-2027', subject_code: 'BIO-204', subject_name: 'Biology', category: 'Core Science', is_compulsory: false, theory_max: 70, practical_max: 30, passing_marks: 35, assigned_teacher: 'Dr. Anita Rao' },
 ];
 
 const initialSubjects: AcademicSubject[] = [
@@ -3479,6 +3586,8 @@ export const useDemoStore = create<DemoState>()(
         students: [],
         invoices: [],
         receipts: [],
+        receiptAudits: [],
+        feeStructures: [],
         admissions: [],
         attendance: [],
         marks: [],
@@ -3486,6 +3595,14 @@ export const useDemoStore = create<DemoState>()(
         periodAttendance: [],
         hallTickets: [],
         staffMembers: [],
+        staffDuties: [],
+        academicSections: [],
+        exams: [],
+        subjects: [],
+        masterSubjectCatalogue: [],
+        curriculumMappings: [],
+        transportRoutes: [],
+        feeSnapshots: [],
       });
     } else {
       set({
@@ -3500,6 +3617,14 @@ export const useDemoStore = create<DemoState>()(
         periodAttendance: initialPeriodAttendance,
         hallTickets: initialHallTickets,
         staffMembers: initialStaffMembers,
+        staffDuties: initialStaffDuties,
+        academicSections: initialAcademicSections,
+        exams: initialExams,
+        subjects: initialSubjects,
+        masterSubjectCatalogue: initialMasterSubjects,
+        curriculumMappings: initialCurriculumMappings,
+        transportRoutes: initialTransportRoutes,
+        feeSnapshots: initialFeeSnapshots,
       });
     }
   },
@@ -3537,6 +3662,8 @@ export const useDemoStore = create<DemoState>()(
   marks: initialMarks,
   exams: initialExams,
   subjects: initialSubjects,
+  masterSubjectCatalogue: initialMasterSubjects,
+  curriculumMappings: initialCurriculumMappings,
   transportRoutes: initialTransportRoutes,
   externalProviders: initialExternalProviders,
 
@@ -4438,6 +4565,183 @@ export const useDemoStore = create<DemoState>()(
       const [moved] = list.splice(fromIndex, 1);
       list.splice(toIndex, 0, moved);
       return { subjects: list };
+    });
+  },
+
+  // Master Subject Catalogue Actions
+  addMasterSubject: (item) => {
+    const newMaster: MasterSubjectItem = {
+      id: `ms-${Date.now()}`,
+      is_active: true,
+      ...item,
+    };
+    set((state) => ({ masterSubjectCatalogue: [...state.masterSubjectCatalogue, newMaster] }));
+  },
+
+  updateMasterSubject: (id, updates) => {
+    set((state) => ({
+      masterSubjectCatalogue: state.masterSubjectCatalogue.map((s) =>
+        s.id === id ? { ...s, ...updates } : s
+      )
+    }));
+  },
+
+  archiveMasterSubject: (id) => {
+    set((state) => ({
+      masterSubjectCatalogue: state.masterSubjectCatalogue.map((s) =>
+        s.id === id ? { ...s, is_active: false } : s
+      )
+    }));
+  },
+
+  loadStandardMasterCatalogueTemplate: () => {
+    set({ masterSubjectCatalogue: initialMasterSubjects });
+  },
+
+  // Curriculum Mapping Actions
+  mapSubjectToClass: (mapping) => {
+    const newMap: CurriculumMappingItem = {
+      id: `cm-${Date.now()}`,
+      ...mapping,
+    };
+    set((state) => ({ curriculumMappings: [...state.curriculumMappings, newMap] }));
+  },
+
+  removeSubjectFromClass: (mappingId) => {
+    set((state) => ({
+      curriculumMappings: state.curriculumMappings.filter((m) => m.id !== mappingId)
+    }));
+  },
+
+  updateCurriculumAssessment: (mappingId, updates) => {
+    set((state) => ({
+      curriculumMappings: state.curriculumMappings.map((m) =>
+        m.id === mappingId ? { ...m, ...updates } : m
+      )
+    }));
+  },
+
+  // Admissions Pipeline Lifecycle Actions
+  updateAdmissionStage: (id, stage) => {
+    set((state) => ({
+      admissions: state.admissions.map((adm) => {
+        if (adm.id !== id) return adm;
+        let newStatus: DemoAdmission['status'] = adm.status;
+        if (stage === 'DOCUMENT_VERIFICATION') newStatus = 'VERIFIED';
+        else if (stage === 'APPROVED') newStatus = 'APPROVED';
+        else if (stage === 'REJECTED') newStatus = 'REJECTED';
+        else if (stage === 'ADMISSION_CONFIRMED') newStatus = 'CONFIRMED';
+        return { ...adm, stage, status: newStatus };
+      })
+    }));
+  },
+
+  confirmAdmissionAndActivate: (id, targetClass, section) => {
+    const state = get();
+    const adm = state.admissions.find((a) => a.id === id);
+    if (!adm) return { studentId: '', admissionNumber: '' };
+
+    const finalClass = targetClass || adm.target_class || 'Class 10';
+    const finalSection = section || 'Section A';
+    const isPu = adm.level === 'PU College' || finalClass.includes('PUC');
+    const admPrefix = state.tenantScope === 'our-school-demo' ? 'OUR-2026' : 'AKSH-2026';
+    const nextNum = Math.floor(100 + Math.random() * 900);
+    const newAdmissionNo = `${admPrefix}-0${nextNum}`;
+    const feeAmount = isPu ? 45000 : 35000;
+
+    const newStudent: DemoStudent = {
+      id: `stu-${Date.now()}`,
+      admission_number: newAdmissionNo,
+      roll_number: String(nextNum),
+      first_name: adm.applicant_name.split(' ')[0] || adm.applicant_name,
+      last_name: adm.applicant_name.split(' ').slice(1).join(' ') || 'Student',
+      institution_level: isPu ? 'PU College' : 'School',
+      class_name: finalClass,
+      section_or_stream: adm.stream_or_comb || (isPu ? (adm.target_class.includes('PCMC') ? 'PCMC' : 'PCMB') : finalSection),
+      guardian_name: adm.parent_name,
+      guardian_phone: adm.parent_phone,
+      parent_email: adm.parent_email,
+      attendance_pct: 100,
+      fee_balance: feeAmount,
+      status: 'ACTIVE',
+      aadhaar_number: 'XXXX-XXXX-' + Math.floor(1000 + Math.random() * 9000),
+      academic_year: '2026-2027',
+      is_hostel_opted: false,
+      is_transport_opted: false,
+    };
+
+    const newInvoice: DemoFeeInvoice = {
+      id: `inv-${Date.now()}`,
+      invoice_number: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      student_name: `${newStudent.first_name} ${newStudent.last_name}`,
+      admission_number: newAdmissionNo,
+      class_name: `${finalClass}-${finalSection}`,
+      academic_year: '2026-2027',
+      term_code: isPu ? 'SEM_1' : 'TERM_1',
+      term_name: isPu ? 'Semester 1 (June-Nov)' : 'Term 1 (June-Aug)',
+      fee_head: isPu ? 'PU_BOARD_TUITION' : 'COLLEGE_FEE',
+      fee_title: isPu ? 'Karnataka Pre-University Tuition & Lab' : 'Annual Tuition & Instructional Learning',
+      total_amount: feeAmount,
+      paid_amount: 0,
+      balance_amount: feeAmount,
+      due_date: '2026-07-31',
+      status: 'UNPAID',
+      breakdown: [
+        { head_code: 'TUITION', title: 'Tuition Fee', amount: feeAmount - 5000 },
+        { head_code: 'REGISTRATION', title: 'Registration & Verification', amount: 5000 },
+      ]
+    };
+
+    set((s) => ({
+      admissions: s.admissions.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              status: 'CONFIRMED',
+              stage: 'ADMISSION_CONFIRMED',
+              assigned_section: finalSection,
+              assigned_roll_number: `R-${nextNum}`
+            }
+          : a
+      ),
+      students: [newStudent, ...s.students],
+      invoices: [newInvoice, ...s.invoices]
+    }));
+
+    return { studentId: newStudent.id, admissionNumber: newAdmissionNo };
+  },
+
+  resetTrialData: () => {
+    set({
+      currentRole: 'PRINCIPAL',
+      tenantScope: 'akshara-trial',
+      staffMembers: [],
+      students: [],
+      admissions: [],
+      invoices: [],
+      receipts: [],
+      receiptAudits: [],
+      feeStructures: [],
+      activeFeeInstitutionFilter: 'ALL',
+      attendance: [],
+      attendanceConfig: initialAttendanceConfig,
+      detailedDailyAttendance: [],
+      periodAttendance: [],
+      marks: [],
+      exams: [],
+      subjects: [],
+      masterSubjectCatalogue: [],
+      curriculumMappings: [],
+      transportRoutes: [],
+      laboratories: [],
+      labInventory: [],
+      labMovements: [],
+      labExperiments: [],
+      academicSections: [],
+      studentTransfers: [],
+      staffDuties: [],
+      hallTickets: [],
+      feeSnapshots: [],
     });
   },
 
@@ -5374,6 +5678,8 @@ export const useDemoStore = create<DemoState>()(
       marks: initialMarks,
       exams: initialExams,
       subjects: initialSubjects,
+  masterSubjectCatalogue: initialMasterSubjects,
+  curriculumMappings: initialCurriculumMappings,
       transportRoutes: initialTransportRoutes,
       externalProviders: initialExternalProviders,
       rolePermissions: initialRolePermissions,
@@ -5427,6 +5733,8 @@ export const useDemoStore = create<DemoState>()(
         marks: state.marks,
         admissions: state.admissions,
         customFeeHeads: state.customFeeHeads,
+        masterSubjectCatalogue: state.masterSubjectCatalogue,
+        curriculumMappings: state.curriculumMappings,
       }),
     }
   )

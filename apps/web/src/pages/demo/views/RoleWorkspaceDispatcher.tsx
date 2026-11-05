@@ -18,7 +18,14 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
   currentRole,
   onNavigateTab
 }) => {
-  const { academicSections, staffDuties, exams, feeSnapshots, students, staffMembers, receipts, attendance } = useDemoStore();
+  const { academicSections, staffDuties, exams, feeSnapshots, students, staffMembers, receipts, attendance, tenantScope } = useDemoStore();
+
+  const isTrial = tenantScope === 'akshara-trial';
+  const enrolledCount = students.length;
+  const facultyCount = staffMembers.length;
+  const totalCollected = receipts.reduce((acc, r) => acc + (r.amount_paid || 0), 0);
+  const formattedCollected = totalCollected >= 100000 ? `₹${(totalCollected / 100000).toFixed(2)}L` : `₹${totalCollected.toLocaleString('en-IN')}`;
+  const pendingSnapshotsCount = feeSnapshots.filter((s: any) => s.status === 'SUBMITTED').length;
 
   // Unified Clean & Neat Enterprise Token Classes
   const cardCls = "bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4 text-slate-800";
@@ -58,53 +65,53 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 pt-5 border-t border-slate-700/80">
               <VibrantStatCard
                 title="Total Enrolled"
-                numericValue={3420}
+                numericValue={enrolledCount}
                 icon={Users}
                 theme="blue"
-                trend="98.2% Cap."
+                trend={enrolledCount === 0 ? "0 / 0 Enrolled" : `${enrolledCount} Active`}
               />
               <VibrantStatCard
                 title="Fee Realization"
-                numericValue={88.4}
+                numericValue={enrolledCount === 0 ? 0 : 88.4}
                 suffix="%"
                 decimalPlaces={1}
                 icon={DollarSign}
                 theme="emerald"
-                trend="₹4.82 Cr Rec."
+                trend={totalCollected === 0 ? "₹0 Rec." : `${formattedCollected} Rec.`}
               />
               <VibrantStatCard
                 title="Academic Pass"
-                numericValue={96.8}
+                numericValue={enrolledCount === 0 ? 0 : 96.8}
                 suffix="%"
                 decimalPlaces={1}
                 icon={Award}
                 theme="purple"
-                trend="State Rank #4"
+                trend={enrolledCount === 0 ? "Awaiting Exams" : "State Rank #4"}
               />
               <VibrantStatCard
                 title="Faculty Strength"
-                numericValue={164}
+                numericValue={facultyCount}
                 icon={UserCheck}
                 theme="teal"
-                trend="94.5% Pres."
+                trend={facultyCount === 0 ? "0 Faculty" : `${facultyCount} on Duty`}
               />
               <VibrantStatCard
                 title="Active Bus Fleet"
-                value="18 / 18"
+                value={isTrial ? "0 / 0" : "18 / 18"}
                 icon={Bus}
                 theme="indigo"
-                trend="Live GPS"
+                trend={isTrial ? "Standby" : "Live GPS"}
               />
               <VibrantStatCard
                 title="Hostel Occupancy"
-                value="284 / 300"
+                value={isTrial ? "0 / 0" : "284 / 300"}
                 icon={Building2}
                 theme="rose"
-                trend="94.6% Full"
+                trend={isTrial ? "0% Full" : "94.6% Full"}
               />
               <VibrantStatCard
                 title="Pending Approvals"
-                numericValue={3}
+                numericValue={pendingSnapshotsCount}
                 icon={Shield}
                 theme="amber"
                 trend="Sign-off Req."

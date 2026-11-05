@@ -12,6 +12,9 @@ import { RoleWorkspaceDispatcher } from './views/RoleWorkspaceDispatcher';
 import { ProfessionalSidebarNavigation } from './views/ProfessionalSidebarNavigation';
 import { ConfigurableAttendanceView } from './views/ConfigurableAttendanceView';
 import { SharedImportWizardModal, MigrationTargetModule } from '../../components/migration/SharedImportWizardModal';
+import { MasterCurriculumManagementView } from './views/MasterCurriculumManagementView';
+import { AdmissionsPipelineView } from './views/AdmissionsPipelineView';
+import { InstitutionalStockCardsView } from '../../components/dashboard/InstitutionalStockCardsView';
 import { CommandPaletteModal } from '../../components/ui/CommandPaletteModal';
 import { Student360Drawer } from '../../components/student/Student360Drawer';
 import { CreateStudentModal } from '../../components/student/CreateStudentModal';
@@ -20,7 +23,7 @@ import { CollectFeeModal } from '../../components/finance/CollectFeeModal';
 import { CreateClassModal } from '../../components/academic/CreateClassModal';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical,
   MessageSquare,
@@ -156,6 +159,7 @@ export const InteractiveDemoPage: React.FC = () => {
     publishDashboardDesignerConfig,
     rollbackDashboardDesignerConfig,
     resetDemoData,
+    resetTrialData,
     staffMembers,
     setTenantScope,
   } = useDemoStore();
@@ -167,6 +171,20 @@ export const InteractiveDemoPage: React.FC = () => {
   const [showCollectFeeModal, setShowCollectFeeModal] = useState<boolean>(false);
   const [showCreateClassModal, setShowCreateClassModal] = useState<boolean>(false);
 
+  const hasInitializedRoleRef = useRef(false);
+
+  const handleRoleSwitch = (nextRole: UserRoleType) => {
+    switchRole(nextRole);
+    setActiveTab('dashboard');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('role', nextRole);
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // noop
+    }
+  };
+
   // Synchronize tenant isolation scope: Trial starts 100% clean (0 records), Demo has 3 demo records
   useEffect(() => {
     if (tenant?.code === 'akshara-trial') {
@@ -176,19 +194,20 @@ export const InteractiveDemoPage: React.FC = () => {
     }
   }, [tenant, setTenantScope]);
 
-  // Sync role and tab from URL search parameters with authenticated session enforcement
+  // Sync role and tab from URL search parameters on initial mount without auto-shifting
   useEffect(() => {
+    if (hasInitializedRoleRef.current) return;
+    hasInitializedRoleRef.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
 
     // Rule: Resolve and enforce actual role permissions using the authenticated backend session.
-    // Never trust URL role parameters as unverified authority.
     if (isAuthenticated && user && !user.is_superadmin) {
       const userRoleCodes = (user.roles || []).map((r: any) => r.code);
       if (roleParam && userRoleCodes.includes(roleParam) && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
         switchRole(roleParam as UserRoleType);
       } else {
-        // Enforce user's actual assigned primary institutional role
         const primaryRole = (userRoleCodes[0] as UserRoleType) || 'TEACHER';
         if (ROLE_PRIVILEGES[primaryRole]) {
           switchRole(primaryRole);
@@ -202,7 +221,7 @@ export const InteractiveDemoPage: React.FC = () => {
     if (tabParam) {
       setActiveTab(tabParam);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.id]);
 
   // Real ERP API Synchronization Hook (Phase D)
   useEffect(() => {
@@ -619,11 +638,7 @@ export const InteractiveDemoPage: React.FC = () => {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Simulate Role:</span>
             <select
               value={currentRole}
-              onChange={(e) => {
-                const nextRole = e.target.value as UserRoleType;
-                switchRole(nextRole);
-                setActiveTab('dashboard');
-              }}
+              onChange={(e) => handleRoleSwitch(e.target.value as UserRoleType)}
               className="bg-slate-50 border border-slate-300 text-xs font-bold text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-xs"
             >
               <option value="CHAIRMAN_DIRECTOR">🏛️ Chairman / Director (Institution Super Admin)</option>
@@ -659,14 +674,25 @@ export const InteractiveDemoPage: React.FC = () => {
               </kbd>
             </button>
 
-            <button
-              onClick={resetDemoData}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 border border-slate-300 transition-colors cursor-pointer shadow-xs"
-              title="Reset sandbox data to default"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Data
-            </button>
+            {tenant?.code === 'akshara-trial' ? (
+              <button
+                onClick={resetTrialData}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 flex items-center gap-1.5 border border-rose-300 transition-colors cursor-pointer shadow-xs"
+                title="Wipe trial data to 0 records for fresh pilot data entry"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Pilot (0 Records)
+              </button>
+            ) : (
+              <button
+                onClick={resetDemoData}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 border border-slate-300 transition-colors cursor-pointer shadow-xs"
+                title="Reset sandbox data to default"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Demo Data
+              </button>
+            )}
 
             <a
               href="/login"
@@ -861,46 +887,12 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                /* Institutional Operations Summary for Ordinary Roles */
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-blue-600" />
-                        Campus Operations & Academic Live Highlights
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Term 1 (2026-2027) • Affiliated with CBSE & Karnataka Pre-University Board
-                      </p>
-                    </div>
-                    <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-bold">
-                      Session Active • All Streams Operating
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      <p className="text-slate-500 font-medium">Class Attendance Today</p>
-                      <p className="text-lg font-bold text-emerald-600 mt-1">96.5%</p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">1,348 of 1,396 students present</p>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      <p className="text-slate-500 font-medium">Term 1 Fee Realisation</p>
-                      <p className="text-lg font-bold text-blue-600 mt-1">₹85.4 Lakhs</p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">77.6% of ₹1.10 Cr target collected</p>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      <p className="text-slate-500 font-medium">Ongoing Exam Cycles</p>
-                      <p className="text-lg font-bold text-amber-600 mt-1">4 Batches Active</p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">NEET Foundation & Term Tests</p>
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      <p className="text-slate-500 font-medium">GPS Transport Tracking</p>
-                      <p className="text-lg font-bold text-teal-600 mt-1">8 Buses on Route</p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">Live geo-telemetry broadcasting</p>
-                    </div>
-                  </div>
-                </div>
+                /* Institutional 5-Pillar Stock Cards Dashboard View */
+                <InstitutionalStockCardsView
+                  onNavigateTab={(tabId) => setActiveTab(tabId)}
+                  onOpenCreateStudent={() => setShowCreateStudentModal(true)}
+                  onOpenCollectFee={() => setShowCollectFeeModal(true)}
+                />
               )}
             </div>
           )}
@@ -1341,14 +1333,14 @@ export const InteractiveDemoPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('hall-tickets')}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
                   >
                     <QrCode className="w-3.5 h-3.5" />
                     Hall Tickets
                   </button>
                   <button
                     onClick={() => setActiveTab('notice-board')}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors shadow-sm cursor-pointer flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
                   >
                     <Award className="w-3.5 h-3.5" />
                     Notice Board
@@ -1366,8 +1358,8 @@ export const InteractiveDemoPage: React.FC = () => {
               {syncFeedback && (
                 <div className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
                   syncFeedback.status === 'APPLIED'
-                    ? 'bg-emerald-950/80 text-emerald-200 border-emerald-800'
-                    : 'bg-amber-950/80 text-amber-200 border-amber-800'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : 'bg-amber-50 text-amber-800 border-amber-300'
                 }`}>
                   <span>{syncFeedback.message}</span>
                   <span className="font-mono text-[10px] uppercase font-bold">{syncFeedback.status}</span>
@@ -1376,30 +1368,30 @@ export const InteractiveDemoPage: React.FC = () => {
 
               {/* Category & Delivery Mode Filters */}
               <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-xs text-xs">
-                <span className="font-bold text-slate-400 uppercase text-[11px]">Category:</span>
+                <span className="font-bold text-slate-500 uppercase text-[11px]">Category:</span>
                 {(['ALL', 'Weekly Test', 'Unit Test', 'Half-Yearly', 'NEET Foundation', 'Model Exam'] as const).map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setExamCategoryFilter(cat)}
-                    className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                       examCategoryFilter === cat
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
                     }`}
                   >
                     {cat}
                   </button>
                 ))}
 
-                <span className="ml-3 font-bold text-slate-400 uppercase text-[11px]">Mode:</span>
+                <span className="ml-3 font-bold text-slate-500 uppercase text-[11px]">Mode:</span>
                 {(['ALL', 'Offline (Paper-based)', 'Internal Online', 'External Provider Adapter'] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => setExamModeFilter(m)}
-                    className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
                       examModeFilter === m
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
                     }`}
                   >
                     {m}
@@ -1419,10 +1411,10 @@ export const InteractiveDemoPage: React.FC = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-base font-black text-slate-900">{exam.title}</h3>
-                            <span className="text-[10px] bg-blue-950 text-blue-300 border border-blue-800 px-2 py-0.5 rounded font-mono font-bold">
+                            <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-mono font-bold">
                               {exam.category}
                             </span>
-                            <span className="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded font-mono">
+                            <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded font-mono font-bold">
                               {exam.exam_mode}
                             </span>
                           </div>
@@ -1433,10 +1425,10 @@ export const InteractiveDemoPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg font-mono ${
                             exam.status === 'PUBLISHED'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
                               : exam.status === 'PRINCIPAL_APPROVED'
-                              ? 'bg-blue-950 text-blue-300 border border-blue-800'
-                              : 'bg-amber-950 text-amber-300 border border-amber-800'
+                              ? 'bg-blue-50 text-blue-800 border border-blue-300'
+                              : 'bg-amber-50 text-amber-800 border border-amber-300'
                           }`}>
                             Status: {exam.status.replace('_', ' ')}
                           </span>
@@ -1444,19 +1436,19 @@ export const InteractiveDemoPage: React.FC = () => {
                       </div>
 
                       {/* 4-Stage Approval Workflow Visualizer */}
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200 space-y-2">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
                           Strict 4-Stage Academic Result Approval Workflow:
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
                           {/* Stage 1 */}
                           <div className={`p-2.5 rounded-lg border ${
                             exam.status !== 'SCHEDULED'
-                              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                              : 'bg-white border-slate-200 text-slate-700'
                           }`}>
-                            <p className="font-bold">Stage 1: Marks Entry</p>
-                            <p className="text-[10px] text-slate-400">Teacher marks entry</p>
+                            <p className="font-bold text-slate-900">Stage 1: Marks Entry</p>
+                            <p className="text-[10px] text-slate-500">Teacher marks entry</p>
                             {exam.status === 'SCHEDULED' && (
                               <button
                                 onClick={() => submitMarksAsTeacher(exam.id)}
@@ -1470,11 +1462,11 @@ export const InteractiveDemoPage: React.FC = () => {
                           {/* Stage 2 */}
                           <div className={`p-2.5 rounded-lg border ${
                             ['CONTROLLER_VERIFIED', 'PRINCIPAL_APPROVED', 'PUBLISHED'].includes(exam.status)
-                              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                              : 'bg-white border-slate-200 text-slate-700'
                           }`}>
-                            <p className="font-bold">Stage 2: Exam Controller</p>
-                            <p className="text-[10px] text-slate-400">Audit missing marks</p>
+                            <p className="font-bold text-slate-900">Stage 2: Exam Controller</p>
+                            <p className="text-[10px] text-slate-500">Audit missing marks</p>
                             {exam.status === 'MARKS_ENTRY' && (
                               <button
                                 onClick={() => verifyExamAsController(exam.id)}
@@ -1488,11 +1480,11 @@ export const InteractiveDemoPage: React.FC = () => {
                           {/* Stage 3 */}
                           <div className={`p-2.5 rounded-lg border ${
                             ['PRINCIPAL_APPROVED', 'PUBLISHED'].includes(exam.status)
-                              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                              : 'bg-white border-slate-200 text-slate-700'
                           }`}>
-                            <p className="font-bold">Stage 3: Principal Seal</p>
-                            <p className="text-[10px] text-slate-400">Official approval</p>
+                            <p className="font-bold text-slate-900">Stage 3: Principal Seal</p>
+                            <p className="text-[10px] text-slate-500">Official approval</p>
                             {exam.status === 'CONTROLLER_VERIFIED' && (
                               <button
                                 onClick={() => approveExamAsPrincipal(exam.id)}
@@ -1506,11 +1498,11 @@ export const InteractiveDemoPage: React.FC = () => {
                           {/* Stage 4 */}
                           <div className={`p-2.5 rounded-lg border ${
                             exam.status === 'PUBLISHED'
-                              ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                              : 'bg-slate-800 border-slate-700 text-slate-400'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                              : 'bg-white border-slate-200 text-slate-700'
                           }`}>
-                            <p className="font-bold">Stage 4: Publication</p>
-                            <p className="text-[10px] text-slate-400">Parent & Student Portal</p>
+                            <p className="font-bold text-slate-900">Stage 4: Publication</p>
+                            <p className="text-[10px] text-slate-500">Parent & Student Portal</p>
                             {exam.status === 'PRINCIPAL_APPROVED' && (
                               <button
                                 onClick={() => publishExamResults(exam.id)}
@@ -1548,7 +1540,11 @@ export const InteractiveDemoPage: React.FC = () => {
                                 <td className="p-2.5 text-slate-800 font-medium">{sch.invigilator}</td>
                                 <td className="p-2.5 font-mono text-slate-800 font-bold">{sch.theory_max}</td>
                                 <td className="p-2.5 font-mono text-slate-800 font-bold">{sch.practical_max}</td>
-                                <td className="p-2.5 font-mono text-amber-400 font-bold">{sch.passing_marks}</td>
+                                <td className="p-2.5">
+                                  <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-bold text-xs inline-block">
+                                    {sch.passing_marks}
+                                  </span>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -2001,104 +1997,10 @@ export const InteractiveDemoPage: React.FC = () => {
           )}
 
           {/* ================================================================= */}
-          {/* TAB 6: ACADEMIC CURRICULUM & SUBJECT MANAGEMENT */}
+          {/* TAB 6: ACADEMIC CURRICULUM & SUBJECT MANAGEMENT (3-TAB ARCHITECTURE) */}
           {/* ================================================================= */}
           {activeTab === 'academics' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-900">Academic Structure & Subject Management</h1>
-                  <p className="text-xs text-slate-600 mt-1">
-                    Schools, PU Colleges & Degree Colleges Curriculum • Visual Priority Reordering & Safe Archival
-                  </p>
-                </div>
-                <button
-                  onClick={() => alert('New subject creator ready for Institution Admin.')}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
-                >
-                  + Add Subject to Curriculum
-                </button>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Configured Subjects ({subjects.filter(s => !s.is_archived).length} Active)
-                  </h3>
-                  <span className="text-[11px] text-slate-600">
-                    Use Up/Down controls to reorder subjects in syllabus & timetable
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {subjects
-                    .filter(s => !s.is_archived)
-                    .map((subj, idx) => (
-                      <div
-                        key={subj.id}
-                        className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* Reordering Controls */}
-                          <div className="flex flex-col gap-1">
-                            <button
-                              disabled={idx === 0}
-                              onClick={() => reorderSubjects(idx, idx - 1)}
-                              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer"
-                              title="Move Up in Curriculum Priority"
-                            >
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              disabled={idx === subjects.length - 1}
-                              onClick={() => reorderSubjects(idx, idx + 1)}
-                              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 cursor-pointer"
-                              title="Move Down in Curriculum Priority"
-                            >
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] bg-slate-800 text-blue-300 px-2 py-0.5 rounded font-bold">
-                                {subj.code}
-                              </span>
-                              <h4 className="font-bold text-slate-900 text-sm">{subj.name}</h4>
-                              <span className="text-[10px] bg-blue-950 text-blue-300 px-2 py-0.5 rounded font-semibold">
-                                {subj.institution_level}
-                              </span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
-                                subj.is_compulsory ? 'bg-amber-950 text-amber-300' : 'bg-slate-800 text-slate-400'
-                              }`}>
-                                {subj.is_compulsory ? 'Compulsory' : 'Elective'}
-                              </span>
-                            </div>
-                            <p className="text-slate-600 text-xs mt-1">
-                              Class: {subj.target_class} {subj.stream_or_comb ? `(${subj.stream_or_comb})` : ''} • Assigned Faculty: {subj.assigned_teacher}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right font-mono">
-                            <span className="text-slate-400 block text-[10px]">Marks Split</span>
-                            <span className="text-slate-900 font-bold">{subj.theory_marks} Theory / {subj.practical_marks} Pract.</span>
-                          </div>
-
-                          <button
-                            onClick={() => archiveSubject(subj.id)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 hover:text-rose-300 text-slate-400 text-xs font-semibold transition-colors cursor-pointer"
-                            title="Archives subject while preserving historical marks"
-                          >
-                            Archive Subject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
+            <MasterCurriculumManagementView />
           )}
 
           {/* ================================================================= */}
@@ -4444,46 +4346,13 @@ export const InteractiveDemoPage: React.FC = () => {
           )}
 
           {/* ================================================================= */}
-          {/* TAB 10: ADMISSIONS */}
+          {/* TAB 10: ADMISSIONS PIPELINE (TRACKING & ACTIVATION) */}
           {/* ================================================================= */}
           {activeTab === 'admissions' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-900">Admissions Pipeline</h1>
-                  <p className="text-xs text-slate-600 mt-1">Application Ingestion • Verification • Approval</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {admissions.map((adm) => (
-                  <div key={adm.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] bg-slate-800 text-blue-300 px-2 py-0.5 rounded font-bold">
-                          {adm.application_number}
-                        </span>
-                        <h4 className="font-bold text-slate-900 text-sm">{adm.applicant_name}</h4>
-                        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                          {adm.target_class} ({adm.level})
-                        </span>
-                      </div>
-                      <p className="text-slate-600 text-xs mt-1">
-                        Parent: {adm.parent_name} • Phone: {adm.parent_phone} • Submitted: {adm.submission_date}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        adm.status === 'APPROVED' ? 'bg-emerald-950 text-emerald-300' : 'bg-amber-950 text-amber-300'
-                      }`}>
-                        {adm.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <AdmissionsPipelineView
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              onOpenStudent360={handleOpenStudent360}
+            />
           )}
 
           {/* ================================================================= */}
