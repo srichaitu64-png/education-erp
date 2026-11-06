@@ -101,6 +101,8 @@ async def test_mfa_setup_verify_and_challenge_flow(
     # Verify in database
     stmt_user = select(User).where(User.email == test_admin_email)
     user = (await db_session.execute(stmt_user)).scalars().first()
+    assert user is not None
+    await db_session.refresh(user)
     assert user.mfa_enabled is True
     assert user.mfa_secret == secret
 
