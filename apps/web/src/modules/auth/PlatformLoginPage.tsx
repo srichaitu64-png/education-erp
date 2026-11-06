@@ -10,7 +10,8 @@ import {
   Server,
   AlertCircle,
   Building2
-} from 'lucide-react';import { api } from '../../services/api';
+} from 'lucide-react';
+import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useDemoStore } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
@@ -20,7 +21,6 @@ export const PlatformLoginPage: React.FC = () => {
   const { login } = useAuthStore();
   const { switchRole } = useDemoStore();
 
-  const [selectedRole, setSelectedRole] = useState<'SUPER_ADMIN' | 'BACKUP_SUPER_ADMIN' | 'DEVELOPER'>('SUPER_ADMIN');
   const [usernameOrId, setUsernameOrId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -125,25 +125,11 @@ export const PlatformLoginPage: React.FC = () => {
 
         {/* Platform Sign In Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* 1. Platform Role */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Platform Administrative Role
-            </label>
-            <div className="relative">
-              <select
-                value={selectedRole}
-                onChange={(e) => handleInputChange(setSelectedRole as any, e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
-              >
-                <option value="SUPER_ADMIN">🌐 Platform Super Admin (Full SaaS Control)</option>
-                <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin (Security & Recovery)</option>
-                <option value="DEVELOPER">💻 Platform Developer (Telemetry & Infrastructure)</option>
-              </select>
-            </div>
+          <div className="rounded-xl border border-purple-900/50 bg-purple-950/30 px-3.5 py-3 text-xs text-purple-200">
+            Platform Super Administrator access is granted by the server from your assigned account privileges.
           </div>
 
-          {/* 2. Identifier */}
+          {/* 1. Identifier */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
               Root Administrator Email
@@ -161,7 +147,7 @@ export const PlatformLoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Password */}
+          {/* 2. Password */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
