@@ -12,6 +12,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://erp_app:${ERP_APP_PASSWORD:?Set ERP_APP_PASSWORD}@db:5432/${POSTGRES_DB:?Set POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:?Set a unique, random SECRET_KEY (at least 32 characters)}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
       INITIAL_SUPERADMIN_PASSWORD: ${INITIAL_SUPERADMIN_PASSWORD:-}
     depends_on:
       db:
