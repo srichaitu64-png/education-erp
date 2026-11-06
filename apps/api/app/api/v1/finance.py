@@ -696,35 +696,9 @@ async def handle_payment_gateway_webhook(
     # have been verified. This preserves RLS without a platform-wide bypass.
     await db.set_rls_context(payload.tenant_id, is_superadmin=False)
 
-    # Idempotency: a gateway retry for an already-applied transaction must not
-    # extend the subscription a second time.
-    duplicate_result = await db.execute(
-        select(SubscriptionAuditLog).where(
-            SubscriptionAuditLog.tenant_id == payload.tenant_id,
-            SubscriptionAuditLog.action == "PAYMENT_RECEIVED_RENEWED",
-            SubscriptionAuditLog.details["transaction_id"].as_string() == payload.transaction_id,
-        )
-    )
-    duplicate_event = duplicate_result.scalars().first()
-    if duplicate_event:
-        existing_sub = (
-            await db.execute(
-                select(Subscription)
-                .where(Subscription.tenant_id == payload.tenant_id)
-                .order_by(Subscription.created_at.desc())
-            )
-        ).scalars().first()
-        return {
-            "status": "SUCCESS",
-            "event": payload.event,
-            "tenant_id": str(payload.tenant_id),
-            "subscription_status": existing_sub.status if existing_sub else "active",
-            "valid_until": existing_sub.ends_at.isoformat() if existing_sub and existing_sub.ends_at else None,
-            "transaction_id": payload.transaction_id,
-            "duplicate": True,
-        }
-
-    # Locate the most recent subscription within the verified tenant scope.
+    # Lock the subscription row before checking the gateway transaction. This
+    # serializes concurrent retries for the same tenant so two webhook workers
+    # cannot both pass the duplicate check and extend the term twice.
     stmt = (
         select(Subscription)
         .where(Subscription.tenant_id == payload.tenant_id)
@@ -733,9 +707,26 @@ async def handle_payment_gateway_webhook(
     )
     res = await db.execute(stmt)
     sub = res.scalars().first()
-
     if not sub:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription record not found for tenant")
+
+    duplicate_result = await db.execute(
+        select(SubscriptionAuditLog).where(
+            SubscriptionAuditLog.tenant_id == payload.tenant_id,
+            SubscriptionAuditLog.action == "PAYMENT_RECEIVED_RENEWED",
+            SubscriptionAuditLog.details["transaction_id"].as_string() == payload.transaction_id,
+        )
+    )
+    if duplicate_result.scalars().first():
+        return {
+            "status": "SUCCESS",
+            "event": payload.event,
+            "tenant_id": str(payload.tenant_id),
+            "subscription_status": sub.status,
+            "valid_until": sub.ends_at.isoformat() if sub.ends_at else None,
+            "transaction_id": payload.transaction_id,
+            "duplicate": True,
+        }
 
     now = datetime.now(timezone.utc)
     old_status = sub.status
