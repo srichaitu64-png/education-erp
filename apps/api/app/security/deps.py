@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -71,6 +71,42 @@ async def get_current_user(
         except ValueError:
             pass
 
+    # Load the global user row first. get_db() has already opened its transaction,
+    # so setting the ContextVar alone is too late to configure PostgreSQL RLS.
+    user_result = await db.execute(select(User).where(User.id == user_uuid))
+    user = user_result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+
+    # Establish RLS on THIS already-open transaction before loading tenant-owned
+    # role assignments or any tenant data. The tenant claim is signed by our JWT.
+    token_tenant = payload.get("tenant_id")
+    if token_tenant:
+        try:
+            tenant_uuid = uuid.UUID(str(token_tenant))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant claim")
+        if user.is_superadmin:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant scope for platform account")
+        set_current_tenant_id(tenant_uuid)
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant_uuid)}
+        )
+        await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+    else:
+        set_current_tenant_id(None)
+        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+        # Only elevate the RLS transaction after checking the persisted account.
+        if user.is_superadmin:
+            await db.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+        else:
+            await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+
+    # Reload role assignments only after the RLS context is correct.
     stmt = (
         select(User)
         .options(
@@ -85,12 +121,16 @@ async def get_current_user(
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+
+    if token_tenant and not any(ur.tenant_id == tenant_uuid for ur in user.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The authenticated account is not assigned to this institution."
+        )
 
     # Mandatory first-login password enforcement gate
     if user.must_change_password:
-        path = request.url.path if request else ""
+        request_path = request.url.path if request else ""
         allowed_first_login_paths = {
             "/api/v1/auth/password/first-login-setup",
             "/api/v1/auth/password/change",
@@ -98,20 +138,11 @@ async def get_current_user(
             "/api/v1/auth/logout",
             "/api/v1/auth/security/overview"
         }
-        if not any(path.startswith(p) for p in allowed_first_login_paths):
+        if not any(request_path.startswith(p) for p in allowed_first_login_paths):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Password setup required: You must establish a permanent password before accessing application workspace."
             )
-
-    # Set tenant context if token has an authenticated tenant
-    token_tenant = payload.get("tenant_id")
-    if token_tenant:
-        try:
-            t_uuid = uuid.UUID(token_tenant)
-            set_current_tenant_id(t_uuid)
-        except ValueError:
-            pass
 
     return user
 
