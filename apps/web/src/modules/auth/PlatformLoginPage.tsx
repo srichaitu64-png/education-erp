@@ -9,13 +9,8 @@ import {
   ArrowRight,
   Server,
   AlertCircle,
-  Sparkles,
-  RotateCcw,
-  Building2,
-  CheckCircle2,
-  Layers
-} from 'lucide-react';
-import { api } from '../../services/api';
+  Building2
+} from 'lucide-react';import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { useDemoStore } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
