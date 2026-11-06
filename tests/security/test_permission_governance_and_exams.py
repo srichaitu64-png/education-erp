@@ -32,6 +32,16 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
         is_superadmin=False
     )
     db_session.add(inst_user)
+    await db_session.flush()
+    inst_role = Role(
+        name="Institution Principal",
+        code=f"TEST_PRINCIPAL_{uuid.uuid4().hex[:8]}",
+        tenant_id=tenant.id,
+        is_system=False,
+    )
+    db_session.add(inst_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=inst_user.id, role_id=inst_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
