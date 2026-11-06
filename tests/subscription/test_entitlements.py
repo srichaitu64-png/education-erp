@@ -59,11 +59,13 @@ async def test_feature_locking_engine_enforcement(client, db_session: AsyncSessi
         ends_at=now + timedelta(days=365)
     )
     db_session.add(sub)
+    tenant_id = tenant.id
+    user_id = user.id
     await db_session.commit()
 
     token = create_access_token(
-        subject=str(user.id),
-        tenant_id=str(tenant.id),
+        subject=str(user_id),
+        tenant_id=str(tenant_id),
         is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
@@ -145,7 +147,7 @@ async def test_institution_specific_feature_override(client, db_session: AsyncSe
     # Super Admin applies an ALLOW override for 30 days
     entitlement_svc = EntitlementService(db_session)
     await entitlement_svc.apply_feature_override(
-        tenant_id=tenant.id,
+        tenant_id=tenant_id,
         feature_id="analytics.ai_reports",
         override_status="ALLOW",
         reason="Special 30-Day Pilot Evaluation",
