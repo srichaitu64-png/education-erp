@@ -125,7 +125,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
     if (!targetSubject) return;
 
     try {
-      await api.post('/academic/curriculum/map', {
+      const response = await api.post('/academic/curriculum/map', {
         academic_year: '2026-2027',
         institution_level: selectedLevel,
         class_name: selectedClass,
@@ -136,31 +136,35 @@ export const MasterCurriculumManagementView: React.FC = () => {
         has_practical: targetSubject.has_practical,
         theory_max_marks: targetSubject.default_theory_max,
         practical_max_marks: targetSubject.default_practical_max,
+        total_max_marks: targetSubject.default_theory_max + targetSubject.default_practical_max,
         theory_pass_marks: 35,
         practical_pass_marks: 0,
         total_pass_marks: 35,
         assigned_teacher_name: staffMembers.length > 0 ? staffMembers[0].name : 'Unassigned',
       });
-    } catch (err) {
-      console.warn('Backend mapping sync notice:', err);
+      const saved = response.data;
+      if (!saved?.id) throw new Error('Server did not return the persisted mapping ID.');
+
+      mapSubjectToClass({
+        id: String(saved.id),
+        institution_level: saved.institution_level,
+        class_name: saved.class_name,
+        stream: saved.stream,
+        academic_year: saved.academic_year,
+        subject_code: saved.subject_code,
+        subject_name: saved.subject_name,
+        category: saved.category,
+        is_compulsory: saved.is_compulsory,
+        theory_max: saved.theory_max_marks,
+        practical_max: saved.practical_max_marks,
+        passing_marks: saved.total_pass_marks,
+        assigned_teacher: saved.assigned_teacher_name || 'Unassigned',
+      });
+      setShowMapModal(false);
+    } catch (err: any) {
+      console.error('Curriculum mapping was not saved:', err);
+      window.alert(err?.response?.data?.detail || err?.message || 'Unable to save curriculum mapping.');
     }
-
-    mapSubjectToClass({
-      institution_level: selectedLevel,
-      class_name: selectedClass,
-      stream: selectedStream,
-      academic_year: '2026-2027',
-      subject_code: targetSubject.code,
-      subject_name: targetSubject.name,
-      category: targetSubject.category,
-      is_compulsory: isCompulsory,
-      theory_max: targetSubject.default_theory_max,
-      practical_max: targetSubject.default_practical_max,
-      passing_marks: targetSubject.has_practical ? 35 : 35,
-      assigned_teacher: staffMembers.length > 0 ? staffMembers[0].name : 'Unassigned',
-    });
-
-    setShowMapModal(false);
   };
 
   const handleStartEditAssessment = (mapping: CurriculumMappingItem) => {
