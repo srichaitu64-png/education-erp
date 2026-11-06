@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import create_access_token, hash_password
 from app.modules.identity.models import User
 from app.modules.tenants.models import Tenant
-from app.modules.subscriptions.models import Subscription, SubscriptionPlan, TenantFeatureOverride
+from app.modules.subscriptions.models import Subscription, SubscriptionPlan, TenantFeatureOverride, PlanFeature
 from app.modules.subscriptions.service import EntitlementService
 
 
@@ -209,3 +209,62 @@ async def test_deny_override_precedence(db_session: AsyncSession):
     assert access.is_enabled is False
     assert access.override_status == "DENY"
     assert "Administrative investigation pending" in access.lock_reason
+
+
+
+@pytest.mark.asyncio
+async def test_explicit_plan_feature_exclusion_overrides_tier_fallback(db_session: AsyncSession):
+    """An explicit PlanFeature exclusion must lock a feature even when plan tier is high enough."""
+    await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+
+    enterprise_plan = (
+        await db_session.execute(
+            select(SubscriptionPlan).where(SubscriptionPlan.code == "ENTERPRISE")
+        )
+    ).scalars().first()
+    assert enterprise_plan is not None
+
+    feature_link = (
+        await db_session.execute(
+            select(PlanFeature).where(
+                PlanFeature.plan_id == enterprise_plan.id,
+                PlanFeature.feature_id == "analytics.ai_reports",
+            )
+        )
+    ).scalars().first()
+    if feature_link is None:
+        feature_link = PlanFeature(
+            plan_id=enterprise_plan.id,
+            feature_id="analytics.ai_reports",
+            is_included=False,
+        )
+        db_session.add(feature_link)
+    else:
+        feature_link.is_included = False
+
+    tenant = Tenant(
+        name="Plan Exclusion Test Institution",
+        code=f"plan-exclusion-{uuid.uuid4().hex[:8]}",
+        institution_type="school",
+        email=f"plan-exclusion-{uuid.uuid4().hex[:8]}@example.com",
+        status="active",
+    )
+    db_session.add(tenant)
+    await db_session.flush()
+
+    now = datetime.now(timezone.utc)
+    db_session.add(Subscription(
+        tenant_id=tenant.id,
+        plan_id=enterprise_plan.id,
+        status="active",
+        billing_cycle="annual",
+        starts_at=now,
+        ends_at=now + timedelta(days=365),
+    ))
+    await db_session.commit()
+
+    access = await EntitlementService(db_session).check_feature_access(
+        tenant.id, "analytics.ai_reports"
+    )
+    assert access.is_enabled is False
+    assert "locked" in (access.lock_reason or "").lower()
