@@ -9,6 +9,22 @@ from app.core.security import create_access_token, hash_password
 
 
 @pytest.mark.asyncio
+async def test_api_test_database_role_cannot_bypass_rls(db_session: AsyncSession):
+    """The API/test connection must not be a PostgreSQL superuser or BYPASSRLS role."""
+    row = (
+        await db_session.execute(
+            text("""
+                SELECT r.rolsuper, r.rolbypassrls
+                FROM pg_catalog.pg_roles r
+                WHERE r.rolname = current_user
+            """)
+        )
+    ).one()
+    assert row.rolsuper is False
+    assert row.rolbypassrls is False
+
+
+@pytest.mark.asyncio
 async def test_database_row_level_security_isolation(db_session: AsyncSession):
     """
     MANDATORY SECURITY TEST:
