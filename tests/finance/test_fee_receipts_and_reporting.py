@@ -1,14 +1,27 @@
 import uuid
 import pytest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
 from app.modules.tenants.models import Tenant, Campus
-from app.modules.identity.models import User, Role, Permission, UserRole
+from app.modules.identity.models import User, Role, Permission, UserRole, PlatformSupportAccessSession
 from app.modules.finance.models import FeeStructure, FeeInvoice, FeePayment, FeeReceipt, ReceiptAuditLog
+
+
+async def create_approved_support_session(db_session: AsyncSession, admin_id: uuid.UUID, tenant_id: uuid.UUID) -> None:
+    db_session.add(PlatformSupportAccessSession(
+        ticket_number=f"TEST-SUPPORT-{uuid.uuid4().hex[:12]}",
+        tenant_id=tenant_id,
+        requested_by_platform_user_id=admin_id,
+        reason="Automated integration test with explicit tenant support approval",
+        scope="FULL_ACCESS",
+        status="APPROVED",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    await db_session.commit()
 
 
 @pytest.mark.asyncio
@@ -28,6 +41,7 @@ async def test_two_institutions_flexible_fee_structures(client: httpx.AsyncClien
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
     assert super_admin is not None
+    await create_approved_support_session(db_session, super_admin.id, pilot_tenant.id)
 
     token = create_access_token(
         subject=str(super_admin.id), tenant_id=str(pilot_tenant.id), is_superadmin=True
@@ -99,6 +113,7 @@ async def test_fee_collection_and_automatic_receipt_generation(client: httpx.Asy
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
+    await create_approved_support_session(db_session, super_admin.id, tenant.id)
 
     token = create_access_token(
         subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
