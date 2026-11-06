@@ -115,6 +115,7 @@ async def login(
 
     # Resolve an explicitly selected institution before loading tenant-scoped role rows.
     # Global platform roles remain visible when no institution is selected.
+    login_tenant = None
     if req.tenant_code:
         requested_code = req.tenant_code.strip().lower()
         target_code = "our-school-demo" if requested_code == "akshara" else requested_code
@@ -216,6 +217,7 @@ async def login(
     if getattr(user, "mfa_enabled", False):
         challenge_token = create_access_token(
             subject=str(user.id),
+            tenant_id=str(login_tenant.id) if login_tenant else None,
             expires_delta=timedelta(minutes=5),
             extra_claims={"type": "mfa_challenge"}
         )
@@ -1032,8 +1034,6 @@ async def admin_reset_user_password(
     - Enforces must_change_password on next sign-in.
     - Records immutable audit log with acting administrator identity and reason.
     """
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
     stmt = (
         select(User)
         .options(selectinload(User.roles).selectinload(UserRole.role))
@@ -1261,7 +1261,10 @@ async def autocomplete_users_by_role(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
 
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant.id)}
+    )
 
     stmt = (
         select(User)
@@ -1376,7 +1379,18 @@ async def complete_mfa_login(
         )
 
     user_id = payload_jwt.get("sub")
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    challenge_tenant = payload_jwt.get("tenant_id")
+    if challenge_tenant:
+        try:
+            challenge_tenant_id = uuid.UUID(challenge_tenant)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant in MFA challenge.")
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(challenge_tenant_id)}
+        )
+    else:
+        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
 
     stmt = (
         select(User)
