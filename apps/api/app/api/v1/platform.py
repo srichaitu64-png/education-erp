@@ -691,12 +691,16 @@ async def list_tenants(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: List all registered institutions."""
-    stmt = select(Tenant).options(selectinload(Tenant.campuses)).order_by(Tenant.created_at.desc())
+    stmt = select(Tenant).order_by(Tenant.created_at.desc())
     res = await db.execute(stmt)
     tenants = res.scalars().all()
 
     out = []
     for t in tenants:
+        await db.set_rls_context(t.id, is_superadmin=False)
+        tenant_campuses = (
+            await db.execute(select(Campus).where(Campus.tenant_id == t.id))
+        ).scalars().all()
         out.append(
             TenantOut(
                 id=t.id,
@@ -715,9 +719,10 @@ async def list_tenants(
                 secondary_color=t.secondary_color,
                 subdomain=t.subdomain,
                 custom_domain=t.custom_domain,
-                campuses=[CampusOut.model_validate(c) for c in t.campuses]
+                campuses=[CampusOut.model_validate(c) for c in tenant_campuses]
             )
         )
+    await db.set_rls_context(None, is_superadmin=False)
     return out
 
 
@@ -776,6 +781,10 @@ async def apply_feature_override(
     Super Admin: Unlock or Lock a specific feature for a single institution
     without altering the global plan. Supports ALLOW and DENY overrides.
     """
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == req.tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+    await db.set_rls_context(req.tenant_id, is_superadmin=False)
     entitlement_svc = EntitlementService(db)
     override = await entitlement_svc.apply_feature_override(
         tenant_id=req.tenant_id,
@@ -800,6 +809,10 @@ async def revoke_feature_override(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: Revoke an institution feature override."""
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == req.tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+    await db.set_rls_context(req.tenant_id, is_superadmin=False)
     entitlement_svc = EntitlementService(db)
     success = await entitlement_svc.revoke_feature_override(
         tenant_id=req.tenant_id,
@@ -1129,18 +1142,26 @@ async def get_platform_metrics(
     paid_count = sum(1 for t in tenants if t.status == "active" and t.code not in ("our-school-demo", "akshara-trial"))
     active_count = len(tenants)
 
-    # Exclude non-paying demo and trial tenants from commercial MRR
-    non_paying_ids = [t.id for t in tenants if t.code in ("our-school-demo", "akshara-trial") or t.status in ("active_demo", "trial", "trial_active")]
-    stmt_sub = (
-        select(Subscription)
-        .options(selectinload(Subscription.plan))
-        .where(
-            Subscription.status == "active",
-            Subscription.tenant_id.notin_(non_paying_ids) if non_paying_ids else True
-        )
-    )
-    res_sub = await db.execute(stmt_sub)
-    paid_subs = res_sub.scalars().all()
+    # Subscription rows are tenant-scoped by RLS. Read each tenant's
+    # subscription under that tenant's scope instead of using a global bypass.
+    non_paying_ids = {
+        t.id for t in tenants
+        if t.code in ("our-school-demo", "akshara-trial")
+        or t.status in ("active_demo", "trial", "trial_active")
+    }
+    paid_subs = []
+    for tenant in tenants:
+        await db.set_rls_context(tenant.id, is_superadmin=False)
+        tenant_subs = (
+            await db.execute(
+                select(Subscription)
+                .options(selectinload(Subscription.plan))
+                .where(Subscription.tenant_id == tenant.id, Subscription.status == "active")
+            )
+        ).scalars().all()
+        if tenant.id not in non_paying_ids:
+            paid_subs.extend(tenant_subs)
+    await db.set_rls_context(None, is_superadmin=False)
     calculated_mrr = float(sum(s.plan.price_monthly_inr for s in paid_subs if s.plan)) if paid_subs else 0.0
 
     return {
