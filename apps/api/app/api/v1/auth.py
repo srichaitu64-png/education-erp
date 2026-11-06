@@ -234,11 +234,7 @@ async def login(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found.")
 
         # Apply tenant scope before querying UserRole/Role/Permission (RLS protected).
-        set_current_tenant_id(tenant.id)
-        await db.execute(
-            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-            {"tenant_id": str(tenant.id)}
-        )
+        await db.set_rls_context(tenant.id, is_superadmin=False)
         scoped_user_result = await db.execute(
             select(User)
             .options(
