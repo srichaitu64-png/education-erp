@@ -55,7 +55,34 @@ EOF
       "${PG_BIN_DIR}/createdb" -h 127.0.0.1 -p "${PG_PORT}" -U "${PG_USER}" education_erp_dev
     "${PG_BIN_DIR}/psql" -h 127.0.0.1 -p "${PG_PORT}" -U "${PG_USER}" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'education_erp_test'" | grep -q 1 || \
       "${PG_BIN_DIR}/createdb" -h 127.0.0.1 -p "${PG_PORT}" -U "${PG_USER}" education_erp_test
-    echo "PostgreSQL running and databases (education_erp_dev, education_erp_test) ready."
+
+    # Ensure application role (erp_app) and test admin role (erp_test_admin) exist
+    "${PG_BIN_DIR}/psql" -h 127.0.0.1 -p "${PG_PORT}" -U "${PG_USER}" -d postgres -c "
+      DO \$\$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'erp_app') THEN
+          CREATE ROLE erp_app WITH LOGIN PASSWORD 'erp_app_pass' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+        ELSE
+          ALTER ROLE erp_app WITH NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+        END IF;
+
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'erp_test_admin') THEN
+          CREATE ROLE erp_test_admin WITH LOGIN PASSWORD 'erp_test_admin_pass' NOSUPERUSER CREATEDB NOCREATEROLE NOBYPASSRLS;
+        ELSE
+          ALTER ROLE erp_test_admin WITH NOSUPERUSER CREATEDB NOCREATEROLE NOBYPASSRLS;
+        END IF;
+        GRANT erp_app TO erp_test_admin;
+      END
+      \$\$;
+      ALTER DATABASE education_erp_test OWNER TO erp_test_admin;
+      GRANT ALL PRIVILEGES ON DATABASE education_erp_dev TO erp_app;
+    "
+    "${PG_BIN_DIR}/psql" -h 127.0.0.1 -p "${PG_PORT}" -U "${PG_USER}" -d education_erp_test -c "
+      ALTER SCHEMA public OWNER TO erp_test_admin;
+      GRANT ALL ON SCHEMA public TO erp_test_admin;
+      GRANT ALL ON SCHEMA public TO erp_app;
+    "
+    echo "PostgreSQL running, databases (education_erp_dev, education_erp_test) and roles (erp_app, erp_test_admin) ready."
     ;;
 
   stop)

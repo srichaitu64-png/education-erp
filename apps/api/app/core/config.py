@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     SYNC_DATABASE_URL: str = "postgresql+psycopg2://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     TEST_DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_test"
-    TEST_ADMIN_DATABASE_URL: Optional[str] = None
+    TEST_ADMIN_DATABASE_URL: Optional[str] = "postgresql+asyncpg://erp_test_admin:erp_test_admin_pass@127.0.0.1:5433/education_erp_test"
 
     # Domain routing
     BASE_DOMAIN: str = "erp.local"
@@ -53,6 +53,41 @@ class Settings(BaseSettings):
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
+        return v
+
+    @field_validator("TEST_ADMIN_DATABASE_URL")
+    @classmethod
+    def validate_test_admin_database_url(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
+        env = info.data.get("ENVIRONMENT", "development")
+        if env == "testing":
+            if not v:
+                raise ValueError(
+                    "Missing TEST_ADMIN_DATABASE_URL: In testing environment, a dedicated test administrator "
+                    "database URL is mandatory and must not fall back to development or production databases."
+                )
+            clean_url = v.split("?")[0]
+            db_name = clean_url.rstrip("/").split("/")[-1]
+            disposable_allowlist = {"education_erp_test", "education_erp_mig_cycle_test", "education_erp_alembic_check_test"}
+            if db_name in ("education_erp_dev", "education_erp_prod", "education_erp") or db_name not in disposable_allowlist:
+                raise ValueError(
+                    f"CRITICAL SAFETY VIOLATION: TEST_ADMIN_DATABASE_URL targets non-disposable database '{db_name}'. "
+                    f"Test executions are restricted exclusively to disposable databases: {disposable_allowlist}"
+                )
+        return v
+
+    @field_validator("TEST_DATABASE_URL")
+    @classmethod
+    def validate_test_database_url(cls, v: str, info: ValidationInfo) -> str:
+        env = info.data.get("ENVIRONMENT", "development")
+        if env == "testing":
+            clean_url = v.split("?")[0]
+            db_name = clean_url.rstrip("/").split("/")[-1]
+            disposable_allowlist = {"education_erp_test", "education_erp_mig_cycle_test", "education_erp_alembic_check_test"}
+            if db_name in ("education_erp_dev", "education_erp_prod", "education_erp") or db_name not in disposable_allowlist:
+                raise ValueError(
+                    f"CRITICAL SAFETY VIOLATION: TEST_DATABASE_URL targets non-disposable database '{db_name}'. "
+                    f"Test executions are restricted exclusively to disposable databases: {disposable_allowlist}"
+                )
         return v
 
     model_config = SettingsConfigDict(

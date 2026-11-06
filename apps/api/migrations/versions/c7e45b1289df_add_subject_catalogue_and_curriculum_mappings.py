@@ -133,10 +133,10 @@ def upgrade() -> None:
 
     # 4. Enforce Row-Level Security without caller-settable superadmin bypass.
     op.execute("ALTER TABLE subject_catalog ENABLE ROW LEVEL SECURITY;")
-    op.execute("ALTER TABLE subject_catalog FORCE ROW LEVEL SECURITY;")
     op.execute("DROP POLICY IF EXISTS hybrid_isolation_policy ON subject_catalog;")
     op.execute("DROP POLICY IF EXISTS hybrid_global_read_policy ON subject_catalog;")
     op.execute("DROP POLICY IF EXISTS hybrid_tenant_write_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_platform_admin_write_policy ON subject_catalog;")
     op.execute("""
         CREATE POLICY hybrid_global_read_policy ON subject_catalog
         FOR SELECT
@@ -151,10 +151,27 @@ def upgrade() -> None:
         USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
         WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
     """)
+    op.execute("""
+        CREATE POLICY hybrid_platform_admin_write_policy ON subject_catalog
+        FOR ALL
+        USING (
+            EXISTS (
+                SELECT 1 FROM users u
+                WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                  AND u.is_superadmin = TRUE
+            )
+        )
+        WITH CHECK (
+            EXISTS (
+                SELECT 1 FROM users u
+                WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                  AND u.is_superadmin = TRUE
+            )
+        );
+    """)
 
     for table in ("institution_subjects", "class_subject_mappings"):
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;")
-        op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;")
         op.execute(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {table};")
         op.execute(f"""
             CREATE POLICY tenant_isolation_policy ON {table}
@@ -173,4 +190,7 @@ def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS institution_subjects;")
 
     op.execute("DROP POLICY IF EXISTS hybrid_isolation_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_global_read_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_tenant_write_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_platform_admin_write_policy ON subject_catalog;")
     op.execute("DROP TABLE IF EXISTS subject_catalog;")

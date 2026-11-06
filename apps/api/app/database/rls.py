@@ -67,9 +67,9 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
     """
     # 1. Enforce strict isolation on tenant-scoped tables
     for table in TENANT_SCOPED_TABLES:
-        # Enable & Force RLS
+        # Enable RLS (strictly enforced on non-owner roles such as erp_app)
         await conn.execute(text(f"ALTER TABLE IF EXISTS {table} ENABLE ROW LEVEL SECURITY;"))
-        await conn.execute(text(f"ALTER TABLE IF EXISTS {table} FORCE ROW LEVEL SECURITY;"))
+        await conn.execute(text(f"ALTER TABLE IF EXISTS {table} NO FORCE ROW LEVEL SECURITY;"))
 
         # Drop existing policy if present
         await conn.execute(text(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {table};"))
@@ -114,10 +114,11 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
     # 2. Enforce hybrid RLS on tables with global records (tenant_id IS NULL)
     for table in HYBRID_SCOPED_TABLES:
         await conn.execute(text(f"ALTER TABLE IF EXISTS {table} ENABLE ROW LEVEL SECURITY;"))
-        await conn.execute(text(f"ALTER TABLE IF EXISTS {table} FORCE ROW LEVEL SECURITY;"))
+        await conn.execute(text(f"ALTER TABLE IF EXISTS {table} NO FORCE ROW LEVEL SECURITY;"))
         await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_isolation_policy ON {table};"))
         await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_global_read_policy ON {table};"))
         await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_tenant_write_policy ON {table};"))
+        await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_platform_admin_write_policy ON {table};"))
 
         # Global rows are visible to every tenant but remain immutable to tenant users.
         # Tenant-owned rows are readable and writable only inside their tenant.
@@ -161,7 +162,7 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
     # Security audit rows may be tenant-scoped, or user-scoped during password
     # recovery before an institution context is known. They are append-only.
     await conn.execute(text("ALTER TABLE IF EXISTS account_security_events ENABLE ROW LEVEL SECURITY;"))
-    await conn.execute(text("ALTER TABLE IF EXISTS account_security_events FORCE ROW LEVEL SECURITY;"))
+    await conn.execute(text("ALTER TABLE IF EXISTS account_security_events NO FORCE ROW LEVEL SECURITY;"))
     await conn.execute(text("DROP POLICY IF EXISTS account_security_event_select_policy ON account_security_events;"))
     await conn.execute(text("DROP POLICY IF EXISTS account_security_event_insert_policy ON account_security_events;"))
     await conn.execute(text("""
@@ -187,7 +188,7 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
     # Platform administrators may manage support-session metadata across tenants;
     # this does not grant access to the tenant's underlying student or finance tables.
     await conn.execute(text("ALTER TABLE IF EXISTS platform_support_access_sessions ENABLE ROW LEVEL SECURITY;"))
-    await conn.execute(text("ALTER TABLE IF EXISTS platform_support_access_sessions FORCE ROW LEVEL SECURITY;"))
+    await conn.execute(text("ALTER TABLE IF EXISTS platform_support_access_sessions NO FORCE ROW LEVEL SECURITY;"))
     await conn.execute(text("DROP POLICY IF EXISTS tenant_isolation_policy ON platform_support_access_sessions;"))
     await conn.execute(text("DROP POLICY IF EXISTS platform_support_session_access_policy ON platform_support_access_sessions;"))
     await conn.execute(text("""
