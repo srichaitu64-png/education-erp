@@ -3,12 +3,12 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import hash_password, generate_temporary_password
-from app.database.session import get_db
+from app.database.session import get_db, set_current_tenant_id
 from app.modules.identity.models import (
     User,
     Role,
@@ -92,6 +92,11 @@ async def create_tenant(
     )
     db.add(tenant)
     await db.flush()
+    set_current_tenant_id(tenant.id)
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        {"tenant_id": str(tenant.id)}
+    )
 
     # Create default Main Campus
     main_campus = Campus(
@@ -214,6 +219,11 @@ async def onboard_institution(
     )
     db.add(tenant)
     await db.flush()
+    set_current_tenant_id(tenant.id)
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        {"tenant_id": str(tenant.id)}
+    )
 
     # Configure campuses
     created_campuses = []
