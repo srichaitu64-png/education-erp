@@ -956,6 +956,12 @@ async def assign_user_role(
             detail="Lockout Guard: Super Admin cannot revoke their own platform administrator access."
         )
 
+    if tenant_id is not None:
+        tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == tenant_id))
+        if tenant_exists.scalar_one_or_none() is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+        await db.set_rls_context(tenant_id, is_superadmin=False)
+
     stmt_role = select(Role).where(Role.code == role_code)
     res_role = await db.execute(stmt_role)
     role = res_role.scalars().first()
@@ -1034,6 +1040,8 @@ async def get_dashboard_layouts(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: Retrieve all dashboard layout configurations."""
+    if tenant_id:
+        await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt = select(DashboardLayoutConfig)
     if tenant_id:
         stmt = stmt.where(DashboardLayoutConfig.tenant_id == tenant_id)
@@ -1061,6 +1069,8 @@ async def save_dashboard_layout(
     - VISIBLE_LOCKED (with explanation)
     - COMPLETELY_HIDDEN
     """
+    if tenant_id:
+        await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt_v = select(DashboardLayoutConfig.version).where(
         DashboardLayoutConfig.tenant_id == tenant_id,
         DashboardLayoutConfig.role_code == role_code
@@ -1312,10 +1322,7 @@ async def list_support_sessions(
     admin: User = Depends(get_current_superadmin)
 ):
     """List support-session metadata for one explicitly selected institution."""
-    await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-        {"tenant_id": str(tenant_id)},
-    )
+    await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt = (
         select(PlatformSupportAccessSession)
         .where(PlatformSupportAccessSession.tenant_id == tenant_id)
@@ -1350,10 +1357,7 @@ async def revoke_support_access(
     admin: User = Depends(get_current_superadmin)
 ):
     """Immediately revoke support access for one explicitly selected institution."""
-    await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-        {"tenant_id": str(tenant_id)},
-    )
+    await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt = select(PlatformSupportAccessSession).where(
         PlatformSupportAccessSession.id == session_id,
         PlatformSupportAccessSession.tenant_id == tenant_id,
