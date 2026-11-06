@@ -20,6 +20,7 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuthStore();
 
   // Controlled form state
+  const [tenantCode, setTenantCode] = useState('');
   const [usernameOrId, setUsernameOrId] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -50,8 +51,8 @@ export const LoginPage: React.FC = () => {
     setErrorMessage(null);
 
     const inputVal = usernameOrId.trim();
-    if (!inputVal || !password.trim()) {
-      setErrorMessage('Please enter your email or registered phone number and password.');
+    if (!tenantCode.trim() || !inputVal || !password.trim()) {
+      setErrorMessage('Please enter your institution code, email or registered phone number, and password.');
       return;
     }
 
@@ -60,6 +61,7 @@ export const LoginPage: React.FC = () => {
     try {
       const payload = {
         username: inputVal,
+        tenant_code: tenantCode.trim(),
         password,
         remember_me: rememberMe,
       };
@@ -152,6 +154,26 @@ export const LoginPage: React.FC = () => {
         {/* Universal Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
+          {/* Institution code */}
+          <div>
+            <label
+              htmlFor="tenantCode"
+              className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5"
+            >
+              Institution code
+            </label>
+            <input
+              id="tenantCode"
+              type="text"
+              required
+              autoComplete="organization"
+              placeholder="Enter the code provided by your institution"
+              value={tenantCode}
+              onChange={(e) => handleInputChange(setTenantCode, e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
+            />
+          </div>
+
           {/* Username / Identifier */}
           <div>
             <label
