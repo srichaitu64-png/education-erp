@@ -636,6 +636,40 @@ export const InstitutionDashboard: React.FC = () => {
           </div>
         )}
         <div className="text-xs text-gray-400">Operational snapshot • {metrics?.as_of ? new Date(metrics.as_of).toLocaleString() : 'Waiting for database'}</div>
+        <section aria-label="Student lifecycle workflow" className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Student Lifecycle Workflow</h3>
+            <p className="text-xs text-gray-500 mt-1">Follow each learner from enquiry to enrolment, daily operations and assessment.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Link to="/app/students" className="rounded-xl border border-gray-200 p-3 hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
+              <span className="text-[10px] font-bold text-blue-600">01 · ADMISSIONS</span>
+              <p className="text-lg font-bold text-gray-900 mt-1">{metricsLoading ? '…' : (metrics?.pending_admissions ?? 0)}</p>
+              <p className="text-xs text-gray-500">Pending review</p>
+            </Link>
+            <Link to="/app/students" className="rounded-xl border border-gray-200 p-3 hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
+              <span className="text-[10px] font-bold text-blue-600">02 · ENROLMENT</span>
+              <p className="text-lg font-bold text-gray-900 mt-1">{metricsLoading ? '…' : (metrics?.enrolled_students ?? 0)}</p>
+              <p className="text-xs text-gray-500">Active students</p>
+            </Link>
+            <Link to="/app/fees" className="rounded-xl border border-gray-200 p-3 hover:border-amber-300 hover:bg-amber-50/40 transition-colors">
+              <span className="text-[10px] font-bold text-amber-700">03 · FEES</span>
+              <p className="text-lg font-bold text-gray-900 mt-1">₹{Number(metrics?.outstanding_fees || 0).toLocaleString('en-IN')}</p>
+              <p className="text-xs text-gray-500">Outstanding</p>
+            </Link>
+            <Link to="/app/attendance" className="rounded-xl border border-gray-200 p-3 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors">
+              <span className="text-[10px] font-bold text-emerald-700">04 · ATTENDANCE</span>
+              <p className="text-lg font-bold text-gray-900 mt-1">{metrics?.today_attendance_pct == null ? '—' : `${metrics.today_attendance_pct}%`}</p>
+              <p className="text-xs text-gray-500">Today</p>
+            </Link>
+            <Link to="/app/examinations" className="rounded-xl border border-gray-200 p-3 hover:border-purple-300 hover:bg-purple-50/40 transition-colors">
+              <span className="text-[10px] font-bold text-purple-700">05 · ASSESSMENT</span>
+              <p className="text-lg font-bold text-gray-900 mt-1">{metricsLoading ? '…' : (metrics?.upcoming_examinations ?? 0)}</p>
+              <p className="text-xs text-gray-500">Upcoming exams</p>
+            </Link>
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link to="/app/students" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
             <div>
