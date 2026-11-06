@@ -258,6 +258,12 @@ async def test_unauthorized_user_cannot_configure_fee_structures(client: httpx.A
     )
     db_session.add(teacher)
     await db_session.flush()
+    teacher_role = (await db_session.execute(
+        select(Role).where(Role.code == "TEACHER", Role.tenant_id == None)
+    )).scalars().first()
+    assert teacher_role is not None
+    db_session.add(UserRole(user_id=teacher.id, role_id=teacher_role.id, tenant_id=tenant.id))
+    await db_session.commit()
 
     token = create_access_token(
         subject=str(teacher.id), tenant_id=str(tenant.id), is_superadmin=False
