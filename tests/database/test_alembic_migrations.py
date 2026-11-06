@@ -77,7 +77,7 @@ def test_alembic_check_clean_dev_database():
     asyncio.run(_manage_db(f"CREATE DATABASE {check_db};"))
     try:
         upgrade = subprocess.run(
-            [sys.executable, "-m", "alembic", "-x", f"db_url={check_db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={check_db_url}", "upgrade", "heads"],
             cwd=api_dir, capture_output=True, text=True, env=dict(os.environ)
         )
         assert upgrade.returncode == 0, f"Fresh migration failed: {upgrade.stderr or upgrade.stdout}"
@@ -117,7 +117,7 @@ def test_alembic_upgrade_downgrade_cycle():
     try:
         # 1. Upgrade to head
         up1 = subprocess.run(
-            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "heads"],
             cwd=api_dir,
             capture_output=True,
             text=True,
@@ -137,7 +137,7 @@ def test_alembic_upgrade_downgrade_cycle():
 
         # 3. Re-upgrade to head
         up2 = subprocess.run(
-            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "heads"],
             cwd=api_dir,
             capture_output=True,
             text=True,
