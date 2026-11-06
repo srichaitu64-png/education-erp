@@ -25,12 +25,13 @@ async def get_test_auth_headers(db_session: AsyncSession, tenant_code: str = "ou
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert tenant is not None, f"Tenant {tenant_code} must exist"
 
-    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
-    super_admin = (await db_session.execute(stmt_user)).scalars().first()
-    assert super_admin is not None
+    login_email = "chairman@akshara-trial.edu.in" if tenant_code == "akshara-trial" else "chairman@ourschool.edu.in"
+    stmt_user = select(User).where(User.email == login_email)
+    institution_head = (await db_session.execute(stmt_user)).scalars().first()
+    assert institution_head is not None
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=False
+        subject=str(institution_head.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     return {"Authorization": f"Bearer {token}"}, tenant
 
@@ -269,7 +270,7 @@ async def test_hall_tickets_batch_generation_and_verification(client: AsyncClien
     headers, tenant = await get_test_auth_headers(db_session, "akshara")
 
     # 1. Get or create examination
-    exam_stmt = select(Examination).where(Examination.tenant_id == tenant.id)
+    exam_stmt = select(Examination).where(Examination.tenant_id == tenant.id, Examination.target_class == "Class 10-A")
     exam = (await db_session.execute(exam_stmt)).scalars().first()
     if not exam:
         exam = Examination(
@@ -335,7 +336,15 @@ async def test_portal_me_contextual_profile(client: AsyncClient, db_session: Asy
     """
     headers, tenant = await get_test_auth_headers(db_session, "akshara")
 
-    portal_res = await client.get("/api/v1/academic/portal/me", headers=headers)
+    student_user = (await db_session.execute(
+        select(User).where(User.email == "student.rahul@ourschool.edu.in")
+    )).scalars().first()
+    assert student_user is not None
+    student_token = create_access_token(
+        subject=str(student_user.id), tenant_id=str(tenant.id), is_superadmin=False
+    )
+    student_headers = {"Authorization": f"Bearer {student_token}"}
+    portal_res = await client.get("/api/v1/academic/portal/me", headers=student_headers)
     assert portal_res.status_code == 200
     p_data = portal_res.json()
     assert "user_id" in p_data
