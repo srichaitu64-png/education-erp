@@ -100,7 +100,6 @@ export const RegisterInstitutionPage: React.FC = () => {
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Unable to submit your request. Please try again.');
-    }
     } finally {
       setLoading(false);
     }
