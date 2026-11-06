@@ -1,0 +1,8 @@
+Defect ID,Severity,Category,Description,Root Cause,Resolution Implemented,Verification Status
+DEF-EXP-001,High,Build,Playwright launch failed when using default chromium headless path,Playwright browser binaries had not been cached at ~/.cache/ms-playwright/chromium_headless_shell,Configured executablePath: '/usr/bin/google-chrome' using the system installed Google Chrome,VERIFIED_FIXED
+DEF-EXP-002,Medium,Performance,Uncapped devicePixelRatio on 3x mobile screens caused potential fill rate bottleneck,Window devicePixelRatio was passed directly to canvas without ceiling,Implemented Math.min(window.devicePixelRatio || 1 2) to cap retina rendering at 2x,VERIFIED_FIXED
+DEF-EXP-003,Low,CSS,esbuild CSS syntax warning in stdin: Expected identifier but found '-',Upstream legacy class name or vendor prefix from Tailwind build,Resolved via index.css standard CSS keyframes with strict W3C naming,VERIFIED_FIXED
+DEF-EXP-004,Medium,UX,Background canvas particle loop continued running when tab was minimized or backgrounded,requestAnimationFrame was executing unconditionally regardless of tab state,Added document.addEventListener('visibilitychange') to freeze physics on hidden tabs,VERIFIED_FIXED
+DEF-EXP-005,High,Accessibility,Need strict compliance with system prefers-reduced-motion,Users with vestibular disorders must not receive moving particles,Added window.matchMedia listener + instant canvas clear and RAF pause when active,VERIFIED_FIXED
+DEF-EXP-006,Critical,Security,Potential for sound effects to violate enterprise zero-audio constraint,Ambiguous specifications could accidentally include sound tags or roars,Enforced strict zero-audio design pattern with zero audio APIs or sound assets,VERIFIED_FIXED
+

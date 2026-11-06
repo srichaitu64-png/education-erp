@@ -118,3 +118,4 @@ Add to `/etc/cron.d/erp-backup`:
    * Query total tenant count: `SELECT count(*) FROM tenants;`
    * Verify integrity of newest fee receipt and student enrollment.
    * Verify API returns HTTP 200 on `/api/v1/health`.
+

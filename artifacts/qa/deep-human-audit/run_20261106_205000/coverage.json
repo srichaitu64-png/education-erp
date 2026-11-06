@@ -1,0 +1,19 @@
+{
+  "run_timestamp": "2026-11-06T20:50:00+05:30",
+  "total_roles": 9,
+  "total_public_pages": 8,
+  "total_tabs": 26,
+  "total_controls_inventoried": 156,
+  "total_test_cases": 50,
+  "passed_test_cases": 50,
+  "failed_test_cases": 0,
+  "pass_rate": "100.00",
+  "viewports": [
+    "desktop",
+    "laptop",
+    "tablet",
+    "mobile"
+  ],
+  "console_errors": 8,
+  "network_failures": 0
+}

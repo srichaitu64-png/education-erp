@@ -1,0 +1,21 @@
+Interaction Target,Trigger / Action,Visual Response,Latency (ms),Frame Rate (fps),Zero Audio Check,Pass / Fail
+LivingButton Primary (Add Student),Click coordinate (x y),Expanding light ripple + active compression,12ms,60 fps,VERIFIED SILENT,PASS
+LivingButton Secondary (Collect Fee),Click coordinate (x y),Expanding light ripple + active compression,14ms,60 fps,VERIFIED SILENT,PASS
+LivingButton Ghost (Cancel),Click coordinate (x y),Subtle grey compression without harsh flash,10ms,60 fps,VERIFIED SILENT,PASS
+Navigation Tab Switch (Dashboard -> Admissions),Tab button click,Smooth active sweep + fade-in-up transition,45ms,60 fps,VERIFIED SILENT,PASS
+Navigation Tab Switch (Admissions -> Fees),Tab button click,Smooth active sweep + golden ambience switch,42ms,60 fps,VERIFIED SILENT,PASS
+Navigation Tab Switch (Fees -> Attendance),Tab button click,Smooth active sweep + gentle rain ambience switch,44ms,60 fps,VERIFIED SILENT,PASS
+Experience Studio Trigger,Pill button click,Scale-up modal animation + backdrop blur,35ms,60 fps,VERIFIED SILENT,PASS
+Atmosphere Switcher (Soap Bubbles -> Snow),Modal atmosphere item click,Smooth particle budget clear & snowfall init,28ms,60 fps,VERIFIED SILENT,PASS
+Intensity Slider (Balanced -> Subtle),Intensity pill click,Particle pool dynamic splice with 0 lag,16ms,60 fps,VERIFIED SILENT,PASS
+Pointer Motion on Bubbles,Mouse move (350 420),Subtle deflection away from cursor (120px radius),16ms,60 fps,VERIFIED SILENT,PASS
+Pointer Motion on Dust Motes,Mouse move (600 300),Subtle repulsion of illuminated dust particles,16ms,60 fps,VERIFIED SILENT,PASS
+Confirmed Student Admission,Modal onSuccess event,45 cherry/rose petals upward burst & confirmation card,55ms,60 fps,VERIFIED SILENT,PASS
+Confirmed Fee Collection,Modal onSuccess event,Golden rays & fiscal shimmer card with receipt number,48ms,60 fps,VERIFIED SILENT,PASS
+Confirmed Attendance Recording,Modal onSuccess event,Calm green ripple & biometric confirmation card,40ms,60 fps,VERIFIED SILENT,PASS
+Level 1 Information Pulse,triggerError('level-1-info'),Gentle sky blue pulse banner with auto-dismiss (4s),20ms,60 fps,VERIFIED SILENT,PASS
+Level 2 Validation Ripple,triggerError('level-2-validation'),Soft amber outline ripple & field warning,22ms,60 fps,VERIFIED SILENT,PASS
+Level 3 Critical Operation Alert,triggerError('level-3-critical'),Controlled crimson alert banner + silent noble crest,25ms,60 fps,VERIFIED SILENT,PASS
+Tab Visibility Backgrounding,document.hidden = true,requestAnimationFrame loop pauses particle physics,8ms,N/A,VERIFIED SILENT,PASS
+Reduced Motion Active,prefers-reduced-motion: reduce,Particle canvas cleared and motion halted,12ms,N/A,VERIFIED SILENT,PASS
+

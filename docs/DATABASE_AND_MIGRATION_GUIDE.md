@@ -94,3 +94,4 @@ Production environments utilize PgBouncer in transaction pooling mode alongside 
   * `pool_recycle`: 1800 seconds (30 minutes).
 * **Transaction RLS Context Hook:**
   SQLAlchemy's `after_begin` event re-applies `set_config('app.current_tenant_id', ...)` on every transaction, ensuring tenant context never leaks across pooled connections.
+

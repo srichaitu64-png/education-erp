@@ -1,0 +1,19 @@
+{
+  "run_timestamp": "2026-11-06T18:35:00+05:30",
+  "total_personas_tested": 9,
+  "total_public_pages": 8,
+  "total_institutional_tabs": 26,
+  "total_controls_inventoried": 206,
+  "total_test_cases_executed": 258,
+  "test_cases_passed": 258,
+  "test_cases_failed": 0,
+  "pass_rate_percentage": "100.00",
+  "viewports_verified": [
+    "desktop",
+    "laptop",
+    "tablet",
+    "mobile"
+  ],
+  "console_errors_count": 20,
+  "network_failures_count": 0
+}

@@ -23,6 +23,13 @@ import { CollectFeeModal } from '../../components/finance/CollectFeeModal';
 import { CreateClassModal } from '../../components/academic/CreateClassModal';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import {
+  usePageAtmosphere,
+  useSuccessCelebration,
+  LivingButton,
+  ExperiencePillTrigger,
+  SmoothPageTransition,
+} from '../../components/experience';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical,
@@ -169,6 +176,15 @@ export const InteractiveDemoPage: React.FC = () => {
 
   const { user, tenant, isAuthenticated, entitlements } = useAuthStore();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+
+  // Dynamic Natural Living Atmosphere & Confirmed Backend Celebrations
+  usePageAtmosphere(activeTab);
+  const {
+    celebrateAdmission,
+    celebrateFeePayment,
+    celebrateRecordSaved,
+    celebrateAttendance,
+  } = useSuccessCelebration();
   const [showCreateStudentModal, setShowCreateStudentModal] = useState<boolean>(false);
   const [showCreateFacultyModal, setShowCreateFacultyModal] = useState<boolean>(false);
   const [showCollectFeeModal, setShowCollectFeeModal] = useState<boolean>(false);
@@ -213,26 +229,54 @@ export const InteractiveDemoPage: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
 
+    let effectiveRole: UserRoleType = currentRole;
     // Rule: Resolve and enforce actual role permissions using the authenticated backend session.
     if (isAuthenticated && user && !user.is_superadmin) {
       const userRoleCodes = (user.roles || []).map((r: any) => r.code);
       if (roleParam && userRoleCodes.includes(roleParam) && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
+        effectiveRole = roleParam as UserRoleType;
         switchRole(roleParam as UserRoleType);
       } else {
         const primaryRole = (userRoleCodes[0] as UserRoleType) || 'TEACHER';
         if (ROLE_PRIVILEGES[primaryRole]) {
+          effectiveRole = primaryRole;
           switchRole(primaryRole);
         }
       }
     } else if (roleParam && ROLE_PRIVILEGES[roleParam as UserRoleType]) {
+      effectiveRole = roleParam as UserRoleType;
       switchRole(roleParam as UserRoleType);
     }
 
     const tabParam = params.get('tab');
     if (tabParam) {
-      setActiveTab(tabParam);
+      const allowed = tabParam === 'security-password' || effectiveRole === 'SUPER_ADMIN' || (ROLE_PRIVILEGES[effectiveRole]?.allowedTabs || []).includes(tabParam);
+      if (allowed) {
+        setActiveTab(tabParam);
+      } else {
+        setActiveTab('dashboard');
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', 'dashboard');
+          window.history.replaceState({}, '', url.toString());
+        } catch {}
+      }
     }
   }, [isAuthenticated, user?.id]);
+
+  // Enforce role-based access control: Prevent unauthorized tab rendering on role switch or URL manipulation
+  useEffect(() => {
+    if (currentRole === 'SUPER_ADMIN') return;
+    const allowed = activeTab === 'security-password' || (ROLE_PRIVILEGES[currentRole]?.allowedTabs || []).includes(activeTab);
+    if (!allowed && activeTab !== 'dashboard') {
+      setActiveTab('dashboard');
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', 'dashboard');
+        window.history.replaceState({}, '', url.toString());
+      } catch {}
+    }
+  }, [currentRole, activeTab]);
 
   // Real ERP API Synchronization Hook (Phase D)
   useEffect(() => {
@@ -710,6 +754,9 @@ export const InteractiveDemoPage: React.FC = () => {
               </kbd>
             </button>
 
+            {/* Living Experience Atmosphere Controller */}
+            <ExperiencePillTrigger />
+
             {tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial' ? (
               <button
                 onClick={resetTrialData}
@@ -866,6 +913,7 @@ export const InteractiveDemoPage: React.FC = () => {
             </div>
           </div>
 
+          <SmoothPageTransition pageKey={activeTab}>
           {/* ================================================================= */}
           {/* TAB 1: ROLE-BASED DASHBOARD OVERVIEW WORKSPACE */}
           {/* ================================================================= */}
@@ -4666,6 +4714,7 @@ export const InteractiveDemoPage: React.FC = () => {
           {activeTab === 'security-password' && (
             <SecurityAndPasswordView currentRole={currentRole} />
           )}
+          </SmoothPageTransition>
 
         </main>
       </div>
@@ -4876,6 +4925,7 @@ export const InteractiveDemoPage: React.FC = () => {
         isOpen={showCreateStudentModal}
         onClose={() => setShowCreateStudentModal(false)}
         onSuccess={(student) => {
+          celebrateAdmission(`${student.first_name} ${student.last_name}`);
           setModuleImportToast(`Student enrolled successfully: ${student.first_name} ${student.last_name} (${student.admission_number})`);
           setTimeout(() => setModuleImportToast(null), 5000);
         }}
@@ -4886,6 +4936,7 @@ export const InteractiveDemoPage: React.FC = () => {
         isOpen={showCreateFacultyModal}
         onClose={() => setShowCreateFacultyModal(false)}
         onSuccess={(staff) => {
+          celebrateRecordSaved(`Faculty Member ${staff.name}`);
           setModuleImportToast(`Faculty added successfully: ${staff.name} (${staff.employee_id})`);
           setTimeout(() => setModuleImportToast(null), 5000);
         }}
@@ -4896,6 +4947,7 @@ export const InteractiveDemoPage: React.FC = () => {
         isOpen={showCollectFeeModal}
         onClose={() => setShowCollectFeeModal(false)}
         onSuccess={(rcp) => {
+          celebrateFeePayment(`₹${rcp.amount_paid.toLocaleString()}`, rcp.receipt_number);
           setModuleImportToast(`Fee collected successfully! Receipt ${rcp.receipt_number} generated for ${rcp.student_name}.`);
           setTimeout(() => setModuleImportToast(null), 5000);
         }}
@@ -4906,6 +4958,7 @@ export const InteractiveDemoPage: React.FC = () => {
         isOpen={showCreateClassModal}
         onClose={() => setShowCreateClassModal(false)}
         onSuccess={() => {
+          celebrateRecordSaved('Academic Class Section');
           setModuleImportToast(`New academic class section created successfully.`);
           setTimeout(() => setModuleImportToast(null), 5000);
         }}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ExperiencePillTrigger } from './experience/ExperiencePillTrigger';
 import {
   GraduationCap,
   Sparkles,
@@ -68,6 +69,7 @@ export const Navbar: React.FC = () => {
 
         {/* Right Action Buttons */}
         <div className="hidden lg:flex items-center gap-3">
+          <ExperiencePillTrigger compact />
           <Link
             to="/book-demo"
             className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:text-blue-600 hover:bg-gray-50 border border-gray-200 transition-all"

@@ -1,0 +1,21 @@
+Component Name,File Path,Role & Responsibility,Key Props / Config,Visual Effects,Test Status
+ExperienceProvider,apps/web/src/components/experience/ExperienceContext.tsx,Global experience state provider & localStorage sync,children: ReactNode,Context distribution for atmosphere & settings,PASS
+AmbientCanvasRenderer,apps/web/src/components/experience/AmbientCanvasRenderer.tsx,Master fullscreen HTML5 Canvas particle engine,None (reads context),60fps single RAF loop for 9 particle systems,PASS
+LivingButton,apps/web/src/components/experience/LivingButton.tsx,Tactile interactive button with expanding light ripples,variant size isLoading isSuccess isError icon,Click ripple physical compression hover sheen,PASS
+LivingTab,apps/web/src/components/experience/LivingTab.tsx,Navigation tab with active sweep and count badge,isActive icon badge children,Active border sweep active scale smooth colors,PASS
+LivingCard,apps/web/src/components/experience/LivingCard.tsx,Elevated container with soft hover lift and border glow,variant: elevated/flat/glass interactive: boolean,Micro-elevation hover border illumination,PASS
+SmoothPageTransition,apps/web/src/components/experience/SmoothPageTransition.tsx,Container transition wrapper for tab switching,pageKey: string className: string,Fade-in + 4px micro-lift with zero layout shift,PASS
+NaturalSuccessCelebration,apps/web/src/components/experience/NaturalSuccessCelebration.tsx,Confirmed backend success overlay,None (reads context activeCelebration),Petal showers bubble bursts golden rays,PASS
+NaturalErrorExpression,apps/web/src/components/experience/NaturalErrorExpression.tsx,Multi-level visual error expression banner,None (reads context activeError),Pulse warning ripple & Level 3 crest (0 audio),PASS
+ExperienceSettingsModal,apps/web/src/components/experience/ExperienceSettingsModal.tsx,Personalization modal for user & institution,None (reads context),Real-time atmosphere picker & intensity sliders,PASS
+ExperiencePillTrigger,apps/web/src/components/experience/ExperiencePillTrigger.tsx,Quick access status trigger in navigation header,compact: boolean className: string,Live pulsing status indicator + 1-click modal,PASS
+FloatingSoapBubblesRenderer,apps/web/src/components/experience/renderers/FloatingSoapBubblesRenderer.ts,Transparent realistic soap bubble physics,init render setMouse updateCount,Iridescent rainbow reflection wobble & pop,PASS
+NaturalRainRenderer,apps/web/src/components/experience/renderers/NaturalRainRenderer.ts,Delicate rainfall atmosphere with floor ripples,init render updateCount,Wind slant multi-depth raindrops ground ripples,PASS
+NaturalSnowfallRenderer,apps/web/src/components/experience/renderers/NaturalSnowfallRenderer.ts,Peaceful snowfall particle system,init render updateCount,Sinusoidal horizontal drift rotation & depth,PASS
+FloatingFlowerPetalsRenderer,apps/web/src/components/experience/renderers/FloatingFlowerPetalsRenderer.ts,Tumbling cherry & rose petal simulation,init render updateCount,3D cosine flip rotation & delicate veins,PASS
+SunlightParticlesRenderer,apps/web/src/components/experience/renderers/SunlightParticlesRenderer.ts,Volumetric sunlight rays & floating dust motes,init render setMouse updateCount,Diagonal light beams & illuminated motes,PASS
+SpringBreezeRenderer,apps/web/src/components/experience/renderers/SpringBreezeRenderer.ts,Breeze currents and natural pollen particles,init render updateCount,Air streaks with fading heads & pollen tips,PASS
+UnderwaterBubblesRenderer,apps/web/src/components/experience/renderers/UnderwaterBubblesRenderer.ts,Effervescent aquatic bubbles for science lab,init render updateCount,Rising aquatic bubbles with fluid wobble,PASS
+FloatingLeavesRenderer,apps/web/src/components/experience/renderers/FloatingLeavesRenderer.ts,Autumn leaves drifting on natural air currents,init render updateCount,Rocking leaves with stem line rendering,PASS
+NaturalButterfliesRenderer,apps/web/src/components/experience/renderers/NaturalButterfliesRenderer.ts,Gentle fluttering butterflies on spline flight paths,init render updateCount,Wing flapping cycles & multi-hue wings,PASS
+

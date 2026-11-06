@@ -8,6 +8,13 @@ import { InstitutionDashboard } from './modules/dashboard/InstitutionDashboard';
 import { SuperAdminDashboard } from './modules/dashboard/SuperAdminDashboard';
 import { EntitlementsManager } from './modules/entitlements/EntitlementsManager';
 import { useAuthStore } from './store/authStore';
+import {
+  ExperienceProvider,
+  AmbientCanvasRenderer,
+  NaturalSuccessCelebration,
+  NaturalErrorExpression,
+  ExperienceSettingsModal,
+} from './components/experience';
 
 // Public Marketing & Demo Pages
 import { HomePage } from './pages/public/HomePage';
@@ -53,8 +60,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireSuperAdmin?: 
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
+      <ExperienceProvider>
+        <AmbientCanvasRenderer />
+        <NaturalSuccessCelebration />
+        <NaturalErrorExpression />
+        <ExperienceSettingsModal />
+        <BrowserRouter>
+          <Routes>
           {/* Public Marketing Website */}
           <Route path="/" element={<HomePage />} />
           <Route path="/features" element={<FeaturesPage />} />
@@ -141,6 +153,7 @@ export const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ExperienceProvider>
     </QueryClientProvider>
   );
 };

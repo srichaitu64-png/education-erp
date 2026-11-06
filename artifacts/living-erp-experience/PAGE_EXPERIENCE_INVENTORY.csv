@@ -1,0 +1,33 @@
+Page/Tab ID,Name,Category,Default Atmosphere,Accent Color,Interaction Feedback,Celebration Event,Verified Status
+dashboard,Executive Dashboard & SIS Overview,administrative,warm-sunlight,#3B82F6,Living Button ripples + Quick Stats Hover,Record Saved / Sync,VERIFIED
+admissions,Admissions Pipeline & Enrolment,academic,flower-petals,#EC4899,Enrol Student tactile ripple + Pipeline cards,Admission Flower Petals,VERIFIED
+students,Student Directory & 360 Profiles,academic,soap-bubbles,#06B6D4,Student Drawer slide + Table row hover,Registration Bubbles,VERIFIED
+attendance,Daily & Biometric Attendance,operations,gentle-rain,#10B981,Toggle attendance tactile switch,Attendance Green Ripple,VERIFIED
+academics,Curriculum & Subject Catalogues,academic,spring-breeze,#8B5CF6,Class allocation ripple + Curriculum edit,Subject Map Saved,VERIFIED
+fees,Fee Collection Invoicing & Receipts,financial,warm-sunlight,#F59E0B,Collect fee tactile ripple + Receipt preview,Fee Payment Golden Light,VERIFIED
+examinations,Examinations Schedules & Approvals,academic,minimal-professional,#6366F1,Schedule exam modal + Approval badges,Exam Publish Achievement,VERIFIED
+progress-cards,Marksheet & Terminal Progress Cards,academic,flower-petals,#14B8A6,Student selector switch + Print preview,Academic Achievement,VERIFIED
+marks-register,Teacher Marks Entry Register,academic,minimal-professional,#4F46E5,Instant inline cell save + Key navigation,Marks Saved Pulse,VERIFIED
+hall-tickets,Examination Hall Ticket Issuance,academic,minimal-professional,#0EA5E9,Batch generate admit card ripple,Hall Tickets Issued,VERIFIED
+notice-board,Official Result Notice Board,academic,flower-petals,#F43F5E,Rank badge filter + Public broadcast,Notice Board Published,VERIFIED
+timetable,Master Timetable & Period Allocation,operations,spring-breeze,#059669,Drag & drop slot tactile feedback,Timetable Saved,VERIFIED
+staff,Faculty & Employee Directory,administrative,soap-bubbles,#2563EB,Add faculty modal + Profile drawer,Faculty Record Saved,VERIFIED
+staff-duties,Exam Invigilation & Staff Duties,operations,minimal-professional,#64748B,Assign invigilator select + Export,Duty Roster Saved,VERIFIED
+fee-review,Consolidated Fee Audit & Ledger,financial,warm-sunlight,#D97706,Ledger filter + Snapshot submit,Fee Audit Approved,VERIFIED
+academic-structure,Courses Batches & Section Config,academic,spring-breeze,#7C3AED,Add section ripple + Capacity slider,Academic Section Saved,VERIFIED
+laboratory,Science & Computer Lab Allocations,academic,underwater-bubbles,#0284C7,Equipment slot booking + Batch select,Lab Slot Reserved,VERIFIED
+communication,Institutional SMS & Notification Hub,operations,warm-sunlight,#E11D48,Compose announcement + Channel pills,SMS Broadcast Sent,VERIFIED
+transport,Fleet Logistics Routes & Stops,operations,spring-breeze,#D97706,Route map pin + Bus manifest,Route Config Saved,VERIFIED
+institution-control-centre,Institution Policy & Campus Profile,administrative,soap-bubbles,#1E40AF,Branding color picker + Save policy,Policy Saved Bubbles,VERIFIED
+permissions-centre,Role Privileges & Access Matrix,security,minimal-professional,#475569,Permission checkbox toggle + Lock badge,RBAC Matrix Saved,VERIFIED
+dashboard-designer,Visual Workspace & Layout Studio,administrative,warm-sunlight,#9333EA,Widget toggle + Drag rearrange,Workspace Saved,VERIFIED
+data-migration,Universal CSV & Excel Migration Wizard,operations,spring-breeze,#0D9488,Upload dropzone + Conflict policy,Import Batch Completed,VERIFIED
+institution-login,Campus Gateway & Portal Access,security,soap-bubbles,#2563EB,Switch portal role + Direct login,Login Welcome,VERIFIED
+security-password,Credential Security & Session Vault,security,minimal-professional,#DC2626,Password strength meter + TOTP toggle,Credentials Updated,VERIFIED
+platform-superadmin,Global Multi-Tenant SaaS Engine,security,minimal-professional,#0F172A,Tenant provision + Subscription renew,Tenant Provisioned,VERIFIED
+public-home,Marketing Homepage,public,soap-bubbles,#2563EB,Hero CTA Living Buttons + Feature cards,Trial Register Flow,VERIFIED
+public-features,Features & Capabilities,public,spring-breeze,#7C3AED,Module interactive cards + Filter pills,Feature Inquiry,VERIFIED
+public-modules,Modular Architecture Suite,public,warm-sunlight,#059669,Interactive module matrix,Module Demo Request,VERIFIED
+public-pricing,Transparent Pricing Plans,public,warm-sunlight,#F59E0B,Pricing calculator + Tier comparison,Plan Selected,VERIFIED
+public-demo,Live Interactive Demo Sandbox,public,soap-bubbles,#3B82F6,Simulate role switcher + Command palette,Demo Tour Started,VERIFIED
+

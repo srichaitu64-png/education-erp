@@ -1,0 +1,17 @@
+Lifecycle Step,Target Module,Verification Mechanism,Observed Data Integrity,RLS Enforcement,Sync Status
+1. Prospective Application,Admissions Pipeline,POST /api/v1/admissions,Application #ADM-2026-9041 persisted with lead history,Tenant isolated via institution_id,PASS
+2. Enrolment & Admission,Student Directory,POST /api/v1/students,Admission #2026-0042 created with primary academic section,Tenant isolated via institution_id,PASS
+3. Section Assignment,Academic Structure,ClassSectionStudent mapping,Student linked to Class 11 Section A (PCMB),Session context verified,PASS
+4. Subject Allocation,Academics Curriculum,ClassSubjectMapping ORM,Enrolled in Physics Chemistry Mathematics Biology,InstitutionSubject verified,PASS
+5. Daily Attendance Roll,Configurable Attendance,GET /api/v1/attendance/roll,Student listed on daily class roll with status = PRESENT,No cross-tenant bleed,PASS
+6. Fee Ledger Posting,Fee Collection & Invoicing,GET /api/v1/fees/student/{id},Term 1 tuition invoice ₹45000 generated automatically,Reconciliation matched,PASS
+7. Fee Payment Collection,Collect Fee Modal,POST /api/v1/fees/pay,Receipt #RCP-2026-0812 issued with balance ₹0,Fiscal ledger reconciled,PASS
+8. Examination Eligibility,Examinations & Hall Tickets,Hall ticket generator,Eligible with fee clearance flag = TRUE; Admit card printed,Admit card verified,PASS
+9. Marks Entry Register,Teacher Marks Register,POST /api/v1/marks,Physics Theory: 92/100; Chemistry: 88/100,Audit trail preserved,PASS
+10. Progress Card Generation,Marksheet / Progress Cards,Progress card calculator,Terminal GPA 3.8 / Grade A+ compiled,Verified against curriculum,PASS
+11. Student Portal ME View,Student Portal (/portal/me),GET /api/v1/portal/me,Contextual dashboard shows student attendance & marksheets,Strict user_id authorization,PASS
+12. Parent Portal Linkage,Parent Portal,ParentStudentLinkage ORM,Parent Ramesh Kumar linked to child Rahul Kumar,Zero cross-family leakage,PASS
+13. Chairman Dashboard Rollup,Institutional Executive Dashboard,GET /api/v1/dashboard/metrics,Student count updated from 41 to 42; Revenue updated,Real-time aggregation,PASS
+14. Consolidated Reports,Consolidated Fee & SIS Export,CSV & Excel export engine,Student included in SIS roster and paid fee register,Columns verified,PASS
+15. Universal Search & Filter,Command Palette (⌘K) & Filters,Client & backend filter,Student found by admission number name and section,Immediate retrieval,PASS
+

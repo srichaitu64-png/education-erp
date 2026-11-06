@@ -56,3 +56,4 @@ dist/
 .playwright-mcp/
 infrastructure/backup/
 checkpoint_*/
+*.tar.gz

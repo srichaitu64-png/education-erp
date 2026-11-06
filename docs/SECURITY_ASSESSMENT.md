@@ -120,3 +120,4 @@ EducationOS enforces database-level tenant isolation using PostgreSQL native RLS
 * **Automated Security Tests:** 17 tests dedicated to authentication, brute-force lockout, MFA TOTP, and token revocation.
 * **RLS Matrix Tests:** 12 tests verifying multi-tenant isolation, cross-tenant leak prevention, and tamper resistance.
 * **Pass Rate:** 100% verified against PostgreSQL 16 under non-privileged role `erp_app`.
+

@@ -77,3 +77,4 @@ cd apps/web
 npm run build
 ```
 A passing build completes with zero TypeScript errors and compiles the production bundle in `apps/web/dist/`.
+

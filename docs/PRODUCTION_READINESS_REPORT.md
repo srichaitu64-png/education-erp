@@ -85,3 +85,4 @@ All 103 backend automated tests pass (100% pass rate) under a strictly restricte
 * **Authentication & Authorization:** 10/10 — Argon2id password hashing, TOTP MFA, JWT token revocation, and granular RBAC.
 * **Curriculum & Academics:** 10/10 — Complete Subject Catalogue, Institution Subjects, and Class Subject Mappings with marks validation.
 * **Observability & Audit:** 9/10 — Immutable receipt logs, offline sync audits, and account security event logging.
+
