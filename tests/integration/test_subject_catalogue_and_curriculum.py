@@ -2,7 +2,7 @@ import uuid
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.core.security import create_access_token
 from app.modules.tenants.models import Tenant
@@ -48,6 +48,20 @@ async def test_global_subject_catalogue_listing_and_custom_creation(client: Asyn
     assert "PHY-101" in codes
     assert "CHEM-102" in codes
     assert "MATH-103" in codes
+
+    # Shared global catalogue entries are readable but immutable to tenant admins.
+    physics = next(subject for subject in subjects if subject["code"] == "PHY-101")
+    global_update = await client.put(
+        f"/api/v1/academic/subjects/{physics['id']}",
+        json={"name": "Tenant Attempt to Rename Physics"},
+        headers=headers
+    )
+    assert global_update.status_code == 403
+    global_archive = await client.delete(
+        f"/api/v1/academic/subjects/{physics['id']}",
+        headers=headers
+    )
+    assert global_archive.status_code == 403
 
     # 2. Create custom subject
     res_custom = await client.post(
@@ -354,6 +368,15 @@ async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncC
     # Tenant B attempting to delete Tenant A's subject must return 404
     res_b_del = await client.delete(f"/api/v1/academic/subjects/{subject_a_id}", headers=headers_b)
     assert res_b_del.status_code == 404
+
+    # Even setting the legacy custom GUC must not grant a cross-tenant RLS bypass.
+    await db_session.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant_b.id)}
+    )
+    await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+    isolated_subject = await db_session.get(SubjectCatalog, uuid.UUID(subject_a_id))
+    assert isolated_subject is None
 
 
 @pytest.mark.asyncio
