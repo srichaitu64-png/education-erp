@@ -113,6 +113,11 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
+    await db.execute(
+        text("SELECT set_config('app.current_user_id', :user_id, true)"),
+        {"user_id": str(user.id)}
+    )
+
     if tenant_uuid and not user.is_superadmin:
         if not any(role.tenant_id == tenant_uuid for role in user.roles):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not assigned to the selected institution.")
