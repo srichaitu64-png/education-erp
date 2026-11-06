@@ -50,7 +50,7 @@ async def test_01_two_administrative_layers_strictly_separated(client, db_sessio
     await db_session.commit()
 
     token_inst = create_access_token(subject=str(inst_admin.id), tenant_id=str(tenant.id), is_superadmin=False)
-    token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
+    token_owner = create_access_token(subject=str(platform_owner_id), is_superadmin=True)
 
     # Institution user attempting to access platform tenant onboarding: MUST BE 403
     resp_inst_tenants = await client.get("/api/v1/platform/tenants", headers={"Authorization": f"Bearer {token_inst}"})
@@ -94,10 +94,13 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
         is_active=True,
         is_superadmin=True
     )
+    tenant_id = tenant.id
+    platform_dev_id = platform_dev.id
+    platform_owner_id = platform_owner.id
     db_session.add_all([platform_dev, platform_owner])
     await db_session.commit()
 
-    token_dev = create_access_token(subject=str(platform_dev.id), is_superadmin=False)
+    token_dev = create_access_token(subject=str(platform_dev_id), is_superadmin=False)
     token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
 
     # 1. Platform Developer trying to access platform-wide tenant management: MUST BE 403
@@ -110,7 +113,7 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
 
     # 3. Superadmin requests support access for Developer
     resp_req = await client.post(
-        f"/api/v1/platform/support-sessions/request?tenant_id={tenant.id}&reason=Investigate+grade+discrepancy",
+        f"/api/v1/platform/support-sessions/request?tenant_id={tenant_id}&reason=Investigate+grade+discrepancy",
         headers={"Authorization": f"Bearer {token_owner}"}
     )
     assert resp_req.status_code == 200
@@ -155,7 +158,7 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
     db_session.add(inst_user)
     await db_session.commit()
 
-    token_inst = create_access_token(subject=str(inst_user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    token_inst = create_access_token(subject=str(inst_user_id), tenant_id=str(tenant_id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token_inst}"}
 
     # Attempt to assign Super Admin permission or invoke permission matrix API
