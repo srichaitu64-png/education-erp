@@ -6,10 +6,10 @@ from app.modules.leads.models import WebsiteLead
 
 @pytest.fixture
 async def platform_token(client: httpx.AsyncClient) -> str:
-    """Obtain valid Platform Super Admin JWT access token using requested siva / Myerp2026@."""
+    """Obtain valid Platform Super Admin JWT access token using requested platform bootstrap credentials."""
     res = await client.post("/api/v1/auth/login", json={
-        "username": "siva",
-        "password": "Myerp2026@"
+        "username": "admin@platform.erp.in",
+        "password": "AdminSecurePassword2026!"
     })
     assert res.status_code == 200, f"Superadmin login failed: {res.text}"
     return res.json()["access_token"]
@@ -19,12 +19,12 @@ async def platform_token(client: httpx.AsyncClient) -> str:
 async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
     """
     Test Self-Service OTP Password Recovery:
-    1. Request OTP using username 'siva'
+    1. Request OTP using platform email
     2. Confirm incorrect OTP fails with 400
     3. Verify valid 6-digit OTP resets password
     4. Verify login succeeds with newly set password
     """
-    # Step 1: Request OTP using superadmin username 'siva'
+    # Step 1: Request OTP using superadmin platform email
     req_resp = await client.post("/api/v1/auth/password/otp-request", json={
         "identifier": "siva"
     })
