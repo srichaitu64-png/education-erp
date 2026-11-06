@@ -17,10 +17,10 @@ async def test_01_get_and_update_attendance_config_daily_only(client: httpx.Asyn
     # Fetch pilot tenant and admin user
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
     assert tenant is not None
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
     assert user is not None
 
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     # 1. Fetch initial configuration
@@ -50,8 +50,8 @@ async def test_01_get_and_update_attendance_config_daily_only(client: httpx.Asyn
 async def test_02_period_attendance_rejected_when_mode_is_daily_only(client: httpx.AsyncClient, db_session: AsyncSession):
     """When mode is DAILY_ONLY, period attendance requests must be rejected with HTTP 400."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     # Ensure mode is DAILY_ONLY
@@ -90,8 +90,8 @@ async def test_02_period_attendance_rejected_when_mode_is_daily_only(client: htt
 async def test_03_config_b_period_wise_only_mode(client: httpx.AsyncClient, db_session: AsyncSession):
     """Configuration B: Period-wise Attendance Only Mode."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     # Update to PERIOD_WISE_ONLY
@@ -128,8 +128,8 @@ async def test_03_config_b_period_wise_only_mode(client: httpx.AsyncClient, db_s
 async def test_04_config_c_both_daily_and_period_mode(client: httpx.AsyncClient, db_session: AsyncSession):
     """Configuration C: Both Daily and Period-Wise Attendance enabled."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     update_res = await client.put(
@@ -202,8 +202,8 @@ async def test_04_config_c_both_daily_and_period_mode(client: httpx.AsyncClient,
 async def test_05_invalid_mode_rejected(client: httpx.AsyncClient, db_session: AsyncSession):
     """Invalid attendance mode must be rejected with HTTP 400."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     bad_res = await client.put(
@@ -219,8 +219,8 @@ async def test_05_invalid_mode_rejected(client: httpx.AsyncClient, db_session: A
 async def test_06_daily_dashboard_independent_of_period_wise(client: httpx.AsyncClient, db_session: AsyncSession):
     """Daily dashboard works reliably regardless of whether period attendance is enabled or disabled."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     res = await client.get("/api/v1/attendance/dashboard", headers=headers)
@@ -237,8 +237,8 @@ async def test_06_daily_dashboard_independent_of_period_wise(client: httpx.Async
 async def test_07_absentee_list_with_privacy(client: httpx.AsyncClient, db_session: AsyncSession):
     """Absent students list provides reasons and authorized details."""
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
+    user = (await db_session.execute(select(User).where(User.email == "principal@akshara.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
 
     res = await client.get("/api/v1/attendance/absentees", headers=headers)
