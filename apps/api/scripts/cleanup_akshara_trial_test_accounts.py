@@ -61,7 +61,7 @@ async def run(apply: bool) -> None:
                 print(f"NO ACTION: {user.email} has no role assignment in this tenant.")
                 continue
             print(
-                f"{'WOULD DISABLE' if apply else 'DRY RUN'}: {user.email}; "
+                f"{'WOULD REMOVE' if apply else 'DRY RUN'}: {user.email}; "
                 f"remove {len(assignments)} Akshara role assignment(s), "
                 "deactivate only if no other role assignments remain."
             )
