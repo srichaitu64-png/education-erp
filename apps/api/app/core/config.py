@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         if env == "production":
             if (
                 len(v) < 32
-                or "change-this" in v.lower()
+                or any(marker in v.lower() for marker in ("change-this", "replace_with", "placeholder", "example"))
                 or v in ("secret", "password", "default")
             ):
                 raise ValueError(
