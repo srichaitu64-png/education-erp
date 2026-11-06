@@ -53,6 +53,9 @@ async def get_current_user(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
 
+    # Reset privileged database context before evaluating any user-controlled request.
+    await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+
     # Apply the tenant claim from the signed access token to both the request
     # context and the active database transaction before loading tenant-scoped
     # role assignments. The DB dependency has already initialized a safe empty
