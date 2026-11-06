@@ -200,6 +200,7 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
                 WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
                   AND u.is_superadmin = TRUE
             )
+            OR requested_by_platform_user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
         )
         WITH CHECK (
             tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
@@ -207,6 +208,10 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
                 SELECT 1 FROM users u
                 WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
                   AND u.is_superadmin = TRUE
+            )
+            OR (
+                requested_by_platform_user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                AND status = 'REQUESTED'
             )
         );
     """))
