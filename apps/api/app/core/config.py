@@ -47,6 +47,16 @@ class Settings(BaseSettings):
                 )
         return v
 
+    @field_validator("INITIAL_SUPERADMIN_PASSWORD")
+    @classmethod
+    def validate_initial_superadmin_password(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            if len(v) < 14:
+                raise ValueError("INITIAL_SUPERADMIN_PASSWORD must be at least 14 characters.")
+            if v.strip() != v:
+                raise ValueError("INITIAL_SUPERADMIN_PASSWORD must not contain leading or trailing whitespace.")
+        return v or None
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
