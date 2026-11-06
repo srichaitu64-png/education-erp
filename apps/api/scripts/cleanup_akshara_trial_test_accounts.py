@@ -74,15 +74,7 @@ async def run(apply: bool) -> None:
                     UserRole.tenant_id == tenant.id,
                 )
             )
-            remaining = (
-                await db.execute(
-                    select(UserRole.id).where(UserRole.user_id == user.id)
-                )
-            ).scalars().first()
-            if remaining is None:
-                user.is_active = False
-                user.must_change_password = True
-
+            # Keep the User row for audit/history and any other institution memberships.\n            # Removing this tenant assignment alone prevents access to the Akshara pilot.\n
         # Never modify the Chairman identity or any tenant-level data.
         chairman = (
             await db.execute(select(User).where(User.email == PRESERVED_CHAIRMAN))
