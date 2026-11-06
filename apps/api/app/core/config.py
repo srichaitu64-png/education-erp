@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     SYNC_DATABASE_URL: str = "postgresql+psycopg2://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     TEST_DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_test"
+    # Privileged connection used only by pytest to create/drop its disposable database schema.
+    TEST_ADMIN_DATABASE_URL: Optional[str] = None
 
     # Domain routing
     BASE_DOMAIN: str = "erp.local"
