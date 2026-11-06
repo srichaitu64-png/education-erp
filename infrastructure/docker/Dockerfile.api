@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN addgroup --system app && adduser --system --ingroup app app
 COPY --chown=app:app apps/api/app ./app
+COPY --chown=app:app apps/api/migrations ./migrations
+COPY --chown=app:app apps/api/alembic.ini ./alembic.ini
 
 USER app
 EXPOSE 8000
