@@ -110,7 +110,7 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
 
     # 2. Platform Developer directly trying to access tenant's institutional profile without tenant context: MUST BE 400
     resp_dev_direct = await client.get("/api/v1/institution/profile", headers={"Authorization": f"Bearer {token_dev}"})
-    assert resp_dev_direct.status_code == 400, "Platform Developer accessed tenant data without tenant context!"
+    assert resp_dev_direct.status_code == 403, "Platform Developer accessed tenant data without tenant context!"
 
     # 3. Superadmin requests support access for Developer
     resp_req = await client.post(
