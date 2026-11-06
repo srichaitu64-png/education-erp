@@ -739,8 +739,6 @@ async def confirm_password_reset(
         )
 
     token_hashed = hash_token(req.token.strip())
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
     stmt = (
         select(PasswordResetToken)
         .options(selectinload(PasswordResetToken.user).selectinload(User.roles))
