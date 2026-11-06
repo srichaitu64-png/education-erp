@@ -49,17 +49,51 @@ def test_settings_cors_origins_parsing():
 
 
 def test_alembic_check_clean_dev_database():
-    """Verify Alembic detects no schema drift on the configured test database."""
+    """Upgrade a fresh isolated database, then verify there is no migration drift."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "check"],
-        cwd=api_dir,
-        env=os.environ.copy(),
-        capture_output=True,
-        text=True
+    base_url = make_url(settings.TEST_DATABASE_URL)
+    check_db = "education_erp_alembic_check_test"
+    check_url = base_url.set(database=check_db).render_as_string(hide_password=False)
+
+    psql_env = os.environ.copy()
+    if base_url.password:
+        psql_env["PGPASSWORD"] = base_url.password
+    psql_base = [
+        "psql",
+        "-h", base_url.host or "127.0.0.1",
+        "-p", str(base_url.port or 5432),
+        "-U", base_url.username or "postgres",
+        "-d", "postgres",
+    ]
+    alembic = [sys.executable, "-m", "alembic"]
+
+    subprocess.run(
+        psql_base + ["-c", f'DROP DATABASE IF EXISTS "{check_db}";'],
+        check=True, capture_output=True, env=psql_env
     )
-    assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
-    assert "No new upgrade operations detected" in (result.stdout + result.stderr)
+    subprocess.run(
+        psql_base + ["-c", f'CREATE DATABASE "{check_db}";'],
+        check=True, capture_output=True, env=psql_env
+    )
+
+    try:
+        upgrade = subprocess.run(
+            alembic + ["-x", f"db_url={check_url}", "upgrade", "head"],
+            cwd=api_dir, env=os.environ.copy(), capture_output=True, text=True
+        )
+        assert upgrade.returncode == 0, f"Initial migration failed: {upgrade.stderr or upgrade.stdout}"
+
+        result = subprocess.run(
+            alembic + ["-x", f"db_url={check_url}", "check"],
+            cwd=api_dir, env=os.environ.copy(), capture_output=True, text=True
+        )
+        assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
+        assert "No new upgrade operations detected" in (result.stdout + result.stderr)
+    finally:
+        subprocess.run(
+            psql_base + ["-c", f'DROP DATABASE IF EXISTS "{check_db}";'],
+            capture_output=True, env=psql_env
+        )
 
 
 def test_alembic_upgrade_downgrade_cycle():
