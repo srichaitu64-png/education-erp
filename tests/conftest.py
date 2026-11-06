@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 # Set test environment
 os.environ["ENVIRONMENT"] = "testing"
+os.environ["INITIAL_SUPERADMIN_PASSWORD"] = "AdminSecurePassword2026!"
 from app.core.config import settings
 from app.database.base import Base
 from app.database.session import get_db, set_current_tenant_id
@@ -53,10 +54,12 @@ def pytest_sessionstart(session):
             """))
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
-            await enable_row_level_security(conn)
 
         async with TestAsyncSessionLocal() as s:
             await seed_initial_data(s)
+
+        async with test_engine.begin() as conn:
+            await enable_row_level_security(conn)
 
     asyncio.run(_setup())
 
