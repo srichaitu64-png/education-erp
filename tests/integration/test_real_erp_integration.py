@@ -305,7 +305,7 @@ async def test_hall_tickets_batch_generation_and_verification(client: AsyncClien
         },
         headers=headers
     )
-    assert gen_res.status_code == 201
+    assert gen_res.status_code == 201, gen_res.text
     assert gen_res.json()["status"] == "SUCCESS"
 
     # 3. List hall tickets
