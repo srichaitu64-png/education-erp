@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Frontend Dependencies
         working-directory: ./apps/web
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build Web Application
         working-directory: ./apps/web
