@@ -1003,6 +1003,11 @@ async def verify_otp_and_reset_password(
     )
     res_user = await db.execute(stmt_user)
     user = res_user.scalars().first()
+    if user:
+        await db.execute(
+            text("SELECT set_config('app.current_user_id', :user_id, true)"),
+            {"user_id": str(user.id)}
+        )
 
     if not user or not user.is_active:
         raise HTTPException(
