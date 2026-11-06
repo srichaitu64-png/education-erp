@@ -32,7 +32,13 @@ async def run(apply: bool) -> None:
             print(f"No {TENANT_CODE!r} tenant exists. Nothing to change.")
             return
 
-        await db.set_rls_context(tenant.id, is_superadmin=False)
+        set_current_tenant_id(tenant.id)
+        from sqlalchemy import text
+        await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant.id)},
+        )
         print(f"Akshara pilot: {tenant.name} ({tenant.code})")
         print(f"Preserved Chairman identity: {PRESERVED_CHAIRMAN}")
 
