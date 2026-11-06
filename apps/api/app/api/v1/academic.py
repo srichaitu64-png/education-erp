@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime, date, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import select, and_, or_, func, text
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.database.session import get_db, get_current_tenant_id
+from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id
 from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User, UserRole, Role
 from app.modules.tenants.models import Tenant
@@ -861,17 +861,24 @@ async def list_hall_tickets(
     return res.scalars().all()
 
 
-@router.get("/hall-tickets/verify/{qr_or_ticket}")
+@router.get("/hall-tickets/verify/{ticket_number}")
 async def verify_hall_ticket(
-    qr_or_ticket: str,
+    ticket_number: str,
+    tenant_id: uuid.UUID = Query(...),
+    verification_code: str = Query(..., min_length=24, max_length=128),
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify hall ticket legitimacy and eligibility status via QR or ticket number."""
+    """Public QR verification requires both tenant scope and the ticket's bearer secret."""
+    set_current_tenant_id(tenant_id)
+    db.info["rls_tenant_id"] = tenant_id
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant_id)}
+    )
     stmt = select(HallTicket).where(
-        or_(
-            HallTicket.ticket_number == qr_or_ticket,
-            HallTicket.qr_verification_code == qr_or_ticket
-        )
+        HallTicket.tenant_id == tenant_id,
+        HallTicket.ticket_number == ticket_number,
+        HallTicket.qr_verification_code == verification_code,
     )
     res = await db.execute(stmt)
     ht = res.scalars().first()
