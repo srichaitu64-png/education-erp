@@ -79,9 +79,10 @@ def test_alembic_upgrade_downgrade_cycle():
     try:
         with admin_conn.cursor() as cursor:
             cursor.execute(f'CREATE DATABASE "{cycle_db}"')
-        cycle_url = base_url.set(database=cycle_db).render_as_string(hide_password=False).replace(
-            "postgresql://", "postgresql+asyncpg://"
-        )
+        cycle_url = base_url.set(
+            drivername="postgresql+asyncpg",
+            database=cycle_db,
+        ).render_as_string(hide_password=False)
         up1 = _alembic("upgrade", "head", db_url=cycle_url)
         assert up1.returncode == 0, f"Upgrade failed: {up1.stderr or up1.stdout}"
 
