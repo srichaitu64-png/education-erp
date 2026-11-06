@@ -26,6 +26,9 @@ def test_settings_secret_key_production_validation():
     with pytest.raises(ValueError, match="Insecure SECRET_KEY"):
         Settings(ENVIRONMENT="production", SECRET_KEY="short-secret-key")
 
+    with pytest.raises(ValueError, match="Insecure SECRET_KEY"):
+        Settings(ENVIRONMENT="production", SECRET_KEY="REPLACE_WITH_A_RANDOM_SECRET_KEY_32_CHARS")
+
     valid_key = "x" * 32
     prod_settings = Settings(ENVIRONMENT="production", SECRET_KEY=valid_key)
     assert prod_settings.SECRET_KEY == valid_key
