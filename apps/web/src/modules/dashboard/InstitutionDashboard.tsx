@@ -686,11 +686,11 @@ export const InstitutionDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Institutional Module Capabilities</h3>
-              <p className="text-sm text-gray-500">Live feature gating based on plan entitlements and administrator overrides</p>
+              <h3 className="text-lg font-bold text-gray-900">Workflow Centre</h3>
+              <p className="text-sm text-gray-500">Connected workflows from admission and enrolment through fees, attendance and examinations</p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-100 text-gray-700">
-              {Object.keys(entitlements).length || 28} Modules Registered
+              {Object.keys(entitlements).length} Entitlements Loaded
             </span>
           </div>
 
@@ -702,7 +702,7 @@ export const InstitutionDashboard: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-sm text-gray-900">Student Information System</h4>
-                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Active</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${entitlements['students.management']?.is_enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{entitlements['students.management']?.is_enabled ? 'Included in plan' : 'Plan required'}</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Full lifecycle student registration, guardian mapping and class assignments.</p>
               </div>
@@ -715,7 +715,7 @@ export const InstitutionDashboard: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-sm text-gray-900">Basic Fee Management</h4>
-                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Active</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${entitlements['fees.basic']?.is_enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{entitlements['fees.basic']?.is_enabled ? 'Included in plan' : 'Plan required'}</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Fee structures, student invoicing, receipt generation and ledger audit trails.</p>
               </div>
