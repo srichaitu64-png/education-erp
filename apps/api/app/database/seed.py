@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.core.config import settings
 from app.modules.tenants.models import Tenant, Campus
 from app.modules.identity.models import User, Role, Permission, UserRole, role_permissions
 from app.modules.subscriptions.models import (
@@ -321,30 +322,27 @@ async def seed_initial_data(db: AsyncSession) -> None:
     res = await db.execute(stmt)
     super_admin = res.scalars().first()
     if not super_admin:
-        super_admin = User(
-            email=admin_email,
-            hashed_password=hash_password("Myerp2026@"),
-            full_name="Platform Super Administrator",
-            is_active=True,
-            is_superadmin=True,
-            phone="+91 98450 12345"
-        )
-        db.add(super_admin)
-        await db.flush()
+        # Never create or reset a platform root account with a repository-known password.
+        # Provision it only when an operator supplies a one-time secret via environment.
+        bootstrap_password = settings.INITIAL_SUPERADMIN_PASSWORD
+        if bootstrap_password:
+            super_admin = User(
+                email=admin_email,
+                hashed_password=hash_password(bootstrap_password),
+                full_name="Platform Super Administrator",
+                is_active=True,
+                is_superadmin=True,
+                must_change_password=True
+            )
+            db.add(super_admin)
+            await db.flush()
 
-        # Assign SUPER_ADMIN role
-        stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
-        res_role = await db.execute(stmt_role)
-        s_role = res_role.scalars().first()
-        if s_role:
-            ur = UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None)
-            db.add(ur)
-    else:
-        super_admin.hashed_password = hash_password("Myerp2026@")
-        super_admin.phone = "+91 98450 12345"
-        super_admin.failed_login_attempts = 0
-        super_admin.locked_until = None
-        await db.flush()
+            stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
+            res_role = await db.execute(stmt_role)
+            s_role = res_role.scalars().first()
+            if s_role:
+                db.add(UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None))
+    # Existing platform administrator credentials and profile are never overwritten by seeding.
 
     # 6. Seed Default Demonstration Institution: OUR SCHOOL (Live Demo)
     stmt_tenant = select(Tenant).where(or_(Tenant.code == "our-school-demo", Tenant.code == "akshara"))
