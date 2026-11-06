@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Safely disable only the known, seeded Akshara trial principal test accounts.
+"""Safely remove only known, seeded Akshara trial principal role assignments.
 
 This is a dry-run by default. It never deletes the Akshara tenant, Chairman,
 subscription, campus, academic configuration, or student records. Unknown users
@@ -7,7 +7,7 @@ are reported for manual review and are never modified by this script.
 """
 import argparse
 import asyncio
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 
 from app.database.session import AsyncSessionLocal
 from app.database.session import set_current_tenant_id
@@ -33,7 +33,6 @@ async def run(apply: bool) -> None:
             return
 
         set_current_tenant_id(tenant.id)
-        from sqlalchemy import text
         await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
         await db.execute(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
@@ -63,7 +62,7 @@ async def run(apply: bool) -> None:
             print(
                 f"{'WOULD REMOVE' if apply else 'DRY RUN'}: {user.email}; "
                 f"remove {len(assignments)} Akshara role assignment(s), "
-                "deactivate only if no other role assignments remain."
+                "retain the user row for audit/history."
             )
             if not apply:
                 continue
