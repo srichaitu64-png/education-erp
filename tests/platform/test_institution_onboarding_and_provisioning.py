@@ -390,7 +390,7 @@ async def test_08_verify_our_school_demo_and_akshara_trial_dashboard_arrangement
     """
     Verify the explicitly approved 2-institution arrangement:
     1. OUR SCHOOL (our-school-demo): Type=demo, Status=active_demo
-    2. AKSHARA GLOBAL SCHOOL AND PU COLLEGE (akshara-trial): Type=composite_group, Status=trial_active
+    2. AKSHARA GLOBAL SCHOOL & COLLEGE (akshara-trial): Type=composite_group, Status=trial_active
     3. Global SaaS Metrics:
        - Total institutions = 2
        - Demo institutions = 1
