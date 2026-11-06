@@ -71,9 +71,9 @@ export const App: React.FC = () => {
           {/* Interactive In-Browser Demo Sandbox */}
           <Route path="/demo" element={<InteractiveDemoPage />} />
 
-          {/* Authentication — Single Universal Login */}
+          {/* Institution and platform-owner authentication remain separate. */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/platform/login" element={<Navigate to="/login" replace />} />
+          <Route path="/platform/login" element={<PlatformLoginPage />} />
 
           {/* Dedicated /platform/* Private SaaS Platform Owner Route Group */}
           <Route
