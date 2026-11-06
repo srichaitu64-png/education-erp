@@ -185,7 +185,7 @@ async def test_05_suspended_tenant_login_blocked(client: httpx.AsyncClient, db_s
     res = await client.post("/api/v1/auth/login", json={
         "username": user_email,
         "password": "UserPassword2026!",
-        "tenant_code": inst_code
+        "tenant_code": suspended_tenant.code
     })
     assert res.status_code == 403
     assert "suspended" in res.json()["detail"].lower()
