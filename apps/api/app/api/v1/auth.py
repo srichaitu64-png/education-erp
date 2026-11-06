@@ -1350,19 +1350,15 @@ async def complete_mfa_login(
         )
 
     user_id = payload_jwt.get("sub")
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA challenge subject.")
 
-    stmt = (
-        select(User)
-        .options(
-            selectinload(User.roles)
-            .selectinload(UserRole.role)
-            .selectinload(Role.permissions)
-        )
-        .where(User.id == uuid.UUID(user_id))
-    )
-    res = await db.execute(stmt)
-    user = res.scalars().first()
+    # Load the account record without elevating RLS. Resolve roles only after
+    # establishing the tenant scope embedded in the signed MFA challenge.
+    user_result = await db.execute(select(User).where(User.id == user_uuid))
+    user = user_result.scalars().first()
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -1375,14 +1371,70 @@ async def complete_mfa_login(
             detail="Invalid 6-digit TOTP verification code."
         )
 
-    # TOTP verification succeeded! Issue access and refresh tokens.
-    tenant_id = user.roles[0].tenant_id if user.roles else None
+    tenant_id = None
+    if not user.is_superadmin:
+        tenant_code = payload_jwt.get("tenant_code")
+        if not tenant_code:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Institution scope is missing from the MFA challenge.")
+        tenant_result = await db.execute(select(Tenant).where(Tenant.code == tenant_code))
+        tenant = tenant_result.scalars().first()
+        if not tenant or tenant.status not in ("active", "trial", "trialing"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution workspace is not active.")
+        set_current_tenant_id(tenant.id)
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant.id)}
+        )
+        scoped_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = scoped_user_result.scalars().first()
+        if not user or not any(ur.tenant_id == tenant.id for ur in user.roles):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is not assigned to this institution.")
+        entitlement_data = await EntitlementService(db).get_tenant_entitlements(tenant.id)
+        if entitlement_data.get("subscription_status") not in ("active", "trial"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution subscription is not active.")
+        tenant_id = tenant.id
+    else:
+        global_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = global_user_result.scalars().first()
+
+    # TOTP verification succeeded; issue a tenant-bound access and refresh token.
+    mfa_session_id = uuid.uuid4()
     access_token = create_access_token(
         subject=str(user.id),
         tenant_id=str(tenant_id) if tenant_id else None,
-        is_superadmin=user.is_superadmin
+        is_superadmin=user.is_superadmin,
+        session_id=str(mfa_session_id)
     )
-    refresh_token = create_refresh_token(subject=str(user.id))
+    refresh_token = create_refresh_token(
+        subject=str(user.id),
+        tenant_id=str(tenant_id) if tenant_id else None
+    )
+    db.add(UserSession(
+        id=mfa_session_id,
+        user_id=user.id,
+        session_token_hash=hash_token(access_token[-16:]),
+        ip_address=request.client.host if request.client else "127.0.0.1",
+        user_agent=request.headers.get("user-agent", "Unknown")[:450],
+        device_name="MFA Verified Session",
+        last_active_at=datetime.now(timezone.utc),
+        is_revoked=False
+    ))
 
     authority_level = "PLATFORM" if user.is_superadmin else "INSTITUTION"
     destination = "/platform" if user.is_superadmin else "/app"
