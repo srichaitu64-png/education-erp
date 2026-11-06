@@ -35,8 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: testing
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/education_erp_test
-      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/education_erp_test
+      DATABASE_URL: ${{ format('postgresql+asyncpg://erp_app:{0}@127.0.0.1:5433/education_erp_test', 'erp_app_pass') }}
+      TEST_DATABASE_URL: ${{ format('postgresql+asyncpg://erp_app:{0}@127.0.0.1:5433/education_erp_test', 'erp_app_pass') }}
+      TEST_ADMIN_DATABASE_URL: ${{ format('postgresql+asyncpg://postgres:{0}@127.0.0.1:5433/education_erp_test', 'postgres') }}
       PGPASSWORD: postgres
       SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
       INITIAL_SUPERADMIN_PASSWORD: AdminSecurePassword2026!
@@ -73,6 +74,8 @@ jobs:
 
       - name: Apply database migrations
         working-directory: ./apps/api
+        env:
+          DATABASE_URL: ${{ format('postgresql+asyncpg://postgres:{0}@127.0.0.1:5433/education_erp_test', 'postgres') }}
         run: python -m alembic upgrade head
 
       - name: Run Full Regression Test Suite
