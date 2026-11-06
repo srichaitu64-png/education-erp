@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -71,6 +71,21 @@ async def get_current_user(
         except ValueError:
             pass
 
+    # Apply the signed tenant claim before loading tenant-scoped role assignments.
+    token_tenant = payload.get("tenant_id")
+    tenant_uuid = None
+    if token_tenant:
+        try:
+            tenant_uuid = uuid.UUID(token_tenant)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant ID in token")
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant_uuid)}
+        )
+    else:
+        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+
     stmt = (
         select(User)
         .options(
@@ -87,6 +102,21 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+
+    if tenant_uuid and not user.is_superadmin:
+        if not any(role.tenant_id == tenant_uuid for role in user.roles):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not assigned to the selected institution.")
+    if tenant_uuid and user.is_superadmin:
+        support_stmt = select(PlatformSupportAccessSession).where(
+            PlatformSupportAccessSession.tenant_id == tenant_uuid,
+            PlatformSupportAccessSession.requested_by_platform_user_id == user.id,
+            PlatformSupportAccessSession.status == "APPROVED",
+            PlatformSupportAccessSession.expires_at > datetime.now(timezone.utc),
+            PlatformSupportAccessSession.revoked_at.is_(None)
+        )
+        support_result = await db.execute(support_stmt)
+        if not support_result.scalars().first():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An approved, active support session is required for tenant-scoped platform access.")
 
     # Mandatory first-login password enforcement gate
     if user.must_change_password:
