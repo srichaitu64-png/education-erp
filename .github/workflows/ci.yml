@@ -39,6 +39,7 @@ jobs:
       TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/education_erp_test
       PGPASSWORD: postgres
       SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
+      INITIAL_SUPERADMIN_PASSWORD: AdminSecurePassword2026!
     services:
       postgres:
         image: postgres:16
