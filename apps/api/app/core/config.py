@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    BOOTSTRAP_SUPERADMIN_EMAIL: str = "admin@platform.erp.in"
+    BOOTSTRAP_SUPERADMIN_PASSWORD: Optional[str] = None
 
     # Database URLs (Strictly non-superuser, NOBYPASSRLS application role)
     DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
@@ -38,8 +40,8 @@ class Settings(BaseSettings):
         if env == "production":
             if (
                 len(v) < 32
-                or "change-this" in v.lower()
-                or v in ("secret", "password", "default")
+                or any(marker in v.lower() for marker in ("change-this", "replace", "example", "your-secret"))
+                or v.lower() in ("secret", "password", "default")
             ):
                 raise ValueError(
                     "Insecure SECRET_KEY: In production, SECRET_KEY must be a cryptographically secure string of at least 32 characters and cannot use placeholder values."

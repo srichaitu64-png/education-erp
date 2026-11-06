@@ -9,11 +9,21 @@ from app.modules.identity.models import User, Role, UserRole
 from app.core.security import hash_password
 
 @pytest.mark.asyncio
-async def test_01_platform_owner_universal_login(client: httpx.AsyncClient):
+async def test_01_platform_owner_universal_login(client: httpx.AsyncClient, db_session: AsyncSession):
     """
     Requirement 1 & 2: Platform Owner signs in via universal /login using either username or email.
     Backend identifies root authority, routes to /platform, and enforces PLATFORM authority.
     """
+    # Isolate this test from credential mutations performed by other security tests.
+    platform_user = (await db_session.execute(
+        select(User).where(User.email == "admin@platform.erp.in")
+    )).scalars().first()
+    assert platform_user is not None
+    platform_user.hashed_password = hash_password("AdminSecurePassword2026!")
+    platform_user.failed_login_attempts = 0
+    platform_user.locked_until = None
+    await db_session.commit()
+
     # 1. Login with username
     res1 = await client.post("/api/v1/auth/login", json={
         "username": "superadmin",

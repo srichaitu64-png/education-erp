@@ -152,33 +152,9 @@ async def login(
                 detail=f"Account is temporarily locked due to consecutive failed login attempts. Lockout active until {user.locked_until.strftime('%H:%M:%S UTC')}."
             )
 
-    valid_password = False
-    if user and verify_password(req.password, user.hashed_password):
-        valid_password = True
-    elif user and user.is_superadmin and req.password in (
-        "AdminSecurePassword2026!",
-        "Adm1nSecurePassword2026!",
-        "SuperAdmin@2026!",
-        "SuperAdm1n@2026!",
-        "Myerp2026@",
-        "admin123",
-        "siva",
-        "admin",
-        "superadmin",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
-        user.must_change_password = False
-    elif user and req.password in (
-        "ChairmanTrialSecure2026!",
-        "PrincipalSecurePassword2026!",
-        "admin123@",
-        "admin123",
-        "demo123",
-        "demo",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
+    # Authentication must rely exclusively on the stored Argon2id password hash.
+    # Never accept shared/static fallback passwords: they bypass per-user credentials.
+    valid_password = bool(user and verify_password(req.password, user.hashed_password))
 
     if not user or not valid_password:
         if user:

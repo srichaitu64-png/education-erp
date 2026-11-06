@@ -4,7 +4,8 @@ from sqlalchemy import select, or_, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
+from app.core.security import hash_password, validate_password_strength
+from app.core.config import settings
 from app.modules.tenants.models import Tenant, Campus
 from app.modules.identity.models import User, Role, Permission, UserRole, role_permissions
 from app.modules.subscriptions.models import (
@@ -315,36 +316,57 @@ async def seed_initial_data(db: AsyncSession) -> None:
                     r_obj.permissions.append(all_perms[pc])
     await db.flush()
 
-    # 5. Default Super Admin User
-    admin_email = "admin@platform.erp.in"
+    # 5. Provision the initial platform owner exactly once.
+    # Production must receive a unique bootstrap password through a secret manager.
+    admin_email = settings.BOOTSTRAP_SUPERADMIN_EMAIL
     stmt = select(User).where(User.email == admin_email)
     res = await db.execute(stmt)
     super_admin = res.scalars().first()
     if not super_admin:
+        if settings.ENVIRONMENT == "production":
+            bootstrap_password = settings.BOOTSTRAP_SUPERADMIN_PASSWORD
+            if not bootstrap_password:
+                raise RuntimeError(
+                    "BOOTSTRAP_SUPERADMIN_PASSWORD is required when provisioning the first production platform owner."
+                )
+            password_ok, password_message = validate_password_strength(bootstrap_password)
+            if not password_ok:
+                raise RuntimeError(f"Invalid bootstrap administrator password: {password_message}")
+        else:
+            # Deterministic credential is test/development-only; never used in production.
+            bootstrap_password = "AdminSecurePassword2026!"
+
         super_admin = User(
             email=admin_email,
-            hashed_password=hash_password("Myerp2026@"),
+            hashed_password=hash_password(bootstrap_password),
             full_name="Platform Super Administrator",
             is_active=True,
             is_superadmin=True,
-            phone="+91 98450 12345"
+            must_change_password=(settings.ENVIRONMENT == "production"),
+            phone=None
         )
         db.add(super_admin)
         await db.flush()
 
-        # Assign SUPER_ADMIN role
         stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
         res_role = await db.execute(stmt_role)
         s_role = res_role.scalars().first()
         if s_role:
-            ur = UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None)
-            db.add(ur)
+            db.add(UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None))
     else:
-        super_admin.hashed_password = hash_password("Myerp2026@")
-        super_admin.phone = "+91 98450 12345"
-        super_admin.failed_login_attempts = 0
-        super_admin.locked_until = None
+        if settings.ENVIRONMENT == "production" and not super_admin.is_superadmin:
+            raise RuntimeError(
+                "BOOTSTRAP_SUPERADMIN_EMAIL is already assigned to a non-platform account; refusing production bootstrap."
+            )
+        # Never reset passwords, clear lockouts, or silently elevate an existing
+        # account during application startup. Re-seeding must not alter identity.
         await db.flush()
+
+    # Production starts with platform catalogue and a one-time owner only.
+    # Demo institutions, demo users and sample financial records belong in non-production.
+    if settings.ENVIRONMENT == "production":
+        await db.commit()
+        return
 
     # 6. Seed Default Demonstration Institution: OUR SCHOOL (Live Demo)
     stmt_tenant = select(Tenant).where(or_(Tenant.code == "our-school-demo", Tenant.code == "akshara"))

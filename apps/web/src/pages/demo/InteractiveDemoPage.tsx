@@ -322,7 +322,7 @@ export const InteractiveDemoPage: React.FC = () => {
   const [loginRole, setLoginRole] = useState<UserRoleType>('PRINCIPAL');
   const [loginSearch, setLoginSearch] = useState('');
   const [selectedUserIdentity, setSelectedUserIdentity] = useState('Dr. Ramesh Kumar (EMP-PRIN-01)');
-  const [loginPassword, setLoginPassword] = useState('PrincipalSecurePassword2026!');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
 

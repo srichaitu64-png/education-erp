@@ -1,20 +1,45 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: erp_migrate
+    restart: "no"
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://erp_app:${ERP_APP_PASSWORD:?Set ERP_APP_PASSWORD in .env}@db:5432/education_erp_prod
+      SECRET_KEY: ${SECRET_KEY:?Set a unique SECRET_KEY in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - erp_net
+
   api:
     build:
       context: .
       dockerfile: infrastructure/docker/Dockerfile.api
     container_name: erp_api
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     environment:
-      - ENVIRONMENT=production
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres_secure_password@db:5432/education_erp_prod
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-default_secure_secret_key_change_in_production}
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://erp_app:${ERP_APP_PASSWORD:?Set ERP_APP_PASSWORD in .env}@db:5432/education_erp_prod
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:?Set a unique SECRET_KEY in .env}
+      BOOTSTRAP_SUPERADMIN_EMAIL: ${BOOTSTRAP_SUPERADMIN_EMAIL:-admin@platform.erp.in}
+      BOOTSTRAP_SUPERADMIN_PASSWORD: ${BOOTSTRAP_SUPERADMIN_PASSWORD:-}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_started
     networks:
@@ -29,7 +54,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - erp_net
 
@@ -40,16 +66,16 @@ services:
     environment:
       POSTGRES_DB: education_erp_prod
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_secure_password
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      ERP_APP_PASSWORD: ${ERP_APP_PASSWORD:?Set ERP_APP_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres-init/01-create-app-role.sql:/docker-entrypoint-initdb.d/01-create-app-role.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d education_erp_prod"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks:
       - erp_net
 
@@ -57,8 +83,6 @@ services:
     image: redis:7-alpine
     container_name: erp_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -71,4 +95,3 @@ volumes:
 networks:
   erp_net:
     driver: bridge
-

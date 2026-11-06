@@ -1,8 +1,12 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 from typing import AsyncGenerator
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.core.config import settings
 from app.database.base import Base
@@ -76,12 +80,36 @@ from app.modules.migration.models import MigrationBatchLog
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown lifecycle handler."""
-    # Initialize database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        await enable_row_level_security(conn)
+    if settings.ENVIRONMENT == "production":
+        # Production schema changes must be deployed through reviewed Alembic
+        # migrations. Never run create_all() against customer data.
+        alembic_config = AlembicConfig(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        expected_revision = ScriptDirectory.from_config(alembic_config).get_current_head()
+        async with engine.connect() as conn:
+            try:
+                result = await conn.execute(text("SELECT version_num FROM alembic_version"))
+                current_revision = result.scalar_one_or_none()
+            except Exception as exc:
+                raise RuntimeError(
+                    "Production database is not migrated. Run python -m alembic upgrade head before starting the API."
+                ) from exc
 
-    # Seed initial platform features, subscription plans, roles and superadmin
+            if current_revision != expected_revision:
+                raise RuntimeError(
+                    f"Database migration revision is {current_revision!r}; expected {expected_revision!r}. "
+                    "Run python -m alembic upgrade head before starting the API."
+                )
+
+            # Apply database-enforced tenant policies only after schema migrations.
+            await enable_row_level_security(conn)
+            await conn.commit()
+    else:
+        # Development/test convenience only. Production must use Alembic.
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            await enable_row_level_security(conn)
+
+    # Seed platform catalogue and (in production) the one-time bootstrap owner.
     async with AsyncSessionLocal() as session:
         await seed_initial_data(session)
 
