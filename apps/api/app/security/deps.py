@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -52,6 +52,32 @@ async def get_current_user(
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
+
+    # Reset privileged database context before evaluating any user-controlled request.
+    await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+
+    # Apply the tenant claim from the signed access token to both the request
+    # context and the active database transaction before loading tenant-scoped
+    # role assignments. The DB dependency has already initialized a safe empty
+    # context; this replaces it only with a validated UUID from the signed token.
+    token_tenant = payload.get("tenant_id")
+    tenant_uuid: Optional[uuid.UUID] = None
+    if token_tenant:
+        try:
+            tenant_uuid = uuid.UUID(str(token_tenant))
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid tenant claim in authentication token",
+            )
+        set_current_tenant_id(tenant_uuid)
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant_uuid)},
+        )
+    else:
+        set_current_tenant_id(None)
+        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
 
     # Verify session revocation if session ID (sid) is present in token
     sid = payload.get("sid")
@@ -104,14 +130,17 @@ async def get_current_user(
                 detail="Password setup required: You must establish a permanent password before accessing application workspace."
             )
 
-    # Set tenant context if token has an authenticated tenant
-    token_tenant = payload.get("tenant_id")
-    if token_tenant:
-        try:
-            t_uuid = uuid.UUID(token_tenant)
-            set_current_tenant_id(t_uuid)
-        except ValueError:
-            pass
+    # A platform administrator receives the explicit RLS bypass only after
+    # the database-backed user record has confirmed platform authority.
+    if user.is_superadmin:
+        await db.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+    elif tenant_uuid and not any(
+        role_assignment.tenant_id == tenant_uuid for role_assignment in user.roles
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is not assigned to the tenant in this session.",
+        )
 
     return user
 
