@@ -5,7 +5,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
-from app.modules.identity.models import User
+from app.modules.identity.models import User, Role, UserRole
 from app.modules.tenants.models import Tenant
 from app.modules.subscriptions.models import Subscription, SubscriptionPlan, TenantFeatureOverride, PlanFeature
 from app.modules.subscriptions.service import EntitlementService
@@ -44,6 +44,12 @@ async def test_feature_locking_engine_enforcement(client, db_session: AsyncSessi
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
 
     now = datetime.now(timezone.utc)
     sub = Subscription(
@@ -55,6 +61,7 @@ async def test_feature_locking_engine_enforcement(client, db_session: AsyncSessi
         ends_at=now + timedelta(days=365)
     )
     db_session.add(sub)
+    tenant_id = tenant.id
     await db_session.commit()
 
     token = create_access_token(
@@ -110,6 +117,12 @@ async def test_institution_specific_feature_override(client, db_session: AsyncSe
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
 
     now = datetime.now(timezone.utc)
     sub = Subscription(
