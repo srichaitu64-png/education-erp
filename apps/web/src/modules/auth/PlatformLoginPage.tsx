@@ -9,75 +9,19 @@ import {
   ArrowRight,
   Server,
   AlertCircle,
-  Sparkles,
-  RotateCcw,
   Building2,
-  CheckCircle2,
-  Layers
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { useDemoStore } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
-
-export interface PlatformDemoAccount {
-  role: 'SUPER_ADMIN' | 'BACKUP_SUPER_ADMIN' | 'DEVELOPER';
-  label: string;
-  shortLabel: string;
-  email: string;
-  username: string;
-  pass: string;
-  fullName: string;
-  badge: string;
-  canDo: string;
-}
-
-export const PLATFORM_DEMO_ACCOUNTS: PlatformDemoAccount[] = [
-  {
-    role: 'SUPER_ADMIN',
-    label: 'Platform Super Admin (SaaS Owner)',
-    shortLabel: '🌐 Super Admin',
-    email: 'admin@platform.erp.in',
-    username: 'superadmin',
-    pass: 'AdminSecurePassword2026!',
-    fullName: 'Global Platform Administrator',
-    badge: 'Platform Root Authority',
-    canDo: 'Global control over all 1,000+ tenancies, plan pricing, MRR analytics, and system health',
-  },
-  {
-    role: 'BACKUP_SUPER_ADMIN',
-    label: 'Backup Super Admin (Security)',
-    shortLabel: '🛡️ Backup Super Admin',
-    email: 'backup.admin@platform.erp.in',
-    username: 'backup.admin',
-    pass: 'BackupSecurePass2026!',
-    fullName: 'Secondary Platform Administrator',
-    badge: 'Disaster Recovery',
-    canDo: 'Secondary emergency recovery, failover validation, and immutable platform audit logs',
-  },
-  {
-    role: 'DEVELOPER',
-    label: 'Platform Developer (DevOps)',
-    shortLabel: '💻 Platform Developer',
-    email: 'developer@platform.erp.in',
-    username: 'developer',
-    pass: 'DevSecurePass2026!',
-    fullName: 'Platform Infrastructure Engineer',
-    badge: 'Infrastructure Telemetry',
-    canDo: 'API telemetry, database performance diagnostics, zero-access to live student gradebooks',
-  },
-];
 
 export const PlatformLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { switchRole } = useDemoStore();
 
-  const [selectedRole, setSelectedRole] = useState<'SUPER_ADMIN' | 'BACKUP_SUPER_ADMIN' | 'DEVELOPER'>('SUPER_ADMIN');
   const [usernameOrId, setUsernameOrId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [activeAccount, setActiveAccount] = useState<PlatformDemoAccount | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -88,14 +32,6 @@ export const PlatformLoginPage: React.FC = () => {
     if (errorMessage) {
       setErrorMessage(null);
     }
-  };
-
-  const handleAutofill = (acc: PlatformDemoAccount) => {
-    setActiveAccount(acc);
-    setUsernameOrId(acc.email);
-    setPassword(acc.pass);
-    setSelectedRole(acc.role);
-    setErrorMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,63 +58,22 @@ export const PlatformLoginPage: React.FC = () => {
       const payload = {
         email: inputVal,
         password,
-        role: selectedRole,
       };
 
-      try {
-        const res = await api.post('/auth/login', payload);
-        const { access_token, refresh_token, user } = res.data;
-        if (!user.is_superadmin) {
-          throw new Error('This account does not have SaaS Platform Super Admin privileges.');
-        }
-        await login(access_token, refresh_token, user);
-        switchRole('SUPER_ADMIN');
-        navigate('/platform');
-        return;
-      } catch (apiErr: any) {
-        // Fallback for static hosting on Vercel or offline backend
-        const searchVal = inputVal.toLowerCase();
-        const matched = PLATFORM_DEMO_ACCOUNTS.find(
-          (acc) =>
-            (acc.email.toLowerCase() === searchVal ||
-              acc.username.toLowerCase() === searchVal) &&
-            acc.pass === password
-        );
-
-        if (matched) {
-          const mockUser = {
-            id: `usr-${matched.role.toLowerCase()}`,
-            email: matched.email,
-            full_name: matched.fullName,
-            phone: '+91 99000 00001',
-            is_active: true,
-            is_superadmin: true,
-            roles: [
-              {
-                id: `role-${matched.role.toLowerCase()}`,
-                name: matched.label,
-                code: matched.role,
-                tenant_id: null,
-                permissions: ['*'],
-              },
-            ],
-          };
-
-          await login('mock_jwt_access_token_platform', 'mock_jwt_refresh_token_platform', mockUser);
-          switchRole('SUPER_ADMIN');
-          navigate('/platform');
-          return;
-        }
-
-        throw apiErr;
+      const res = await api.post('/auth/login', payload);
+      const { access_token, refresh_token, user } = res.data || {};
+      if (!access_token || !user?.is_superadmin) {
+        throw new Error('This account does not have SaaS Platform Owner privileges.');
       }
+      await login(access_token, refresh_token, user);
+      navigate('/platform');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (detail) {
         setErrorMessage(detail);
       } else {
         setErrorMessage(
-          'Invalid credentials or unassigned platform role. Use the Quick Platform Demo Accounts below.'
+          'Invalid credentials or insufficient platform privileges. Please verify your Platform Owner account.'
         );
       }
     } finally {
@@ -203,49 +98,9 @@ export const PlatformLoginPage: React.FC = () => {
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">EducationOS Platform Control</h1>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              SaaS Infrastructure, Multi-Tenant Provisioning, Billing & Zero-Trust Governance
+              Private SaaS administration and platform governance
             </p>
           </div>
-        </div>
-
-        {/* Quick Platform Demo Credentials Picker */}
-        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              Platform Owner Demo Credentials (1-Click Fill)
-            </span>
-            <span className="text-[10px] text-slate-500 font-medium">Root Access</span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {PLATFORM_DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.role}
-                type="button"
-                onClick={() => handleAutofill(acc)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                  selectedRole === acc.role && (usernameOrId === acc.email || usernameOrId === acc.username)
-                    ? 'bg-purple-600/30 text-purple-200 border-purple-500/60 shadow-sm'
-                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'
-                }`}
-              >
-                <span>{acc.shortLabel}</span>
-              </button>
-            ))}
-          </div>
-
-          {activeAccount && (
-            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-purple-900/40 text-[11px] text-slate-300 space-y-1 mt-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-white">{activeAccount.fullName}</span>
-                <span className="text-[10px] font-semibold text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/60">
-                  {activeAccount.badge}
-                </span>
-              </div>
-              <p className="text-slate-400 text-[10px] leading-relaxed">{activeAccount.canDo}</p>
-            </div>
-          )}
         </div>
 
         {/* Error Banner */}
@@ -258,28 +113,10 @@ export const PlatformLoginPage: React.FC = () => {
 
         {/* Platform Sign In Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* 1. Platform Role */}
+          {/* Platform Owner Identifier */}
           <div>
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Platform Administrative Role
-            </label>
-            <div className="relative">
-              <select
-                value={selectedRole}
-                onChange={(e) => handleInputChange(setSelectedRole as any, e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
-              >
-                <option value="SUPER_ADMIN">🌐 Platform Super Admin (Full SaaS Control)</option>
-                <option value="BACKUP_SUPER_ADMIN">🛡️ Backup Super Admin (Security & Recovery)</option>
-                <option value="DEVELOPER">💻 Platform Developer (Telemetry & Infrastructure)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* 2. Identifier */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Root Administrator Email
+              Platform Owner Email
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
