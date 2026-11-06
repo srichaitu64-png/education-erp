@@ -59,6 +59,14 @@ def test_settings_cors_origins_parsing():
 def test_alembic_check_clean_dev_database():
     """Verify that alembic check detects zero discrepancies between SQLAlchemy models and DB schema."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
+    # Ensure target database is at head before verifying model synchronization
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=api_dir,
+        capture_output=True,
+        text=True,
+        env=dict(os.environ)
+    )
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "check"],
         cwd=api_dir,
