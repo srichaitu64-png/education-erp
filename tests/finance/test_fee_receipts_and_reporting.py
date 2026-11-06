@@ -129,14 +129,15 @@ async def test_fee_collection_and_automatic_receipt_generation(client: httpx.Asy
     assert resp.status_code == 201, resp.text
     receipt = resp.json()
 
-    assert receipt["receipt_number"].startswith("RCP-AKSH-")
+    expected_tenant_code = "".join(ch for ch in tenant.code.upper() if ch.isalnum())[:8] or "INST"
+    assert receipt["receipt_number"].startswith(f"RCP-{expected_tenant_code}-")
     assert receipt["amount_paid"] == 5000.0
     assert receipt["previous_balance"] == initial_bal
     assert receipt["current_balance"] == initial_bal - 5000.0
     assert receipt["is_duplicate"] is False
     assert receipt["reprint_count"] == 0
     assert "qr_verification_code" in receipt
-    assert receipt["institution_branding"]["institution_name"] == "Akshara Global Educational Institutions"
+    assert receipt["institution_branding"]["institution_name"] == tenant.name
 
     # Verify Idempotency: submitting the exact same idempotency_key returns the same receipt without double charging
     retry_resp = await client.post("/api/v1/finance/collect", json=payment_payload, headers=headers)
