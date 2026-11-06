@@ -318,8 +318,12 @@ async def test_hall_tickets_batch_generation_and_verification(client: AsyncClien
     ticket_no = sample_ticket["ticket_number"]
     qr_code = sample_ticket["qr_verification_code"]
 
-    # 4. Verify QR code
-    verify_res = await client.get(f"/api/v1/academic/hall-tickets/verify/{ticket_no}")
+    # 4. Verify QR code. Public verification accepts only the high-entropy
+    # tenant-bound QR token, never the enumerable ticket number.
+    ticket_number_lookup = await client.get(f"/api/v1/academic/hall-tickets/verify/{ticket_no}")
+    assert ticket_number_lookup.status_code == 404
+
+    verify_res = await client.get(f"/api/v1/academic/hall-tickets/verify/{qr_code}")
     assert verify_res.status_code == 200
     v_data = verify_res.json()
     assert v_data["valid"] is True
