@@ -49,10 +49,10 @@ async def test_01_get_and_update_attendance_config_daily_only(client: httpx.Asyn
 @pytest.mark.asyncio
 async def test_02_period_attendance_rejected_when_mode_is_daily_only(client: httpx.AsyncClient, db_session: AsyncSession):
     """When mode is DAILY_ONLY, period attendance requests must be rejected with HTTP 400."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     # Ensure mode is DAILY_ONLY
     await client.put(
@@ -89,10 +89,10 @@ async def test_02_period_attendance_rejected_when_mode_is_daily_only(client: htt
 @pytest.mark.asyncio
 async def test_03_config_b_period_wise_only_mode(client: httpx.AsyncClient, db_session: AsyncSession):
     """Configuration B: Period-wise Attendance Only Mode."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     # Update to PERIOD_WISE_ONLY
     update_res = await client.put(
@@ -127,10 +127,10 @@ async def test_03_config_b_period_wise_only_mode(client: httpx.AsyncClient, db_s
 @pytest.mark.asyncio
 async def test_04_config_c_both_daily_and_period_mode(client: httpx.AsyncClient, db_session: AsyncSession):
     """Configuration C: Both Daily and Period-Wise Attendance enabled."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     update_res = await client.put(
         "/api/v1/attendance/config",
@@ -201,10 +201,10 @@ async def test_04_config_c_both_daily_and_period_mode(client: httpx.AsyncClient,
 @pytest.mark.asyncio
 async def test_05_invalid_mode_rejected(client: httpx.AsyncClient, db_session: AsyncSession):
     """Invalid attendance mode must be rejected with HTTP 400."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     bad_res = await client.put(
         "/api/v1/attendance/config",
@@ -218,10 +218,10 @@ async def test_05_invalid_mode_rejected(client: httpx.AsyncClient, db_session: A
 @pytest.mark.asyncio
 async def test_06_daily_dashboard_independent_of_period_wise(client: httpx.AsyncClient, db_session: AsyncSession):
     """Daily dashboard works reliably regardless of whether period attendance is enabled or disabled."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     res = await client.get("/api/v1/attendance/dashboard", headers=headers)
     assert res.status_code == 200
@@ -236,10 +236,10 @@ async def test_06_daily_dashboard_independent_of_period_wise(client: httpx.Async
 @pytest.mark.asyncio
 async def test_07_absentee_list_with_privacy(client: httpx.AsyncClient, db_session: AsyncSession):
     """Absent students list provides reasons and authorized details."""
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     res = await client.get("/api/v1/attendance/absentees", headers=headers)
     assert res.status_code == 200
