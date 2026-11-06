@@ -330,6 +330,26 @@ async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncC
     headers_a = {"Authorization": f"Bearer {token_a}"}
     tenant_a_id = tenant_a.id
 
+    # Global catalogue rows are shared and must be immutable to tenant administrators.
+    global_physics = (await db_session.execute(
+        select(SubjectCatalog).where(
+            SubjectCatalog.tenant_id.is_(None),
+            SubjectCatalog.code == "PHY-101"
+        )
+    )).scalars().first()
+    assert global_physics is not None
+    global_update = await client.put(
+        f"/api/v1/academic/subjects/{global_physics.id}",
+        json={"name": "Tenant A must not rename global Physics"},
+        headers=headers_a,
+    )
+    assert global_update.status_code == 403
+    global_archive = await client.delete(
+        f"/api/v1/academic/subjects/{global_physics.id}",
+        headers=headers_a,
+    )
+    assert global_archive.status_code == 403
+
     # Tenant A creates custom subject
     res_a = await client.post(
         "/api/v1/academic/subjects",
