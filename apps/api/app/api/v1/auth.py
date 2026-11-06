@@ -266,7 +266,12 @@ async def login(
             if not scoped_roles:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active role assignment exists for this institution.")
             tenant_id = str(tenant.id)
-            if tenant.status not in ("active", "trial", "trialing", "trial_active"):
+            # OUR SCHOOL is a dedicated, isolated demonstration workspace. It may
+            # authenticate only when explicitly marked as demo in tenant settings;
+            # this never grants access to any production institution.
+            is_isolated_demo = bool((tenant.settings or {}).get("is_demo"))
+            allowed_tenant_statuses = {"active", "trial", "trialing", "trial_active"}
+            if not (tenant.status in allowed_tenant_statuses or (tenant.status == "active_demo" and is_isolated_demo)):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Institution workspace status is '{tenant.status}'. An active institution or approved trial is required."
