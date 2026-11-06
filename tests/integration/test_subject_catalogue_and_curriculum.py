@@ -303,7 +303,32 @@ async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncC
     """
     Verify multi-tenant isolation: Tenant B cannot access or modify Tenant A's custom subjects or curriculum.
     """
-    headers_a, tenant_a_id = await get_test_auth_headers(db_session, "our-school-demo")
+    tenant_a = (await db_session.execute(
+        select(Tenant).where(Tenant.code == "our-school-demo")
+    )).scalars().first()
+    assert tenant_a is not None
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id == None)
+    )).scalars().first()
+    assert principal_role is not None
+
+    tenant_a_user = User(
+        email=f"principal_a_{uuid.uuid4().hex[:8]}@example.test",
+        hashed_password=hash_password("TenantA-Password-2026!"),
+        full_name="Tenant A Principal",
+        is_active=True,
+        is_superadmin=False,
+        must_change_password=False,
+    )
+    db_session.add(tenant_a_user)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=tenant_a_user.id, role_id=principal_role.id, tenant_id=tenant_a.id))
+    await db_session.commit()
+    token_a = create_access_token(
+        subject=str(tenant_a_user.id), tenant_id=str(tenant_a.id), is_superadmin=False
+    )
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+    tenant_a_id = tenant_a.id
 
     # Tenant A creates custom subject
     res_a = await client.post(
