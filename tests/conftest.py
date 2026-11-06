@@ -15,7 +15,7 @@ TEST_OTP_ADMIN_PASSWORD = f"Aa!{uuid.uuid4().hex}2026"
 os.environ["TEST_OTP_ADMIN_PASSWORD"] = TEST_OTP_ADMIN_PASSWORD
 from app.core.config import settings
 from app.database.base import Base
-from app.database.session import get_db, set_current_tenant_id
+from app.database.session import get_db, RLSAsyncSession, set_current_tenant_id
 from app.database.rls import enable_row_level_security
 from app.database.seed import seed_initial_data
 from app.core.security import hash_password, verify_password
@@ -30,7 +30,7 @@ test_engine = create_async_engine(
 )
 TestAsyncSessionLocal = async_sessionmaker(
     bind=test_engine,
-    class_=AsyncSession,
+    class_=RLSAsyncSession,
     autocommit=False,
     autoflush=False,
     expire_on_commit=False
@@ -163,15 +163,19 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         # Test fixture writes are privileged setup operations. Use session-level context
         # so it survives fixture commits; authenticated API dependencies explicitly
         # reset this to false and install the signed tenant scope for each request.
-        await session.execute(text("SELECT set_config('app.is_superadmin', 'true', false)"))
-        await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
+        # Direct fixture writes use a privileged context. API requests temporarily
+        # replace it with a non-privileged, token-scoped context and restore it after.
+        await session.set_rls_context(None, is_superadmin=True)
 
         async def override_get_db():
-            # Every API request starts with a non-privileged database context,
-            # including public endpoints and requests that reuse this test session.
-            await session.execute(text("SELECT set_config('app.is_superadmin', 'false', false)"))
-            await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
-            yield session
+            previous_tenant = session.info.get("_rls_tenant_id", "")
+            previous_admin = session.info.get("_rls_is_superadmin", False)
+            await session.set_rls_context(None, is_superadmin=False)
+            try:
+                yield session
+            finally:
+                restore_tenant = uuid.UUID(previous_tenant) if previous_tenant else None
+                await session.set_rls_context(restore_tenant, is_superadmin=previous_admin)
 
         app.dependency_overrides[get_db] = override_get_db
         yield session
