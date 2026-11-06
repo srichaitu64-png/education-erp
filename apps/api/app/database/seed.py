@@ -563,6 +563,10 @@ async def seed_initial_data(db: AsyncSession) -> None:
         )
         db.add(pilot_tenant)
         await db.flush()
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(pilot_tenant.id)}
+        )
 
         # Add Main Campus
         campus = Campus(
@@ -1153,6 +1157,10 @@ async def seed_initial_data(db: AsyncSession) -> None:
         )
         db.add(trial_tenant)
         await db.flush()
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(trial_tenant.id)}
+        )
 
         # Add Main Campus
         trial_campus = Campus(
