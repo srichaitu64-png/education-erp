@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
-from app.database.session import get_db, set_current_tenant_id, get_current_tenant_id
+from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id, get_current_tenant_id
 from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession, UserSession
 from app.modules.subscriptions.service import EntitlementService, FeatureAccessResult
 
@@ -83,6 +83,18 @@ async def get_current_user(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(tenant_uuid)}
         )
+    elif user.is_superadmin:
+        # A platform owner may enter a tenant scope only when middleware has
+        # resolved an explicit institution context; support-session validation
+        # below then gates access to that tenant's private records.
+        tenant_uuid = get_current_tenant_id()
+        if tenant_uuid:
+            await db.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+                {"tenant_id": str(tenant_uuid)}
+            )
+        else:
+            await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
     else:
         await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
 
