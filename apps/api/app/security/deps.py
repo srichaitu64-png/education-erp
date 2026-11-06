@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
-from app.database.session import get_db, set_current_tenant_id, get_current_tenant_id
+from app.database.session import get_db
 from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession, UserSession
 from app.modules.subscriptions.service import EntitlementService, FeatureAccessResult
 
@@ -54,7 +54,7 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
 
     # Reset privileged database context before evaluating any user-controlled request.
-    await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+    await db.set_rls_context(None, is_superadmin=False)
 
     # Apply the tenant claim from the signed access token to both the request
     # context and the active database transaction before loading tenant-scoped
@@ -70,14 +70,9 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid tenant claim in authentication token",
             )
-        set_current_tenant_id(tenant_uuid)
-        await db.execute(
-            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-            {"tenant_id": str(tenant_uuid)},
-        )
+        await db.set_rls_context(tenant_uuid, is_superadmin=False)
     else:
-        set_current_tenant_id(None)
-        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+        await db.set_rls_context(None, is_superadmin=False)
 
     # Verify session revocation if session ID (sid) is present in token
     sid = payload.get("sid")
@@ -133,7 +128,7 @@ async def get_current_user(
     # A platform administrator receives the explicit RLS bypass only after
     # the database-backed user record has confirmed platform authority.
     if user.is_superadmin:
-        await db.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+        await db.set_rls_context(tenant_uuid, is_superadmin=True)
     elif tenant_uuid and not any(
         role_assignment.tenant_id == tenant_uuid for role_assignment in user.roles
     ):
