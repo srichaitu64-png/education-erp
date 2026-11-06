@@ -110,7 +110,7 @@ async def test_01_onboard_new_institution_end_to_end(client: httpx.AsyncClient, 
     assert data["initial_admin"]["email"] == admin_email
     assert data["initial_admin"]["role"] == "CHAIRMAN_DIRECTOR"
     assert data["initial_admin"]["must_change_password"] is True
-    assert data["initial_admin"]["temporary_password"] == "GreenwoodInitialPass2026!"
+    assert data["initial_admin"]["temporary_password"]\n    assert data["initial_admin"]["temporary_password"] != payload["initial_admin"]["temporary_password"]
 
 
 @pytest.mark.asyncio
@@ -145,6 +145,8 @@ async def test_02_newly_onboarded_admin_universal_login(client: httpx.AsyncClien
         headers={"Authorization": f"Bearer {platform_token}"}
     )
     assert onboard_res.status_code == 200, f"Onboarding failed: {onboard_res.text}"
+    temp_pass = onboard_res.json()["initial_admin"]["temporary_password"]
+    assert temp_pass
 
     # 2. Admin signs in at universal /login
     login_res = await client.post("/api/v1/auth/login", json={
@@ -187,6 +189,7 @@ async def test_03_tenant_status_suspension_blocks_logins(client: httpx.AsyncClie
         headers={"Authorization": f"Bearer {platform_token}"}
     )
     assert onboard_res.status_code == 200
+    passw = onboard_res.json()["initial_admin"]["temporary_password"]
     tenant_id = onboard_res.json()["tenant"]["id"]
 
     # Suspend tenant
