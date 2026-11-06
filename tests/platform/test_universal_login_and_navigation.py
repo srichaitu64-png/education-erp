@@ -48,28 +48,29 @@ async def test_02_all_institutional_roles_universal_login(client: httpx.AsyncCli
     Backend resolves identity, tenant, and primary role, returning exact destination URL.
     """
     test_personas = [
-        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/appCHAIRMAN_DIRECTOR"),
-        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/appCHAIRMAN_DIRECTOR"),
-        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/appPRINCIPAL"),
-        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/appPRINCIPAL"),
-        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/appACCOUNTANT"),
-        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/appACCOUNTANT"),
-        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/appEXAM_CONTROLLER"),
-        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/appEXAM_CONTROLLER"),
-        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/appTEACHER"),
-        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/appTEACHER"),
-        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/appLIBRARIAN"),
-        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/appLIBRARIAN"),
-        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/appSTUDENT"),
-        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/appSTUDENT"),
-        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/appPARENT"),
-        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/appPARENT"),
+        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/app"),
+        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/app"),
+        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/app"),
+        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/app"),
+        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/app"),
+        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/app"),
+        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/app"),
+        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/app"),
+        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/app"),
+        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/app"),
+        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/app"),
+        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/app"),
+        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/app"),
+        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/app"),
+        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/app"),
+        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/app"),
     ]
 
     for identifier, password, expected_role, expected_dest in test_personas:
         res = await client.post("/api/v1/auth/login", json={
             "username": identifier,
-            "password": password
+            "password": password,
+            "tenant_code": "our-school-demo"
         })
         assert res.status_code == 200, f"Persona login failed for {identifier}: {res.text}"
         data = res.json()
