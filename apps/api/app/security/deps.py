@@ -122,7 +122,11 @@ async def get_current_user(
         {"user_id": str(user.id)}
     )
 
-    if not user.is_superadmin and not tenant_uuid:
+    is_platform_developer = any(
+        role.tenant_id is None and role.role and role.role.code == "DEVELOPER"
+        for role in user.roles
+    )
+    if not user.is_superadmin and not is_platform_developer and not tenant_uuid:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Institution context is required for institutional accounts."
