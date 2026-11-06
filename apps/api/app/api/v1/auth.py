@@ -191,6 +191,18 @@ async def login(
     tenant_id = None
 
     if user.is_superadmin:
+        # Platform accounts may only see global (tenant_id IS NULL) role rows;
+        # the default RLS context remains non-privileged.
+        platform_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = platform_user_result.scalars().first()
         authority_level = "PLATFORM"
         destination = "/platform"
         primary_role = "SUPER_ADMIN"
