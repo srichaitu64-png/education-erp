@@ -188,13 +188,13 @@ async def test_04_tenant_data_isolation_multi_tenant(client, db_session: AsyncSe
     db_session.add_all([user_1, user_2])
     await db_session.flush()
 
-    role_1 = Role(name="NPS Institution Admin", code=f"NPS_ADMIN_{uuid.uuid4().hex[:8]}", tenant_id=tenant_1.id, is_system=False)
-    role_2 = Role(name="Cottons Institution Admin", code=f"COTTONS_ADMIN_{uuid.uuid4().hex[:8]}", tenant_id=tenant_2.id, is_system=False)
-    db_session.add_all([role_1, role_2])
-    await db_session.flush()
+    principal_role = await db_session.scalar(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )
+    assert principal_role is not None
     db_session.add_all([
-        UserRole(user_id=user_1.id, role_id=role_1.id, tenant_id=tenant_1.id),
-        UserRole(user_id=user_2.id, role_id=role_2.id, tenant_id=tenant_2.id),
+        UserRole(user_id=user_1.id, role_id=principal_role.id, tenant_id=tenant_1.id),
+        UserRole(user_id=user_2.id, role_id=principal_role.id, tenant_id=tenant_2.id),
     ])
     await db_session.commit()
 
@@ -240,10 +240,11 @@ async def test_05_platform_metrics_revenue_not_leaked_to_institutions(client, db
     db_session.add_all([user, owner])
     await db_session.flush()
 
-    tenant_role = Role(name="Oxford Principal", code=f"OXFORD_PRINCIPAL_{uuid.uuid4().hex[:8]}", tenant_id=tenant.id, is_system=False)
-    db_session.add(tenant_role)
-    await db_session.flush()
-    db_session.add(UserRole(user_id=user.id, role_id=tenant_role.id, tenant_id=tenant.id))
+    principal_role = await db_session.scalar(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_user = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
