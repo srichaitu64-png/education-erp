@@ -5,7 +5,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.tenants.models import Tenant, Campus
-from app.modules.identity.models import User, PlatformSupportAccessSession
+from app.modules.identity.models import User, Role, UserRole, PlatformSupportAccessSession
 from app.core.security import create_access_token, hash_password
 
 
@@ -37,6 +37,10 @@ async def test_institution_users_cannot_invoke_platform_administration_apis(clie
         is_superadmin=False
     )
     db_session.add(inst_admin)
+    tenant_role = Role(name="Institution Administrator", code="INSTITUTION_ADMIN", tenant_id=tenant.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=inst_admin.id, role_id=tenant_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_inst = create_access_token(
@@ -82,6 +86,14 @@ async def test_tenant_isolation_bidirectional_and_tamper_resistant(client, db_se
     user_a = User(email=f"user_a_{uuid.uuid4().hex[:6]}@alpha.com", hashed_password=hash_password("Pass#1234"), full_name="User A", is_active=True, is_superadmin=False)
     user_b = User(email=f"user_b_{uuid.uuid4().hex[:6]}@beta.com", hashed_password=hash_password("Pass#1234"), full_name="User B", is_active=True, is_superadmin=False)
     db_session.add_all([user_a, user_b])
+    role_a = Role(name="Alpha Principal", code="PRINCIPAL", tenant_id=tenant_a.id, is_system=False)
+    role_b = Role(name="Beta Principal", code="PRINCIPAL", tenant_id=tenant_b.id, is_system=False)
+    db_session.add_all([role_a, role_b])
+    await db_session.flush()
+    db_session.add_all([
+        UserRole(user_id=user_a.id, role_id=role_a.id, tenant_id=tenant_a.id),
+        UserRole(user_id=user_b.id, role_id=role_b.id, tenant_id=tenant_b.id),
+    ])
     await db_session.commit()
 
     token_a = create_access_token(subject=str(user_a.id), tenant_id=str(tenant_a.id), is_superadmin=False)
@@ -128,6 +140,10 @@ async def test_tenant_metrics_never_exposes_platform_revenue(client, db_session:
 
     user = User(email=f"principal_{uuid.uuid4().hex[:6]}@gv.edu", hashed_password=hash_password("Pass#1234"), full_name="Principal GV", is_active=True, is_superadmin=False)
     db_session.add(user)
+    tenant_role = Role(name="Green Valley Principal", code="PRINCIPAL", tenant_id=tenant.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=user.id, role_id=tenant_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
