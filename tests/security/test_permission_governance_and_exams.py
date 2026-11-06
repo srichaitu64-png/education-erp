@@ -280,6 +280,12 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    exam_role = await db_session.scalar(
+        select(Role).where(Role.code == "EXAM_CONTROLLER", Role.tenant_id.is_(None))
+    )
+    assert exam_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=exam_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
