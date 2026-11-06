@@ -68,7 +68,7 @@ async def list_academic_sections(
     user: User = Depends(get_current_user)
 ):
     """List all configured academic sections for the institution."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     query = select(AcademicSection).where(
         AcademicSection.tenant_id == tenant_id,
         AcademicSection.academic_year == academic_year
@@ -90,7 +90,7 @@ async def create_academic_section(
     Create a new academic section (e.g. Class 6 Section D, or I PUC PCMB Section F).
     Prevents duplicate section codes within the same academic level and enforces capacity limit.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     dup_check = await db.execute(
         select(AcademicSection).where(
             AcademicSection.tenant_id == tenant_id,
@@ -135,7 +135,7 @@ async def transfer_student_section(
     Transfer a student from one section to another.
     Enforces target section capacity and preserves historical attendance, marks, and fee records.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     target_sec = await db.get(AcademicSection, payload.target_section_id)
     if not target_sec or target_sec.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target section not found.")
@@ -198,7 +198,7 @@ async def assign_staff_duty(
     Assign staff responsibilities (Class Teacher, Subject Teacher, Computer Operator).
     Enforces scoped access control: e.g. Physics Teacher only enters marks for assigned sections.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     section = await db.get(AcademicSection, payload.section_id)
     if not section or section.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assigned section not found.")
@@ -237,7 +237,7 @@ async def submit_fee_report_snapshot(
     Accountant submits a formal consolidated fee report snapshot to the Chairman/Director.
     Captures exact frozen figures at submission time.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     snapshot_code = f"FEE-SNAP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     snapshot = ConsolidatedFeeReportSnapshot(
         tenant_id=tenant_id,
@@ -282,7 +282,7 @@ async def review_fee_report_snapshot(
     """
     Chairman / Director reviews a submitted fee report snapshot: Accepts or Returns with remarks.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     result = await db.execute(
         select(ConsolidatedFeeReportSnapshot).where(
             ConsolidatedFeeReportSnapshot.tenant_id == tenant_id,
@@ -325,7 +325,7 @@ async def list_students(
     """
     List students enrolled in the active institution with filtering, searching and pagination.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     query = select(Student).where(Student.tenant_id == tenant_id)
     if status_filter:
         query = query.where(Student.status == status_filter)
@@ -372,7 +372,7 @@ async def create_student(
     Auto-generates unique admission number if not provided.
     Automatically assigns and enrols into matching academic section if configured.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     adm_no = payload.admission_number
     if not adm_no:
         count_res = await db.execute(
@@ -462,7 +462,7 @@ async def get_student_details(
     user: User = Depends(get_current_user)
 ):
     """Retrieve complete 360-degree student profile including enrolments, fee status, and attendance."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     student = await db.get(Student, student_id)
     if not student or student.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student record not found.")
@@ -534,7 +534,7 @@ async def update_student(
     user: User = Depends(get_current_user)
 ):
     """Update canonical student record attributes."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     student = await db.get(Student, student_id)
     if not student or student.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
@@ -554,7 +554,7 @@ async def withdraw_student(
     user: User = Depends(get_current_user)
 ):
     """Soft-delete / mark student as WITHDRAWN."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     student = await db.get(Student, student_id)
     if not student or student.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
@@ -574,7 +574,7 @@ async def list_admission_applications(
     user: User = Depends(get_current_user)
 ):
     """List prospective student admission applications."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     stmt = select(AdmissionApplication).where(AdmissionApplication.tenant_id == tenant_id)
     if status_filter:
         stmt = stmt.where(AdmissionApplication.status == status_filter)
@@ -590,7 +590,7 @@ async def submit_admission_application(
     user: User = Depends(get_current_user)
 ):
     """Submit a prospective student admission application."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     count_res = await db.execute(
         select(func.count(AdmissionApplication.id)).where(AdmissionApplication.tenant_id == tenant_id)
     )
@@ -629,7 +629,7 @@ async def approve_admission_application(
     Approve an admission application:
     Automatically enrolls the applicant as a canonical Student and registers section enrolment.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     app_entry = await db.get(AdmissionApplication, admission_id)
     if not app_entry or app_entry.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admission application not found.")
@@ -717,7 +717,7 @@ async def list_staff_duty_assignments(
     user: User = Depends(get_current_user)
 ):
     """List staff duty assignments with optional staff/section/role filters."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     stmt = select(StaffDutyAssignment).where(
         StaffDutyAssignment.tenant_id == tenant_id,
         StaffDutyAssignment.is_active == True
@@ -740,7 +740,7 @@ async def list_institution_staff(
     user: User = Depends(get_current_user)
 ):
     """List faculty and staff members active within the institution."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     stmt = (
         select(User, Role.code)
         .join(UserRole, User.id == UserRole.user_id)
@@ -775,7 +775,7 @@ async def generate_hall_tickets(
     user: User = Depends(get_current_user)
 ):
     """Batch generate official examination hall tickets for students in class/section."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     exam = await db.get(Examination, payload.examination_id)
     if not exam or exam.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Examination not found.")
@@ -852,7 +852,7 @@ async def list_hall_tickets(
     user: User = Depends(get_current_user)
 ):
     """List generated examination hall tickets."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     stmt = select(HallTicket).where(HallTicket.tenant_id == tenant_id)
     if examination_id:
         stmt = stmt.where(HallTicket.examination_id == examination_id)
@@ -914,7 +914,7 @@ async def get_portal_my_profile(
     Resolves student record from authenticated user context, returning attendance summary,
     fee balance, recent exam marks, and active hall tickets.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     user_role = "SUPER_ADMIN" if getattr(user, "is_superadmin", False) else (
         getattr(user.roles[0], "role", None).code if user.roles and getattr(user.roles[0], "role", None) else "STUDENT"
     )
@@ -988,6 +988,23 @@ async def get_portal_my_profile(
 # Production-Grade Subject Catalogue & Curriculum Management Endpoints
 # ===========================================================================
 
+def _require_academic_tenant_id(user: User) -> uuid.UUID:
+    """Resolve an explicit tenant scope; never invent a tenant identifier."""
+    tenant_id = get_current_tenant_id()
+    if tenant_id is not None:
+        return tenant_id
+
+    memberships = {role.tenant_id for role in user.roles if role.tenant_id is not None}
+    if len(memberships) == 1:
+        return next(iter(memberships))
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Select an institution before managing its curriculum."
+    )
+
+
+
 @router.get("/subjects", response_model=List[SubjectCatalogOut])
 async def list_subject_catalogue(
     category: Optional[str] = None,
@@ -1035,7 +1052,7 @@ async def create_subject_catalogue_entry(
     """
     Create a custom subject in the master catalogue for the active institution.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+    tenant_id = _require_academic_tenant_id(user)
     clean_code = payload.code.strip().upper()
 
     # Check for duplicate code in tenant scope or global catalog
@@ -1201,7 +1218,7 @@ async def load_standard_catalogue_template(
     """
     Idempotently adopt standard Karnataka PU / CBSE board subjects into active institution repository.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
 
     # Fetch global catalog subjects
     stmt_cat = select(SubjectCatalog).where(
@@ -1251,7 +1268,7 @@ async def list_institution_subjects(
     user: User = Depends(get_current_user)
 ):
     """List all subjects adopted and configured by the active institution."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     stmt = (
         select(InstitutionSubject)
         .options(joinedload(InstitutionSubject.catalogue_subject))
@@ -1297,7 +1314,7 @@ async def adopt_or_create_institution_subject(
     user: User = Depends(require_permission("curriculum.manage"))
 ):
     """Adopt a catalogue subject into the active institution."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
 
     # Check catalogue subject exists
     cat_subject = await db.get(SubjectCatalog, payload.subject_id)
@@ -1378,7 +1395,7 @@ async def list_class_curriculum_mappings(
     """
     Retrieve class-wise curriculum mappings for the active institution.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
 
     stmt = (
         select(ClassSubjectMapping)
@@ -1461,7 +1478,7 @@ async def map_subject_to_class_curriculum(
     Map an institution subject to a specific Class and Stream.
     Prevents duplicate mappings and validates marks calculation integrity.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
 
     # 1. Resolve institution_subject_id
     inst_subject = None
@@ -1691,7 +1708,7 @@ async def update_class_subject_mapping(
     """
     Update curriculum assessment scheme (theory/practical marks, pass criteria, assigned faculty).
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     mapping = await db.get(ClassSubjectMapping, mapping_id)
     if not mapping or mapping.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curriculum mapping not found.")
@@ -1798,7 +1815,7 @@ async def remove_class_subject_mapping(
     If historical exam marks exist, soft-deactivates the mapping (is_active = False)
     so academic grade history and transcripts remain intact.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     mapping = await db.get(ClassSubjectMapping, mapping_id)
     if not mapping or mapping.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curriculum mapping not found.")
@@ -1838,7 +1855,7 @@ async def reorder_curriculum_mappings(
     user: User = Depends(require_permission("curriculum.manage"))
 ):
     """Update display order priority of subjects in syllabus."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = _require_academic_tenant_id(user)
     for idx, mid in enumerate(payload.mapping_ids):
         mapping = await db.get(ClassSubjectMapping, mid)
         if mapping and mapping.tenant_id == tenant_id:
