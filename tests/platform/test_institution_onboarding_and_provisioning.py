@@ -254,7 +254,8 @@ async def test_04_tenant_reactivation_restores_logins(client: httpx.AsyncClient,
     # 3. Login now succeeds
     login_attempt = await client.post("/api/v1/auth/login", json={
         "username": admin_email,
-        "password": passw
+        "password": passw,
+        "tenant_code": inst_code
     })
     assert login_attempt.status_code == 200
     assert login_attempt.json()["authority_level"] == "INSTITUTION"
