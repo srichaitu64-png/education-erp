@@ -95,6 +95,14 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture
+async def app_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Direct session using the restricted application role for RLS assertions."""
+    async with TestAsyncSessionLocal() as session:
+        yield session
+        await session.rollback()
+
+
+@pytest_asyncio.fixture
 async def client() -> AsyncGenerator[httpx.AsyncClient, None]:
     """HTTP client whose requests execute with the restricted application DB role."""
     async def override_get_db():
