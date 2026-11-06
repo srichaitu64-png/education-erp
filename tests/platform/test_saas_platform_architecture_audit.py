@@ -155,6 +155,8 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
         is_active=True,
         is_superadmin=False
     )
+    tenant_id = tenant.id
+    inst_user_id = inst_user.id
     db_session.add(inst_user)
     await db_session.commit()
 
@@ -166,8 +168,8 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
     assert resp_matrix.status_code == 403, "Institution user accessed platform permissions matrix!"
 
     resp_assign = await client.post("/api/v1/platform/permissions/users/assign", headers=headers, json={
-        "user_id": str(inst_user.id),
-        "target_tenant_id": str(tenant.id),
+        "user_id": str(inst_user_id),
+        "target_tenant_id": str(tenant_id),
         "role_codes": ["SUPER_ADMIN"]
     })
     assert resp_assign.status_code == 403, "Institution user promoted account to SUPER_ADMIN!"
