@@ -38,9 +38,10 @@ async def test_institution_users_cannot_invoke_platform_administration_apis(clie
     )
     db_session.add(inst_admin)
     await db_session.flush()
-    inst_role = Role(name="Institution Admin", code=f"XAVIER_ADMIN_{uuid.uuid4().hex[:8]}", tenant_id=tenant.id, is_system=False)
-    db_session.add(inst_role)
-    await db_session.flush()
+    inst_role = await db_session.scalar(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )
+    assert inst_role is not None
     db_session.add(UserRole(user_id=inst_admin.id, role_id=inst_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
@@ -88,13 +89,13 @@ async def test_tenant_isolation_bidirectional_and_tamper_resistant(client, db_se
     user_b = User(email=f"user_b_{uuid.uuid4().hex[:6]}@beta.com", hashed_password=hash_password("Pass#1234"), full_name="User B", is_active=True, is_superadmin=False)
     db_session.add_all([user_a, user_b])
     await db_session.flush()
-    role_a = Role(name="Alpha Institution User", code=f"ALPHA_USER_{uuid.uuid4().hex[:8]}", tenant_id=tenant_a.id, is_system=False)
-    role_b = Role(name="Beta Institution User", code=f"BETA_USER_{uuid.uuid4().hex[:8]}", tenant_id=tenant_b.id, is_system=False)
-    db_session.add_all([role_a, role_b])
-    await db_session.flush()
+    principal_role = await db_session.scalar(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )
+    assert principal_role is not None
     db_session.add_all([
-        UserRole(user_id=user_a.id, role_id=role_a.id, tenant_id=tenant_a.id),
-        UserRole(user_id=user_b.id, role_id=role_b.id, tenant_id=tenant_b.id),
+        UserRole(user_id=user_a.id, role_id=principal_role.id, tenant_id=tenant_a.id),
+        UserRole(user_id=user_b.id, role_id=principal_role.id, tenant_id=tenant_b.id),
     ])
     await db_session.commit()
 
@@ -143,10 +144,11 @@ async def test_tenant_metrics_never_exposes_platform_revenue(client, db_session:
     user = User(email=f"principal_{uuid.uuid4().hex[:6]}@gv.edu", hashed_password=hash_password("Pass#1234"), full_name="Principal GV", is_active=True, is_superadmin=False)
     db_session.add(user)
     await db_session.flush()
-    role = Role(name="Green Valley Principal", code=f"GV_PRINCIPAL_{uuid.uuid4().hex[:8]}", tenant_id=tenant.id, is_system=False)
-    db_session.add(role)
-    await db_session.flush()
-    db_session.add(UserRole(user_id=user.id, role_id=role.id, tenant_id=tenant.id))
+    principal_role = await db_session.scalar(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
