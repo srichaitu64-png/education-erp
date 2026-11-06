@@ -268,7 +268,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                       {/* Institution Subdomain / Code */}
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                          Desired Subdomain Code *
+                          Preferred Institution Code *
                         </label>
                         <div className="flex items-center">
                           <input
@@ -283,7 +283,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                             .educationos.in
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-400 mt-1">This will be your institution's permanent URL and tenant identifier.</p>
+                        <p className="text-[11px] text-gray-400 mt-1">This is a requested code only; the platform team confirms availability before provisioning.</p>
                       </div>
 
                       {/* Institution Type */}
@@ -300,6 +300,23 @@ export const RegisterInstitutionPage: React.FC = () => {
                           <option value="pu_college">Pre-University College (+1 / +2)</option>
                           <option value="degree_college">Degree College / Autonomous</option>
                           <option value="group_institution">Educational Trust / Multi-Campus</option>
+                        </select>
+                      </div>
+
+                      {/* Requested Plan */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                          Plan to Explore *
+                        </label>
+                        <select
+                          value={formData.selectedPlan}
+                          onChange={(e) => setFormData({ ...formData, selectedPlan: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                        >
+                          <option value="TRIAL">30-Day Free Trial — ₹0</option>
+                          <option value="STARTER">Starter — ₹999/month or ₹9,999/year</option>
+                          <option value="STANDARD">Standard — ₹1,999/month or ₹19,999/year</option>
+                          <option value="ENTERPRISE">Enterprise — ₹9,999/month or ₹99,999/year</option>
                         </select>
                       </div>
 
