@@ -1,13 +1,26 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password, create_access_token
-from app.modules.identity.models import User, Role, Permission, UserRole
+from app.modules.identity.models import User, Role, Permission, UserRole, PlatformSupportAccessSession
 from app.modules.tenants.models import Tenant
 from app.modules.examinations.models import Examination, ExamAttendanceAndMarks, ExternalExamProviderConfig
+
+
+async def approve_support(db_session: AsyncSession, admin_id: uuid.UUID, tenant_id: uuid.UUID) -> None:
+    db_session.add(PlatformSupportAccessSession(
+        ticket_number=f"TEST-SUPPORT-{uuid.uuid4().hex[:12]}",
+        tenant_id=tenant_id,
+        requested_by_platform_user_id=admin_id,
+        reason="Explicit support approval for integration test",
+        scope="FULL_ACCESS",
+        status="APPROVED",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    await db_session.commit()
 
 
 @pytest.mark.asyncio
@@ -32,6 +45,12 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
         is_superadmin=False
     )
     db_session.add(inst_user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id == None)
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=inst_user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
@@ -154,6 +173,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
+    await approve_support(db_session, admin_user.id, tenant.id)
 
     # Super admin / evaluator token
     token = create_access_token(
@@ -210,6 +230,7 @@ async def test_external_exam_provider_credentials_not_leaked(client, db_session:
     stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
+    await approve_support(db_session, admin_user.id, tenant.id)
 
     token = create_access_token(
         subject=str(admin_user.id),
@@ -270,6 +291,12 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    operator_role = (await db_session.execute(
+        select(Role).where(Role.code == "EXAM_CONTROLLER", Role.tenant_id == None)
+    )).scalars().first()
+    assert operator_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=operator_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
