@@ -70,7 +70,7 @@ async def list_academic_sections(
 async def create_academic_section(
     payload: AcademicSectionCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """
     Create a new academic section (e.g. Class 6 Section D, or I PUC PCMB Section F).
@@ -115,7 +115,7 @@ async def create_academic_section(
 async def transfer_student_section(
     payload: SectionTransferRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.edit"))
 ):
     """
     Transfer a student from one section to another.
@@ -178,7 +178,7 @@ async def transfer_student_section(
 async def assign_staff_duty(
     payload: StaffDutyAssignmentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("staff.manage"))
 ):
     """
     Assign staff responsibilities (Class Teacher, Subject Teacher, Computer Operator).
@@ -217,7 +217,7 @@ async def assign_staff_duty(
 async def submit_fee_report_snapshot(
     payload: FeeReportSnapshotSubmit,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("fees.reconcile"))
 ):
     """
     Accountant submits a formal consolidated fee report snapshot to the Chairman/Director.
@@ -263,7 +263,7 @@ async def review_fee_report_snapshot(
     snapshot_code: str,
     payload: FeeReportSnapshotReview,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("fees.configure"))
 ):
     """
     Chairman / Director reviews a submitted fee report snapshot: Accepts or Returns with remarks.
@@ -351,7 +351,7 @@ async def list_students(
 async def create_student(
     payload: StudentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_permission("students.create"))
+    user: User = Depends(require_permission("students.import"))
 ):
     """
     Register a student into the canonical student master.
@@ -517,7 +517,7 @@ async def update_student(
     student_id: uuid.UUID,
     payload: StudentUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.edit"))
 ):
     """Update canonical student record attributes."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
@@ -537,7 +537,7 @@ async def update_student(
 async def withdraw_student(
     student_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.archive"))
 ):
     """Soft-delete / mark student as WITHDRAWN."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
