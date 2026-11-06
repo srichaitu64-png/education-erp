@@ -95,13 +95,13 @@ async def test_fee_collection_and_automatic_receipt_generation(client: httpx.Asy
     institution branding, fee-head allocations, and QR verification hash.
     Verify idempotency prevents duplicate receipts on retry.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
+        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -157,13 +157,13 @@ async def test_reopen_and_reprint_historical_receipt(client: httpx.AsyncClient, 
     - reprint_count increments.
     - reprint audit log entry is recorded.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
+        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -195,13 +195,13 @@ async def test_consolidated_and_due_reports(client: httpx.AsyncClient, db_sessio
     Acceptance Test 4:
     Consolidated collection report and due reports calculation.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
+        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -231,7 +231,7 @@ async def test_unauthorized_user_cannot_configure_fee_structures(client: httpx.A
     Unauthorised users (e.g. standard teacher without fees.configure) cannot modify fee structures.
     Must return 403 Forbidden.
     """
-    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
 
     # Create a plain teacher user with only teaching role
@@ -244,6 +244,12 @@ async def test_unauthorized_user_cannot_configure_fee_structures(client: httpx.A
     )
     db_session.add(teacher)
     await db_session.flush()
+    teacher_role = (await db_session.execute(
+        select(Role).where(Role.code == "TEACHER", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert teacher_role is not None
+    db_session.add(UserRole(user_id=teacher.id, role_id=teacher_role.id, tenant_id=tenant.id))
+    await db_session.commit()
 
     token = create_access_token(
         subject=str(teacher.id), tenant_id=str(tenant.id), is_superadmin=False
