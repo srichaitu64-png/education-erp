@@ -15,7 +15,7 @@ from app.modules.subscriptions.models import SubscriptionPlan, Subscription
 async def platform_token(client: httpx.AsyncClient) -> str:
     """Obtain valid Platform Super Admin JWT access token."""
     res = await client.post("/api/v1/auth/login", json={
-        "username": "superadmin",
+        "username": "admin@platform.erp.in",
         "password": "AdminSecurePassword2026!"
     })
     assert res.status_code == 200, f"Superadmin login failed: {res.text}"
@@ -149,13 +149,14 @@ async def test_02_newly_onboarded_admin_universal_login(client: httpx.AsyncClien
     # 2. Admin signs in at universal /login
     login_res = await client.post("/api/v1/auth/login", json={
         "username": admin_email,
-        "password": temp_pass
+        "password": temp_pass,
+        "tenant_code": inst_code
     })
     assert login_res.status_code == 200, f"Login failed: {login_res.text}"
     login_data = login_res.json()
     assert login_data["authority_level"] == "INSTITUTION"
     assert login_data["primary_role"] == "CHAIRMAN_DIRECTOR"
-    assert login_data["destination"] == "/demo?role=CHAIRMAN_DIRECTOR"
+    assert login_data["destination"] == "/app"
     assert login_data["tenant_info"]["code"] == inst_code
     assert login_data["user"]["must_change_password"] is True
 
@@ -200,7 +201,8 @@ async def test_03_tenant_status_suspension_blocks_logins(client: httpx.AsyncClie
     # User login attempt must be rejected with 403 Forbidden
     login_attempt = await client.post("/api/v1/auth/login", json={
         "username": admin_email,
-        "password": passw
+        "password": passw,
+        "tenant_code": inst_code
     })
     assert login_attempt.status_code == 403
     assert "suspended" in login_attempt.json()["detail"].lower()
