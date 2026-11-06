@@ -64,6 +64,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r apps/api/requirements.txt
 
+      - name: Print Alembic Migration Chain
+        working-directory: ./apps/api
+        run: python -m alembic history -v
+
       - name: Run Full Regression Test Suite
         env:
           ENVIRONMENT: testing
