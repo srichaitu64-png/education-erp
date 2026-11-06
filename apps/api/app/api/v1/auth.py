@@ -188,6 +188,7 @@ async def login(
     authority_level = "INSTITUTION"
     destination = "/app"
     primary_role = None
+    scoped_roles = []
     available_workspaces: List[WorkspaceOut] = []
     tenant_info = None
     entitled_modules: List[str] = []
@@ -208,8 +209,7 @@ async def login(
 
         if req.tenant_code:
             req_code = req.tenant_code.lower().strip()
-            target_code = "our-school-demo" if req_code == "akshara" else req_code
-            stmt_t = select(Tenant).where(or_(Tenant.code == target_code, Tenant.code == req_code))
+            stmt_t = select(Tenant).where(Tenant.code == req_code)
             res_t = await db.execute(stmt_t)
             tenant = res_t.scalars().first()
             if not tenant:
@@ -222,18 +222,25 @@ async def login(
                     detail="Unauthorized tenant selection: User does not hold an active role assignment in this institution."
                 )
             target_tenant_id = tenant.id
-        elif user.roles:
-            for ur in user.roles:
-                if ur.tenant_id:
-                    target_tenant_id = ur.tenant_id
-                    break
-            if target_tenant_id:
+        else:
+            user_tenant_ids = {ur.tenant_id for ur in user.roles if ur.tenant_id}
+            if len(user_tenant_ids) > 1:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institution code is required for accounts assigned to multiple institutions.")
+            if len(user_tenant_ids) == 1:
+                target_tenant_id = next(iter(user_tenant_ids))
                 stmt_t = select(Tenant).where(Tenant.id == target_tenant_id)
                 res_t = await db.execute(stmt_t)
                 tenant = res_t.scalars().first()
 
         if tenant:
+            scoped_roles = [ur for ur in user.roles if ur.tenant_id == tenant.id]
             tenant_id = str(tenant.id)
+            if tenant.status not in ("active", "trial", "trialing"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your institution workspace is not active. Please contact the institution owner or platform administration."
+                )
+
             if tenant.status == "suspended":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -270,49 +277,45 @@ async def login(
             effective_permissions = sorted(list(user_perm_codes))
 
             # Determine primary role and destination mapping
-            role_codes = [ur.role.code for ur in user.roles]
+            role_codes = [ur.role.code for ur in scoped_roles]
 
             if "CHAIRMAN_DIRECTOR" in role_codes or "DIRECTOR" in role_codes:
                 primary_role = "CHAIRMAN_DIRECTOR"
-                destination = "/demo?role=CHAIRMAN_DIRECTOR"
+                destination = "/app"
             elif "PRINCIPAL" in role_codes:
                 primary_role = "PRINCIPAL"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             elif "VICE_PRINCIPAL" in role_codes:
                 primary_role = "VICE_PRINCIPAL"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             elif "ACCOUNTANT" in role_codes:
                 primary_role = "ACCOUNTANT"
-                destination = "/demo?role=ACCOUNTANT"
+                destination = "/app"
             elif "EXAM_CONTROLLER" in role_codes:
                 primary_role = "EXAM_CONTROLLER"
-                destination = "/demo?role=EXAM_CONTROLLER"
+                destination = "/app"
             elif "TEACHER" in role_codes:
                 primary_role = "TEACHER"
-                destination = "/demo?role=TEACHER"
+                destination = "/app"
             elif "STUDENT" in role_codes:
                 primary_role = "STUDENT"
-                destination = "/demo?role=STUDENT"
+                destination = "/app"
             elif "PARENT" in role_codes:
                 primary_role = "PARENT"
-                destination = "/demo?role=PARENT"
+                destination = "/app"
             elif "LIBRARIAN" in role_codes:
                 primary_role = "LIBRARIAN"
-                destination = "/demo?role=LIBRARIAN"
+                destination = "/app"
             elif "INSTITUTION_ADMIN" in role_codes:
                 primary_role = "INSTITUTION_ADMIN"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             else:
                 primary_role = role_codes[0] if role_codes else "INSTITUTION_USER"
                 destination = "/app"
 
             # Multi-role available workspaces
-            for ur in user.roles:
-                dest_r = (
-                    f"/demo?role={ur.role.code}"
-                    if ur.role.code in ("CHAIRMAN_DIRECTOR", "PRINCIPAL", "ACCOUNTANT", "EXAM_CONTROLLER", "TEACHER", "STUDENT", "PARENT", "LIBRARIAN")
-                    else "/app"
-                )
+            for ur in scoped_roles:
+                dest_r = "/app"
                 available_workspaces.append(
                     WorkspaceOut(
                         workspace_id=f"{ur.role.code}-{ur.tenant_id or 'global'}",
@@ -364,7 +367,8 @@ async def login(
     await db.commit()
 
     roles_out = []
-    for ur in user.roles:
+    response_roles = scoped_roles if authority_level == "INSTITUTION" else user.roles
+    for ur in response_roles:
         roles_out.append(
             RoleOut(
                 id=ur.role.id,
@@ -885,23 +889,8 @@ async def verify_otp_and_reset_password(
         )
 
     raw_id = req.identifier.strip().lower()
-    CODE_TO_EMAIL = {
-        "superadmin": "admin@platform.erp.in",
-        "siva": "admin@platform.erp.in",
-        "owner": "admin@platform.erp.in",
-        "admin": "admin@platform.erp.in",
-        "principal": "principal@akshara.edu.in",
-        "accountant": "accountant@akshara.edu.in",
-        "exams": "exams@akshara.edu.in",
-        "teacher": "teacher.physics@akshara.edu.in",
-        "student": "student.rahul@akshara.edu.in",
-        "parent": "parent.rahul@akshara.edu.in",
-    }
-    target_email = CODE_TO_EMAIL.get(raw_id, raw_id)
-
     stmt_user = select(User).options(selectinload(User.roles)).where(
         or_(
-            func.lower(User.email) == target_email,
             func.lower(User.email) == raw_id,
             User.phone == req.identifier.strip()
         )
@@ -1209,8 +1198,7 @@ async def autocomplete_users_by_role(
         return []
 
     req_code = req.tenant_code.lower().strip()
-    target_code = "our-school-demo" if req_code == "akshara" else req_code
-    stmt_t = select(Tenant).where(or_(Tenant.code == target_code, Tenant.code == req_code))
+    stmt_t = select(Tenant).where(Tenant.code == req_code)
     res_t = await db.execute(stmt_t)
     tenant = res_t.scalars().first()
     if not tenant:
