@@ -5,97 +5,99 @@ import { CheckCircle2, Lock, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-
 export const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'annual' | 'monthly'>('annual');
 
+  // Public offers intentionally mirror the homepage: 30-day trial + three paid plans.
+  // Intermediate internal tiers remain available to platform administrators, not public checkout.
   const plans = [
+    {
+      code: 'TRIAL',
+      name: '30-Day Free Trial',
+      tier: 'Evaluation',
+      students: 'Up to 100 Students',
+      campuses: '1 Campus',
+      annualPrice: 0,
+      monthlyPrice: 0,
+      description: 'Explore the core school workflows before choosing a subscription.',
+      features: [
+        'Student and admissions records',
+        'Daily attendance',
+        'Basic fee management',
+        'Examinations and report cards',
+        '30 days of evaluation access',
+      ],
+      notIncluded: [
+        'Parent & student portals',
+        'Advanced communication and automation',
+        'Multi-campus governance and AI analytics',
+      ],
+    },
     {
       code: 'STARTER',
       name: 'Starter Plan',
-      tier: 'Tier 1',
+      tier: 'For growing schools',
       students: 'Up to 300 Students',
       campuses: '1 Campus',
       annualPrice: 9999,
       monthlyPrice: 999,
-      description: 'Ideal for early-stage and primary schools starting digital administration.',
+      description: 'Core digital administration for schools and smaller institutions.',
       features: [
-        'Complete Student Information System (SIS)',
-        'Basic Fee Invoicing & Counter Receipts',
-        'Daily Student & Staff Attendance',
-        'Examinations & Printable Report Cards',
-        'Academic Years & Classes Configuration',
-        'Standard Email Notifications',
+        'Student Information System and admissions',
+        'Daily student and staff attendance',
+        'Fee structures, invoices and counter receipts',
+        'Examinations and printable report cards',
+        'Academic years, classes and standard reports',
+        'Email notifications',
       ],
       notIncluded: [
-        'Parent & Student Mobile Portal',
-        'Offline PWA Synchronisation',
-        'WhatsApp Business Automation',
+        'Parent & student portals and offline sync',
+        'Advanced HR, library, transport and hostel modules',
+        'WhatsApp automation, biometric sync and AI analytics',
       ],
     },
     {
       code: 'STANDARD',
       name: 'Standard Plan',
-      tier: 'Tier 2',
+      tier: 'Most Popular',
       isPopular: true,
       students: 'Up to 750 Students',
       campuses: '1 Campus',
       annualPrice: 19999,
       monthlyPrice: 1999,
-      description: 'The preferred choice for growing schools with parent and student apps.',
+      description: 'Everything in Starter, with connected parent and student experiences.',
       features: [
         'Everything in Starter Plan',
-        'Dedicated Parent & Student Portals',
-        'True Offline PWA & Local Queue Sync',
-        'White-Label Branding (Logo & Colors)',
-        'Automated SMS Fee Due Reminders',
-        'Timetable Conflict Scheduling',
-        'Standard Data Exports (Excel & CSV)',
+        'Parent and student portals',
+        'Offline PWA and local queue synchronisation',
+        'SMS alerts and fee reminders',
+        'White-label institution branding',
+        'Expanded capacity and storage',
       ],
       notIncluded: [
-        'Hardware Biometric Attendance Sync',
-        'Official WhatsApp Business Automation',
-      ],
-    },
-    {
-      code: 'PROFESSIONAL',
-      name: 'Professional Plan',
-      tier: 'Tier 3',
-      students: 'Up to 1,500 Students',
-      campuses: 'Up to 2 Campuses',
-      annualPrice: 34999,
-      monthlyPrice: 3499,
-      description: 'Engineered for senior secondary schools, PU colleges, and growing institutions.',
-      features: [
-        'Everything in Standard Plan',
-        'PU College Streams & University Credits',
-        'Online Payment Gateway (Razorpay/UPI)',
-        'Staff HR, Leaves & Salary Payroll',
-        'Library Management & Barcode Issues',
-        'Bus Transport & Route Allocations',
-        'Hostel Bed & Room Allocations',
-      ],
-      notIncluded: [
-        'AI Performance Risk Forecasting',
-        'Dedicated Database Deployment',
+        'Advanced HR, library, transport and hostel modules',
+        'WhatsApp Business API and biometric hardware sync',
+        'AI performance forecasting and dedicated infrastructure',
       ],
     },
     {
       code: 'ENTERPRISE',
       name: 'Enterprise Suite',
-      tier: 'Tier 5',
-      students: '10,000+ Students',
-      campuses: 'Unlimited Campuses',
+      tier: 'For institutions and groups',
+      students: 'Up to 10,000 Students',
+      campuses: 'Up to 20 Campuses',
       annualPrice: 99999,
       monthlyPrice: 9999,
-      description: 'For degree colleges, universities, and multi-campus educational trusts.',
+      description: 'Advanced operations, multi-campus governance and enterprise capabilities.',
       features: [
-        'Everything in Professional Plan',
-        'AI Academic Risk & Performance Forecaster',
-        'Official WhatsApp Business API Automation',
-        'Biometric Hardware Integration Sync',
-        'Multi-Campus Centralized Audit Controls',
-        'Optional Physical Dedicated Database',
-        'Separately Branded Mobile App (Premium)',
-        'Dedicated 24/7 Account Manager & SLA',
+        'Everything in Standard Plan',
+        'Professional operations: HR, payroll, library, transport and hostel',
+        'PU and degree-college academic capabilities',
+        'Online payment gateway integrations',
+        'WhatsApp Business and biometric integrations',
+        'Multi-campus governance and advanced analytics',
+        'AI performance forecasting and enterprise controls',
       ],
-      notIncluded: [],
+      notIncluded: [
+        'Dedicated physical database and separately branded mobile app are subject to deployment scope',
+      ],
     },
   ];
 
@@ -187,7 +189,7 @@ export const PricingPage: React.FC = () => {
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                 }`}
               >
-                Choose {p.name}
+                {p.code === 'TRIAL' ? 'Start Free Trial' : `Choose ${p.name}`}
               </Link>
             </div>
           </div>
