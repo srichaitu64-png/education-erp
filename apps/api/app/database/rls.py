@@ -34,6 +34,21 @@ TENANT_SCOPED_TABLES = [
     "class_subject_mappings",
 ]
 
+# Non-private control-plane records platform admins may inspect across tenants.
+PLATFORM_READ_TABLES = {
+    "campuses",
+    "tenant_domains",
+    "subscriptions",
+    "tenant_feature_overrides",
+    "feature_usage",
+}
+PLATFORM_WRITE_TABLES = {
+    "campuses",
+    "tenant_domains",
+    "subscriptions",
+    "tenant_feature_overrides",
+}
+
 # Hybrid tables where tenant_id is nullable (global system records have tenant_id=NULL)
 HYBRID_SCOPED_TABLES = [
     "roles",
@@ -71,6 +86,30 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
         );
         """
         await conn.execute(text(policy_sql))
+        await conn.execute(text(f"DROP POLICY IF EXISTS platform_admin_control_plane_policy ON {table};"))
+        if table in PLATFORM_READ_TABLES:
+            policy_command = "ALL" if table in PLATFORM_WRITE_TABLES else "SELECT"
+            check_clause = """
+                WITH CHECK (
+                    EXISTS (
+                        SELECT 1 FROM users u
+                        WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                          AND u.is_superadmin = TRUE
+                    )
+                )
+            """ if table in PLATFORM_WRITE_TABLES else ""
+            await conn.execute(text(f"""
+                CREATE POLICY platform_admin_control_plane_policy ON {table}
+                FOR {policy_command}
+                USING (
+                    EXISTS (
+                        SELECT 1 FROM users u
+                        WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                          AND u.is_superadmin = TRUE
+                    )
+                )
+                {check_clause}
+            """))
 
     # 2. Enforce hybrid RLS on tables with global records (tenant_id IS NULL)
     for table in HYBRID_SCOPED_TABLES:
