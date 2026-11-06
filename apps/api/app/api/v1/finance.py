@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import User
+from app.modules.tenants.models import Tenant, Campus
 from app.modules.subscriptions.models import Subscription, SubscriptionAuditLog
 from app.modules.finance.models import (
     FeeStructure,
@@ -267,19 +268,41 @@ async def collect_fee_and_generate_receipt(
     db.add(payment)
     await db.flush()
 
-    # 6. Generate Unique Permanent Receipt Number
-    # Count receipts to generate deterministic monotonic receipt number
+    # 6. Generate a tenant-specific receipt number.
+    # Lock the tenant row so concurrent collections for this institution cannot
+    # allocate the same count-based sequence number.
+    tenant_result = await db.execute(
+        select(Tenant).where(Tenant.id == tenant_id).with_for_update()
+    )
+    tenant = tenant_result.scalars().first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Institution not found")
+
     count_stmt = select(func.count(FeeReceipt.id)).where(FeeReceipt.tenant_id == tenant_id)
     receipt_count = (await db.execute(count_stmt)).scalar() or 0
-    receipt_num = f"RCP-CAMP-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
+    tenant_code = "".join(ch for ch in tenant.code.upper() if ch.isalnum())[:8] or "INST"
+    receipt_num = f"RCP-{tenant_code}-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
 
-    # Institution branding metadata
+    # Use the institution's saved identity and contact information. Campus details
+    # override the address/contact fields when the invoice belongs to a campus.
+    campus = None
+    if invoice.campus_id:
+        campus_result = await db.execute(
+            select(Campus).where(
+                Campus.id == invoice.campus_id,
+                Campus.tenant_id == tenant_id,
+            )
+        )
+        campus = campus_result.scalars().first()
+
     branding = {
-        "institution_name": "Pilot Educational Institutions",
-        "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-        "address": "Campus Ground, Knowledge Corridor, Bengaluru, Karnataka - 560085",
-        "phone": "+91 80 2345 6789",
-        "email": "accounts@institution.erp.in",
+        "institution_name": tenant.name,
+        "campus_name": campus.name if campus else None,
+        "affiliation": (tenant.settings or {}).get("affiliation", ""),
+        "address": (campus.address if campus and campus.address else tenant.address) or "",
+        "phone": (campus.contact_phone if campus and campus.contact_phone else tenant.phone) or "",
+        "email": (campus.contact_email if campus and campus.contact_email else tenant.email) or "",
+        "logo_url": tenant.logo_url,
         "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal",
     }
 
