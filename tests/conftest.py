@@ -173,7 +173,12 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
             await session.set_rls_context(None, is_superadmin=False)
             try:
                 yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
             finally:
+                await session.rollback()
                 restore_tenant = uuid.UUID(previous_tenant) if previous_tenant else None
                 await session.set_rls_context(restore_tenant, is_superadmin=previous_admin)
 
