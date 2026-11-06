@@ -16,7 +16,8 @@ import {
   BarChart3,
   MessageSquare,
   Building2,
-  Lock
+  Lock,
+  ChevronDown
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -27,10 +28,19 @@ interface NavItem {
   featureId?: string;
 }
 
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, tenant, entitlements, logout } = useAuthStore();
   const location = useLocation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    workflow: true, learning: true, finance: true, engagement: true, platform: true,
+  });
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -45,27 +55,60 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isSuperAdmin = user?.is_superadmin;
 
-  const institutionNavItems: NavItem[] = [
-    { label: 'Overview', path: '/app', icon: GraduationCap },
-    { label: 'Admissions & Students', path: '/app/students', icon: Users, featureId: 'students.management' },
-    { label: 'Fees & Invoicing', path: '/app/fees', icon: CreditCard, featureId: 'fees.basic' },
-    { label: 'Daily Attendance', path: '/app/attendance', icon: CalendarCheck, featureId: 'attendance.basic' },
-    { label: 'Examinations & Marks', path: '/app/examinations', icon: Award, featureId: 'examinations.basic' },
-    { label: 'Academics & Timetable', path: '/app/academics', icon: BookOpen },
-    { label: 'WhatsApp Automation', path: '/app/whatsapp', icon: MessageSquare, featureId: 'communication.whatsapp' },
-    { label: 'AI Performance Reports', path: '/app/ai-reports', icon: Sparkles, featureId: 'analytics.ai_reports' },
-    { label: 'Multi-Campus Directory', path: '/app/campuses', icon: Building2, featureId: 'multi_campus' },
+  const institutionNavGroups: NavGroup[] = [
+    {
+      id: 'workflow',
+      label: 'Workflow Centre',
+      items: [
+        { label: 'Overview & Tasks', path: '/app', icon: GraduationCap },
+        { label: 'Admissions & Students', path: '/app/students', icon: Users, featureId: 'students.management' },
+      ],
+    },
+    {
+      id: 'learning',
+      label: 'Academic Operations',
+      items: [
+        { label: 'Daily Attendance', path: '/app/attendance', icon: CalendarCheck, featureId: 'attendance.basic' },
+        { label: 'Examinations & Marks', path: '/app/examinations', icon: Award, featureId: 'examinations.basic' },
+        { label: 'Academics & Timetable', path: '/app/academics', icon: BookOpen },
+      ],
+    },
+    {
+      id: 'finance',
+      label: 'Finance & Administration',
+      items: [
+        { label: 'Fees & Invoicing', path: '/app/fees', icon: CreditCard, featureId: 'fees.basic' },
+        { label: 'Multi-Campus Directory', path: '/app/campuses', icon: Building2, featureId: 'multi_campus' },
+      ],
+    },
+    {
+      id: 'engagement',
+      label: 'Communication & Insights',
+      items: [
+        { label: 'WhatsApp Automation', path: '/app/whatsapp', icon: MessageSquare, featureId: 'communication.whatsapp' },
+        { label: 'AI Performance Reports', path: '/app/ai-reports', icon: Sparkles, featureId: 'analytics.ai_reports' },
+      ],
+    },
   ];
 
-  const superAdminNavItems: NavItem[] = [
-    { label: 'Platform Overview', path: '/platform', icon: Shield },
-    { label: 'Institutions Directory', path: '/platform/institutions', icon: Building2 },
-    { label: 'Subscription Plans', path: '/platform/plans', icon: CreditCard },
-    { label: 'Feature Entitlements', path: '/platform/entitlements', icon: Lock },
-    { label: 'Global Audit Logs', path: '/platform/audit', icon: BarChart3 },
+  const platformNavGroups: NavGroup[] = [
+    {
+      id: 'platform',
+      label: 'Platform Governance',
+      items: [
+        { label: 'Platform Overview', path: '/platform', icon: Shield },
+        { label: 'Institutions Directory', path: '/platform/institutions', icon: Building2 },
+        { label: 'Subscription Plans', path: '/platform/plans', icon: CreditCard },
+        { label: 'Feature Entitlements', path: '/platform/entitlements', icon: Lock },
+        { label: 'Global Audit Logs', path: '/platform/audit', icon: BarChart3 },
+      ],
+    },
   ];
 
-  const navItems = isSuperAdmin ? superAdminNavItems : institutionNavItems;
+  const navGroups = isSuperAdmin ? platformNavGroups : institutionNavGroups;
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -96,37 +139,56 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           {!isOnline && <span className="bg-amber-200 px-1.5 py-0.5 rounded text-[10px]">Queue Active</span>}
         </div>
 
-        <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            const feature = item.featureId ? entitlements[item.featureId] : null;
-            const isLocked = !isSuperAdmin && feature && !feature.is_enabled;
-
+        <nav className="p-3 flex-1 space-y-3 overflow-y-auto" aria-label="Main navigation">
+          {navGroups.map((group) => {
+            const expanded = expandedGroups[group.id] ?? true;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center gap-3 truncate">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {isLocked && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                    <Lock className="w-2.5 h-2.5" />
-                    {feature.required_plan}
-                  </span>
+              <section key={group.id} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  aria-expanded={expanded}
+                  className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-gray-400 hover:text-gray-700"
+                >
+                  <span>{group.label}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+                </button>
+                {expanded && (
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path ||
+                        (item.path !== '/app' && location.pathname.startsWith(item.path + '/'));
+                      const feature = item.featureId ? entitlements[item.featureId] : null;
+                      const isLocked = !isSuperAdmin && Boolean(item.featureId) && (!feature || !feature.is_enabled);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="flex items-center gap-3 min-w-0">
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                          {isLocked && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                              <Lock className="w-2.5 h-2.5" />
+                              {feature?.required_plan || 'Plan required'}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+              </section>
             );
           })}
-        </nav>
+        </nav>>
 
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
