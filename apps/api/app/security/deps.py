@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import decode_token
-from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id, set_current_tenant_id, get_current_tenant_id
+from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id
 from app.modules.identity.models import User, UserRole, Role, Permission, PlatformSupportAccessSession, UserSession
 from app.modules.subscriptions.service import EntitlementService, FeatureAccessResult
 
