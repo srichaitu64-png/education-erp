@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useDemoStore, MasterSubjectItem, CurriculumMappingItem } from '../../../store/demoStore';
 import { CreateMasterSubjectModal } from '../../../components/academic/CreateMasterSubjectModal';
+import { api } from '../../../services/api';
 
 export const MasterCurriculumManagementView: React.FC = () => {
   const {
@@ -35,6 +36,37 @@ export const MasterCurriculumManagementView: React.FC = () => {
 
   const [activeSubTab, setActiveSubTab] = useState<'catalogue' | 'mapping' | 'assessment'>('catalogue');
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
+
+  // Synchronize with backend REST API if available
+  React.useEffect(() => {
+    let isMounted = true;
+    const syncBackendData = async () => {
+      try {
+        const resSubjects = await api.get('/academic/subjects');
+        if (isMounted && Array.isArray(resSubjects.data) && resSubjects.data.length > 0) {
+          resSubjects.data.forEach((s: any) => {
+            const exists = masterSubjectCatalogue.some((ms) => ms.code === s.code);
+            if (!exists) {
+              addMasterSubject({
+                code: s.code,
+                name: s.name,
+                category: s.category,
+                has_practical: s.has_practical,
+                default_theory_max: s.default_theory_max,
+                default_practical_max: s.default_practical_max,
+                credits: s.credits,
+                description: s.description,
+              });
+            }
+          });
+        }
+      } catch (err) {
+        // Fallback to demoStore when offline or in standalone demo mode
+      }
+    };
+    syncBackendData();
+    return () => { isMounted = false; };
+  }, []);
 
   // Catalogue Filters
   const [catalogueSearch, setCatalogueSearch] = useState('');
@@ -88,9 +120,30 @@ export const MasterCurriculumManagementView: React.FC = () => {
     setShowMapModal(true);
   };
 
-  const handleConfirmMapSubject = () => {
+  const handleConfirmMapSubject = async () => {
     const targetSubject = masterSubjectCatalogue.find((s) => s.id === selectedCatalogueSubjectId);
     if (!targetSubject) return;
+
+    try {
+      await api.post('/academic/curriculum/map', {
+        academic_year: '2026-2027',
+        institution_level: selectedLevel,
+        class_name: selectedClass,
+        stream: selectedStream,
+        subject_code: targetSubject.code,
+        is_compulsory: isCompulsory,
+        has_theory: true,
+        has_practical: targetSubject.has_practical,
+        theory_max_marks: targetSubject.default_theory_max,
+        practical_max_marks: targetSubject.default_practical_max,
+        theory_pass_marks: 35,
+        practical_pass_marks: 0,
+        total_pass_marks: 35,
+        assigned_teacher_name: staffMembers.length > 0 ? staffMembers[0].name : 'Unassigned',
+      });
+    } catch (err) {
+      console.warn('Backend mapping sync notice:', err);
+    }
 
     mapSubjectToClass({
       institution_level: selectedLevel,
@@ -118,7 +171,18 @@ export const MasterCurriculumManagementView: React.FC = () => {
     setEditTeacher(mapping.assigned_teacher || '');
   };
 
-  const handleSaveAssessment = (mappingId: string) => {
+  const handleSaveAssessment = async (mappingId: string) => {
+    try {
+      await api.put(`/academic/curriculum/mappings/${mappingId}`, {
+        theory_max_marks: Number(editTheory),
+        practical_max_marks: Number(editPractical),
+        theory_pass_marks: Number(editPass),
+        assigned_teacher_name: editTeacher,
+      });
+    } catch (err) {
+      console.warn('Backend assessment update sync notice:', err);
+    }
+
     updateCurriculumAssessment(mappingId, {
       theory_max: Number(editTheory),
       practical_max: Number(editPractical),
@@ -126,6 +190,33 @@ export const MasterCurriculumManagementView: React.FC = () => {
       assigned_teacher: editTeacher,
     });
     setEditingAssessmentId(null);
+  };
+
+  const handleArchiveSubjectAction = async (subjectId: string) => {
+    try {
+      await api.delete(`/academic/subjects/${subjectId}`);
+    } catch (err) {
+      console.warn('Backend archive subject sync notice:', err);
+    }
+    archiveMasterSubject(subjectId);
+  };
+
+  const handleRemoveSubjectFromClassAction = async (mappingId: string) => {
+    try {
+      await api.delete(`/academic/curriculum/mappings/${mappingId}`);
+    } catch (err) {
+      console.warn('Backend unmap sync notice:', err);
+    }
+    removeSubjectFromClass(mappingId);
+  };
+
+  const handleLoadStandardTemplateAction = async () => {
+    try {
+      await api.post('/academic/subjects/templates/load-standard');
+    } catch (err) {
+      console.warn('Backend template load sync notice:', err);
+    }
+    loadStandardMasterCatalogueTemplate();
   };
 
   return (
@@ -148,7 +239,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           {masterSubjectCatalogue.length === 0 && (
             <button
-              onClick={() => loadStandardMasterCatalogueTemplate()}
+              onClick={handleLoadStandardTemplateAction}
               className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-purple-600" />
@@ -305,7 +396,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => archiveMasterSubject(subject.id)}
+                      onClick={() => handleArchiveSubjectAction(subject.id)}
                       className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors cursor-pointer"
                       title="Archive Subject"
                     >
@@ -337,7 +428,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
                   + Add First Subject
                 </button>
                 <button
-                  onClick={() => loadStandardMasterCatalogueTemplate()}
+                  onClick={handleLoadStandardTemplateAction}
                   className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-purple-600" />
@@ -498,7 +589,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => removeSubjectFromClass(mapping.id)}
+                        onClick={() => handleRemoveSubjectFromClassAction(mapping.id)}
                         className="px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer border border-rose-200"
                         title="Unbind from class without removing master subject"
                       >

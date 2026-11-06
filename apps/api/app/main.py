@@ -63,7 +63,10 @@ from app.modules.academic.models import (
     HallTicket,
     ConsolidatedFeeReportSnapshot,
     Student,
-    AdmissionApplication
+    AdmissionApplication,
+    SubjectCatalog,
+    InstitutionSubject,
+    ClassSubjectMapping
 )
 from app.modules.attendance.models import (
     InstitutionAttendanceConfig,

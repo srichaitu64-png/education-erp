@@ -284,3 +284,115 @@ class AdmissionApplication(TenantBaseModel):
         Index("idx_admission_tenant_status", "tenant_id", "status"),
     )
 
+
+class SubjectCatalog(Base, TimestampMixin):
+    """
+    Central Subject Catalogue (Global National/State Board library + custom tenant subjects).
+    tenant_id is NULL for platform standard catalogue subjects (CBSE, Karnataka PU Board, etc.).
+    tenant_id is set for custom subjects created by a specific institution.
+    """
+    __tablename__ = "subject_catalog"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    code: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    category: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="Core Science", index=True
+        # 'Language', 'Core Science', 'Core Commerce', 'Arts & Humanities', 'Vocational', 'Elective'
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    has_practical: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    default_theory_max: Mapped[float] = mapped_column(Float, default=100.0, nullable=False)
+    default_practical_max: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, default=4, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    institution_subjects: Mapped[List["InstitutionSubject"]] = relationship(
+        "InstitutionSubject", back_populates="catalogue_subject", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "code", name="uq_subject_catalog_tenant_code"),
+        Index("idx_subject_cat_search", "tenant_id", "category", "is_active"),
+    )
+
+
+class InstitutionSubject(TenantBaseModel):
+    """
+    Institution-specific Subject repository.
+    Enables schools/colleges to adopt catalog subjects, customize titles/codes,
+    define departmental ownership, and configure specific subject settings.
+    """
+    __tablename__ = "institution_subjects"
+
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subject_catalog.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    custom_code: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    custom_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    department: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
+    institution_level: Mapped[str] = mapped_column(String(64), default="PU College", nullable=False, index=True)
+    settings: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    catalogue_subject: Mapped["SubjectCatalog"] = relationship("SubjectCatalog", back_populates="institution_subjects")
+    class_mappings: Mapped[List["ClassSubjectMapping"]] = relationship(
+        "ClassSubjectMapping", back_populates="institution_subject", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "subject_id", name="uq_institution_subject_tenant"),
+        Index("idx_inst_subject_level", "tenant_id", "institution_level", "is_active"),
+    )
+
+
+class ClassSubjectMapping(TenantBaseModel):
+    """
+    Class-wise curriculum mapping connecting an institution subject to a specific
+    Academic Year, Class/Grade, and optional Stream (e.g. I PUC PCMB, II PUC Commerce).
+    Configures compulsory vs elective, theory/practical breakdown, and pass criteria.
+    """
+    __tablename__ = "class_subject_mappings"
+
+    academic_year: Mapped[str] = mapped_column(String(32), default="2026-2027", nullable=False, index=True)
+    institution_level: Mapped[str] = mapped_column(String(64), default="PU College", nullable=False, index=True)
+    class_name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    stream: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+
+    institution_subject_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("institution_subjects.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+
+    is_compulsory: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    has_theory: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    has_practical: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    theory_max_marks: Mapped[float] = mapped_column(Float, default=100.0, nullable=False)
+    practical_max_marks: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    total_max_marks: Mapped[float] = mapped_column(Float, default=100.0, nullable=False)
+
+    theory_pass_marks: Mapped[float] = mapped_column(Float, default=35.0, nullable=False)
+    practical_pass_marks: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    total_pass_marks: Mapped[float] = mapped_column(Float, default=35.0, nullable=False)
+
+    weekly_periods: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+
+    assigned_teacher_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    assigned_teacher_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    display_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    institution_subject: Mapped["InstitutionSubject"] = relationship("InstitutionSubject", back_populates="class_mappings")
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "academic_year", "class_name", "stream", "institution_subject_id", name="uq_class_subject_mapping"),
+        Index("idx_class_subject_lookup", "tenant_id", "academic_year", "class_name", "stream"),
+    )
+

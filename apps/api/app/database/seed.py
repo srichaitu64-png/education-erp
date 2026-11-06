@@ -17,7 +17,10 @@ from app.modules.academic.models import (
     AcademicSection,
     StudentSectionEnrolment,
     Student,
-    AdmissionApplication
+    AdmissionApplication,
+    SubjectCatalog,
+    InstitutionSubject,
+    ClassSubjectMapping
 )
 
 # Standard Platform Features Registry
@@ -169,12 +172,149 @@ DEFAULT_PERMISSIONS: List[Dict[str, str]] = [
     {"code": "transport.view", "name": "View Transport Routes & Fleet", "module": "transport"},
     {"code": "transport.manage", "name": "Manage Vehicles, Routes & Stops", "module": "transport"},
     {"code": "transport.track", "name": "Live GPS Tracking Telemetry", "module": "transport"},
+
+    # Academics & Curriculum
+    {"code": "curriculum.view", "name": "View Subject Catalogue & Curriculum", "module": "academic"},
+    {"code": "curriculum.manage", "name": "Configure Subjects & Class Curriculum", "module": "academic"},
     
     # Governance & Platform
     {"code": "reports.export", "name": "Generate & Export Reports", "module": "reports"},
     {"code": "settings.branding", "name": "Configure White-Label Branding", "module": "settings"},
     {"code": "permissions.manage", "name": "Super Admin Permission Control", "module": "governance"},
     {"code": "dashboard.design", "name": "Super Admin Dashboard Designer", "module": "governance"},
+]
+
+STANDARD_CATALOG_SUBJECTS: List[Dict[str, Any]] = [
+    {
+        "code": "ENG-101",
+        "name": "English Core & Communication",
+        "category": "Language",
+        "has_practical": False,
+        "default_theory_max": 100.0,
+        "default_practical_max": 0.0,
+        "credits": 4,
+        "description": "Compulsory language, reading comprehension, writing skills and literature",
+    },
+    {
+        "code": "KAN-102",
+        "name": "Kannada Sahitya (Core Language)",
+        "category": "Language",
+        "has_practical": False,
+        "default_theory_max": 100.0,
+        "default_practical_max": 0.0,
+        "credits": 4,
+        "description": "State regional language core, grammar and classical literature",
+    },
+    {
+        "code": "HIN-103",
+        "name": "Hindi Core (Samanya)",
+        "category": "Language",
+        "has_practical": False,
+        "default_theory_max": 100.0,
+        "default_practical_max": 0.0,
+        "credits": 4,
+        "description": "National language option, prose, poetry and applied composition",
+    },
+    {
+        "code": "PHY-101",
+        "name": "Physics (Theory + Lab)",
+        "category": "Core Science",
+        "has_practical": True,
+        "default_theory_max": 70.0,
+        "default_practical_max": 30.0,
+        "credits": 5,
+        "description": "Mechanics, Thermodynamics, Electromagnetism, Optics, Modern Physics and Lab Practicals",
+    },
+    {
+        "code": "CHEM-102",
+        "name": "Chemistry (Inorganic, Organic & Physical)",
+        "category": "Core Science",
+        "has_practical": True,
+        "default_theory_max": 70.0,
+        "default_practical_max": 30.0,
+        "credits": 5,
+        "description": "General chemical principles, Qualitative and Quantitative Analysis lab",
+    },
+    {
+        "code": "MATH-103",
+        "name": "Pure & Applied Mathematics",
+        "category": "Core Science",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 5,
+        "description": "Calculus, Algebra, Coordinate Geometry, Vectors, Probability and Internal Assessment",
+    },
+    {
+        "code": "BIO-104",
+        "name": "Biology (Botany & Zoology)",
+        "category": "Core Science",
+        "has_practical": True,
+        "default_theory_max": 70.0,
+        "default_practical_max": 30.0,
+        "credits": 5,
+        "description": "Cell Biology, Genetics, Plant & Human Physiology, Ecology and Specimen Dissection",
+    },
+    {
+        "code": "CS-105",
+        "name": "Computer Science (Python & SQL)",
+        "category": "Core Science",
+        "has_practical": True,
+        "default_theory_max": 70.0,
+        "default_practical_max": 30.0,
+        "credits": 5,
+        "description": "Python Programming, Data Structures, Relational Database, SQL queries & Computer Networks",
+    },
+    {
+        "code": "ACC-201",
+        "name": "Accountancy & Financial Statements",
+        "category": "Core Commerce",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 4,
+        "description": "Double entry bookkeeping, Balance sheets, Partnership & Company accounts",
+    },
+    {
+        "code": "BST-202",
+        "name": "Business Studies & Management",
+        "category": "Core Commerce",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 4,
+        "description": "Principles of Management, Marketing, Business Finance & Consumer Protection",
+    },
+    {
+        "code": "ECO-203",
+        "name": "Economics (Micro & Macro)",
+        "category": "Core Commerce",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 4,
+        "description": "Indian Economic Development, Microeconomics and National Income Accounting",
+    },
+    {
+        "code": "HIST-301",
+        "name": "History & Heritage Studies",
+        "category": "Arts & Humanities",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 4,
+        "description": "Ancient, Medieval, Modern World & Indian Civilizations",
+    },
+    {
+        "code": "POL-302",
+        "name": "Political Science & Constitution",
+        "category": "Arts & Humanities",
+        "has_practical": False,
+        "default_theory_max": 80.0,
+        "default_practical_max": 20.0,
+        "credits": 4,
+        "description": "Indian Constitution, Political Theory, Comparative Politics & International Relations",
+    },
 ]
 
 
@@ -243,6 +383,29 @@ async def seed_initial_data(db: AsyncSession) -> None:
             db.add(perm)
     await db.flush()
 
+    # 3.5 Global Subject Catalogue Reference Library
+    for s_def in STANDARD_CATALOG_SUBJECTS:
+        stmt_s = select(SubjectCatalog).where(
+            SubjectCatalog.code == s_def["code"],
+            SubjectCatalog.tenant_id == None
+        )
+        res_s = await db.execute(stmt_s)
+        if not res_s.scalars().first():
+            cat_subject = SubjectCatalog(
+                tenant_id=None,
+                code=s_def["code"],
+                name=s_def["name"],
+                category=s_def["category"],
+                has_practical=s_def["has_practical"],
+                default_theory_max=s_def["default_theory_max"],
+                default_practical_max=s_def["default_practical_max"],
+                credits=s_def["credits"],
+                description=s_def["description"],
+                is_active=True
+            )
+            db.add(cat_subject)
+    await db.flush()
+
     # 4. Global System Roles (Never overwritten during migrations)
     system_roles = [
         ("SUPER_ADMIN", "Platform Super Administrator", True),
@@ -280,7 +443,15 @@ async def seed_initial_data(db: AsyncSession) -> None:
             "fees.view", "fees.configure",
             "attendance.mark", "attendance.verify",
             "exams.view", "exams.manage", "marks.enter", "marks.verify", "marks.approve", "marks.publish", "marks.export",
+            "curriculum.view", "curriculum.manage",
             "staff.manage", "transport.view", "reports.export", "settings.branding"
+        ],
+        "VICE_PRINCIPAL": [
+            "students.view", "students.create", "students.edit", "admissions.manage",
+            "attendance.mark", "attendance.verify",
+            "exams.view", "exams.manage", "marks.enter", "marks.verify", "marks.approve",
+            "curriculum.view", "curriculum.manage",
+            "staff.manage", "reports.export"
         ],
         "ACCOUNTANT": [
             "fees.view", "fees.collect", "fees.refund", "fees.reconcile", "fees.configure",
@@ -288,10 +459,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
         ],
         "EXAM_CONTROLLER": [
             "exams.view", "exams.manage", "exams.delete", "marks.enter", "marks.verify", "marks.publish", "marks.export",
+            "curriculum.view",
             "students.view", "reports.export"
         ],
         "TEACHER": [
-            "attendance.mark", "marks.enter", "exams.view", "students.view"
+            "attendance.mark", "marks.enter", "exams.view", "students.view", "curriculum.view"
         ],
         "STUDENT": [
             "students.view", "exams.view"

@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class AcademicSectionCreate(BaseModel):
@@ -266,5 +266,170 @@ class PortalMeResponse(BaseModel):
     fee_summary: Optional[Dict[str, Any]] = None
     recent_marks: List[Dict[str, Any]] = []
     hall_tickets: List[HallTicketResponse] = []
+
+
+# ---------------------------------------------------------------------------
+# Subject Catalogue & Curriculum Mapping Schemas
+# ---------------------------------------------------------------------------
+class SubjectCatalogCreate(BaseModel):
+    code: str = Field(..., min_length=2, max_length=64, description="Unique subject code, e.g. PHY-101")
+    name: str = Field(..., min_length=2, max_length=255, description="Official subject name")
+    category: str = Field(default="Core Science", description="Category: Language, Core Science, Core Commerce, Arts & Humanities, Vocational, Elective")
+    description: Optional[str] = None
+    has_practical: bool = False
+    default_theory_max: float = Field(default=100.0, ge=0.0, le=200.0)
+    default_practical_max: float = Field(default=0.0, ge=0.0, le=100.0)
+    credits: int = Field(default=4, ge=1, le=20)
+    is_active: bool = True
+
+
+class SubjectCatalogUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    has_practical: Optional[bool] = None
+    default_theory_max: Optional[float] = None
+    default_practical_max: Optional[float] = None
+    credits: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class SubjectCatalogOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: Optional[uuid.UUID] = None
+    code: str
+    name: str
+    category: str
+    description: Optional[str] = None
+    has_practical: bool
+    default_theory_max: float
+    default_practical_max: float
+    credits: int
+    is_active: bool
+    created_at: datetime
+
+    @computed_field
+    @property
+    def is_global(self) -> bool:
+        return self.tenant_id is None
+
+    class Config:
+        from_attributes = True
+
+
+class InstitutionSubjectCreate(BaseModel):
+    subject_id: uuid.UUID
+    custom_code: Optional[str] = None
+    custom_name: Optional[str] = None
+    department: Optional[str] = None
+    institution_level: str = "PU College"
+    settings: Optional[Dict[str, Any]] = None
+    is_active: bool = True
+
+
+class InstitutionSubjectOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    subject_id: uuid.UUID
+    code: str
+    name: str
+    category: str
+    department: Optional[str] = None
+    institution_level: str
+    has_practical: bool
+    settings: Dict[str, Any] = {}
+    is_active: bool
+    catalogue_subject: Optional[SubjectCatalogOut] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClassSubjectMappingCreate(BaseModel):
+    academic_year: str = Field(default="2026-2027")
+    institution_level: str = Field(default="PU College")
+    class_name: str = Field(..., description="Target class, e.g. Class 10, I PUC, II PUC")
+    stream: Optional[str] = Field(default=None, description="Optional stream or combination, e.g. PCMB, PCMC, Commerce")
+
+    subject_id: Optional[uuid.UUID] = None
+    institution_subject_id: Optional[uuid.UUID] = None
+    subject_code: Optional[str] = None
+
+    is_compulsory: bool = True
+    has_theory: bool = True
+    has_practical: bool = False
+
+    theory_max_marks: float = Field(default=100.0, ge=0.0)
+    practical_max_marks: float = Field(default=0.0, ge=0.0)
+    total_max_marks: Optional[float] = None
+
+    theory_pass_marks: float = Field(default=35.0, ge=0.0)
+    practical_pass_marks: float = Field(default=0.0, ge=0.0)
+    total_pass_marks: Optional[float] = None
+
+    weekly_periods: int = Field(default=5, ge=1, le=40)
+    assigned_teacher_id: Optional[uuid.UUID] = None
+    assigned_teacher_name: Optional[str] = None
+    display_order: int = 1
+    notes: Optional[str] = None
+
+
+class ClassSubjectMappingUpdate(BaseModel):
+    is_compulsory: Optional[bool] = None
+    has_theory: Optional[bool] = None
+    has_practical: Optional[bool] = None
+    theory_max_marks: Optional[float] = None
+    practical_max_marks: Optional[float] = None
+    total_max_marks: Optional[float] = None
+    theory_pass_marks: Optional[float] = None
+    practical_pass_marks: Optional[float] = None
+    total_pass_marks: Optional[float] = None
+    weekly_periods: Optional[int] = None
+    assigned_teacher_id: Optional[uuid.UUID] = None
+    assigned_teacher_name: Optional[str] = None
+    display_order: Optional[int] = None
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+
+class ClassSubjectMappingOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    academic_year: str
+    institution_level: str
+    class_name: str
+    stream: Optional[str] = None
+    institution_subject_id: uuid.UUID
+
+    subject_code: str
+    subject_name: str
+    category: str
+
+    is_compulsory: bool
+    has_theory: bool
+    has_practical: bool
+
+    theory_max_marks: float
+    practical_max_marks: float
+    total_max_marks: float
+
+    theory_pass_marks: float
+    practical_pass_marks: float
+    total_pass_marks: float
+
+    weekly_periods: int
+    assigned_teacher_id: Optional[uuid.UUID] = None
+    assigned_teacher_name: Optional[str] = None
+    display_order: int
+    is_active: bool
+    notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ReorderCurriculumRequest(BaseModel):
+    mapping_ids: List[uuid.UUID]
 
 

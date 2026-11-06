@@ -31,6 +31,8 @@ TENANT_SCOPED_TABLES = [
     "admission_applications",
     "migration_batch_logs",
     "platform_support_access_sessions",
+    "institution_subjects",
+    "class_subject_mappings",
 ]
 
 # Hybrid tables where tenant_id is nullable (global system records have tenant_id=NULL)
@@ -41,6 +43,7 @@ HYBRID_SCOPED_TABLES = [
     "dashboard_layout_configs",
     "subscription_audit_logs",
     "account_security_events",
+    "subject_catalog",
 ]
 
 

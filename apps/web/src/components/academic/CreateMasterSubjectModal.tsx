@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, BookOpen, CheckCircle2 } from 'lucide-react';
 import { useDemoStore, MasterSubjectItem } from '../../store/demoStore';
+import { api } from '../../services/api';
 
 interface CreateMasterSubjectModalProps {
   isOpen: boolean;
@@ -26,11 +27,11 @@ export const CreateMasterSubjectModal: React.FC<CreateMasterSubjectModalProps> =
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || !name.trim()) return;
 
-    addMasterSubject({
+    const payload = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
       category,
@@ -39,8 +40,16 @@ export const CreateMasterSubjectModal: React.FC<CreateMasterSubjectModalProps> =
       default_practical_max: hasPractical ? (Number(practicalMax) || 0) : 0,
       credits: Number(credits) || 4,
       description: description.trim() || undefined,
-    });
+    };
 
+    try {
+      await api.post('/academic/subjects', payload);
+    } catch (err) {
+      // Gracefully continue in local demo mode if unauthenticated or offline
+      console.warn('Backend API subject sync notice:', err);
+    }
+
+    addMasterSubject(payload);
     onClose();
   };
 

@@ -4,9 +4,10 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
+from sqlalchemy.orm import selectinload, joinedload
 
 from app.database.session import get_db, get_current_tenant_id
-from app.security.deps import get_current_user
+from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User, UserRole, Role
 from app.modules.tenants.models import Tenant
 from app.modules.finance.models import FeeInvoice
@@ -20,6 +21,9 @@ from app.modules.academic.models import (
     ConsolidatedFeeReportSnapshot,
     Student,
     AdmissionApplication,
+    SubjectCatalog,
+    InstitutionSubject,
+    ClassSubjectMapping,
 )
 from app.modules.academic.schemas import (
     AcademicSectionCreate,
@@ -41,6 +45,15 @@ from app.modules.academic.schemas import (
     AdmissionApproveRequest,
     StaffUserOut,
     PortalMeResponse,
+    SubjectCatalogCreate,
+    SubjectCatalogUpdate,
+    SubjectCatalogOut,
+    InstitutionSubjectCreate,
+    InstitutionSubjectOut,
+    ClassSubjectMappingCreate,
+    ClassSubjectMappingUpdate,
+    ClassSubjectMappingOut,
+    ReorderCurriculumRequest,
 )
 
 router = APIRouter(prefix="/academic", tags=["Academic Operations & Duty Assignments"])
@@ -61,7 +74,7 @@ async def list_academic_sections(
     )
     if class_name:
         query = query.where(AcademicSection.class_name == class_name)
-    
+
     result = await db.execute(query.order_by(AcademicSection.class_name, AcademicSection.section_code))
     return result.scalars().all()
 
@@ -91,7 +104,7 @@ async def create_academic_section(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Section '{payload.section_code.upper()}' already exists for {payload.class_name} ({payload.academic_year})."
         )
-    
+
     section = AcademicSection(
         tenant_id=tenant_id,
         academic_year=payload.academic_year,
@@ -125,7 +138,7 @@ async def transfer_student_section(
     target_sec = await db.get(AcademicSection, payload.target_section_id)
     if not target_sec or target_sec.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target section not found.")
-    
+
     if target_sec.enrolled_count >= target_sec.max_capacity:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -188,7 +201,7 @@ async def assign_staff_duty(
     section = await db.get(AcademicSection, payload.section_id)
     if not section or section.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assigned section not found.")
-    
+
     assignment = StaffDutyAssignment(
         tenant_id=tenant_id,
         staff_id=payload.staff_id,
@@ -960,4 +973,843 @@ async def get_portal_my_profile(
         recent_marks=marks_list,
         hall_tickets=[HallTicketResponse.model_validate(t) for t in tickets]
     )
+
+
+# ===========================================================================
+# Production-Grade Subject Catalogue & Curriculum Management Endpoints
+# ===========================================================================
+
+@router.get("/subjects", response_model=List[SubjectCatalogOut])
+async def list_subject_catalogue(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    active_only: bool = True,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    List subjects in the catalogue accessible to the active tenant.
+    Returns global system subjects (tenant_id IS NULL) + custom subjects created by this tenant.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+
+    stmt = select(SubjectCatalog).where(
+        or_(
+            SubjectCatalog.tenant_id == None,
+            SubjectCatalog.tenant_id == tenant_id
+        )
+    )
+    if active_only:
+        stmt = stmt.where(SubjectCatalog.is_active == True)
+    if category and category != "ALL":
+        stmt = stmt.where(SubjectCatalog.category == category)
+    if search and search.strip():
+        term = f"%{search.strip().lower()}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(SubjectCatalog.code).like(term),
+                func.lower(SubjectCatalog.name).like(term),
+                func.lower(SubjectCatalog.category).like(term)
+            )
+        )
+    stmt = stmt.order_by(SubjectCatalog.category.asc(), SubjectCatalog.code.asc())
+    res = await db.execute(stmt)
+    return res.scalars().all()
+
+
+@router.post("/subjects", response_model=SubjectCatalogOut, status_code=status.HTTP_201_CREATED)
+async def create_subject_catalogue_entry(
+    payload: SubjectCatalogCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Create a custom subject in the master catalogue for the active institution.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+    clean_code = payload.code.strip().upper()
+
+    # Check for duplicate code in tenant scope or global catalog
+    stmt_check = select(SubjectCatalog).where(
+        SubjectCatalog.code == clean_code,
+        or_(SubjectCatalog.tenant_id == tenant_id, SubjectCatalog.tenant_id == None)
+    )
+    res_check = await db.execute(stmt_check)
+    existing = res_check.scalars().first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A subject with code '{clean_code}' already exists in the catalogue ({existing.name})."
+        )
+
+    # Validate marks
+    if payload.has_practical and payload.default_practical_max <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Subjects with practicals must have default practical marks greater than zero."
+        )
+
+    subject = SubjectCatalog(
+        tenant_id=tenant_id,
+        code=clean_code,
+        name=payload.name.strip(),
+        category=payload.category,
+        description=payload.description,
+        has_practical=payload.has_practical,
+        default_theory_max=payload.default_theory_max,
+        default_practical_max=payload.default_practical_max if payload.has_practical else 0.0,
+        credits=payload.credits,
+        is_active=payload.is_active,
+        created_by=user.id
+    )
+    db.add(subject)
+    await db.commit()
+    await db.refresh(subject)
+    return subject
+
+
+@router.get("/subjects/{subject_id}", response_model=SubjectCatalogOut)
+async def get_subject_catalogue_entry(
+    subject_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Get single catalogue subject by ID."""
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+    subject = await db.get(SubjectCatalog, subject_id)
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is not None and subject.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is not None and subject.tenant_id != tenant_id and not user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access to subject forbidden.")
+    return subject
+
+
+@router.put("/subjects/{subject_id}", response_model=SubjectCatalogOut)
+async def update_subject_catalogue_entry(
+    subject_id: uuid.UUID,
+    payload: SubjectCatalogUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """Update catalogue subject details."""
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+    subject = await db.get(SubjectCatalog, subject_id)
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is not None and subject.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is not None and subject.tenant_id != tenant_id and not user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify other institution's subject.")
+
+    if payload.name is not None:
+        subject.name = payload.name.strip()
+    if payload.category is not None:
+        subject.category = payload.category
+    if payload.description is not None:
+        subject.description = payload.description
+    if payload.has_practical is not None:
+        subject.has_practical = payload.has_practical
+    if payload.default_theory_max is not None:
+        subject.default_theory_max = payload.default_theory_max
+    if payload.default_practical_max is not None:
+        subject.default_practical_max = payload.default_practical_max
+    if payload.credits is not None:
+        subject.credits = payload.credits
+    if payload.is_active is not None:
+        subject.is_active = payload.is_active
+    subject.updated_by = user.id
+
+    await db.commit()
+    await db.refresh(subject)
+    return subject
+
+
+@router.delete("/subjects/{subject_id}", status_code=status.HTTP_200_OK)
+async def archive_or_delete_subject(
+    subject_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Safely archive or delete a subject.
+    If the subject has active class mappings or exam marks, soft-archives it (is_active = False).
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else None)
+    subject = await db.get(SubjectCatalog, subject_id)
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is not None and subject.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+
+    # Check if subject is adopted in institution_subjects
+    stmt_inst = select(InstitutionSubject).where(
+        InstitutionSubject.subject_id == subject_id,
+        InstitutionSubject.tenant_id == tenant_id
+    )
+    inst_subj = (await db.execute(stmt_inst)).scalars().first()
+
+    has_mappings = False
+    if inst_subj:
+        stmt_map = select(ClassSubjectMapping).where(
+            ClassSubjectMapping.institution_subject_id == inst_subj.id,
+            ClassSubjectMapping.tenant_id == tenant_id,
+            ClassSubjectMapping.is_active == True
+        )
+        has_mappings = (await db.execute(stmt_map)).scalars().first() is not None
+
+    if has_mappings:
+        subject.is_active = False
+        if inst_subj:
+            inst_subj.is_active = False
+        await db.commit()
+        return {
+            "status": "ARCHIVED",
+            "message": f"Subject '{subject.code}' is currently assigned in curriculum; archived safely from catalogue."
+        }
+
+    # Soft delete subject
+    subject.is_active = False
+    if inst_subj:
+        inst_subj.is_active = False
+    await db.commit()
+    return {
+        "status": "ARCHIVED",
+        "message": f"Subject '{subject.code}' successfully archived from catalogue."
+    }
+
+
+@router.post("/subjects/templates/load-standard", status_code=status.HTTP_200_OK)
+async def load_standard_catalogue_template(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Idempotently adopt standard Karnataka PU / CBSE board subjects into active institution repository.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+
+    # Fetch global catalog subjects
+    stmt_cat = select(SubjectCatalog).where(
+        SubjectCatalog.tenant_id == None,
+        SubjectCatalog.is_active == True
+    )
+    res_cat = await db.execute(stmt_cat)
+    global_subjects = res_cat.scalars().all()
+
+    loaded_count = 0
+    for gs in global_subjects:
+        stmt_exist = select(InstitutionSubject).where(
+            InstitutionSubject.tenant_id == tenant_id,
+            InstitutionSubject.subject_id == gs.id
+        )
+        exist = (await db.execute(stmt_exist)).scalars().first()
+        if not exist:
+            new_is = InstitutionSubject(
+                tenant_id=tenant_id,
+                subject_id=gs.id,
+                custom_code=gs.code,
+                custom_name=gs.name,
+                department=gs.category,
+                institution_level="PU College",
+                is_active=True,
+                created_by=user.id
+            )
+            db.add(new_is)
+            loaded_count += 1
+
+    await db.commit()
+    return {
+        "status": "SUCCESS",
+        "loaded_count": loaded_count,
+        "adopted_count": loaded_count,
+        "total_available": len(global_subjects),
+        "message": f"Successfully configured {loaded_count} standard catalogue subjects into your institution repository."
+    }
+
+
+@router.get("/institution-subjects", response_model=List[InstitutionSubjectOut])
+async def list_institution_subjects(
+    institution_level: Optional[str] = None,
+    department: Optional[str] = None,
+    active_only: bool = True,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """List all subjects adopted and configured by the active institution."""
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    stmt = (
+        select(InstitutionSubject)
+        .options(joinedload(InstitutionSubject.catalogue_subject))
+        .where(InstitutionSubject.tenant_id == tenant_id)
+    )
+    if active_only:
+        stmt = stmt.where(InstitutionSubject.is_active == True)
+    if institution_level:
+        stmt = stmt.where(InstitutionSubject.institution_level == institution_level)
+    if department:
+        stmt = stmt.where(InstitutionSubject.department == department)
+
+    stmt = stmt.order_by(InstitutionSubject.created_at.asc())
+    res = await db.execute(stmt)
+    inst_subjs = res.scalars().all()
+
+    output = []
+    for s in inst_subjs:
+        cat = s.catalogue_subject
+        output.append(
+            InstitutionSubjectOut(
+                id=s.id,
+                tenant_id=s.tenant_id,
+                subject_id=s.subject_id,
+                code=s.custom_code or (cat.code if cat else "UNKNOWN"),
+                name=s.custom_name or (cat.name if cat else "Unnamed Subject"),
+                category=cat.category if cat else "General",
+                department=s.department,
+                institution_level=s.institution_level,
+                has_practical=cat.has_practical if cat else False,
+                settings=s.settings or {},
+                is_active=s.is_active,
+                catalogue_subject=SubjectCatalogOut.model_validate(cat) if cat else None
+            )
+        )
+    return output
+
+
+@router.post("/institution-subjects", response_model=InstitutionSubjectOut, status_code=status.HTTP_201_CREATED)
+async def adopt_or_create_institution_subject(
+    payload: InstitutionSubjectCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """Adopt a catalogue subject into the active institution."""
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+
+    # Check catalogue subject exists
+    cat_subject = await db.get(SubjectCatalog, payload.subject_id)
+    if not cat_subject:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Catalogue subject not found.")
+
+    # Check if already adopted
+    stmt_exist = select(InstitutionSubject).options(joinedload(InstitutionSubject.catalogue_subject)).where(
+        InstitutionSubject.tenant_id == tenant_id,
+        InstitutionSubject.subject_id == payload.subject_id
+    )
+    exist = (await db.execute(stmt_exist)).scalars().first()
+    if exist:
+        if not exist.is_active:
+            exist.is_active = True
+            await db.commit()
+            await db.refresh(exist)
+        return InstitutionSubjectOut(
+            id=exist.id,
+            tenant_id=exist.tenant_id,
+            subject_id=exist.subject_id,
+            code=exist.custom_code or cat_subject.code,
+            name=exist.custom_name or cat_subject.name,
+            category=cat_subject.category,
+            department=exist.department,
+            institution_level=exist.institution_level,
+            has_practical=cat_subject.has_practical,
+            settings=exist.settings or {},
+            is_active=exist.is_active,
+            catalogue_subject=SubjectCatalogOut.model_validate(cat_subject)
+        )
+
+    inst_sub = InstitutionSubject(
+        tenant_id=tenant_id,
+        subject_id=payload.subject_id,
+        custom_code=payload.custom_code or cat_subject.code,
+        custom_name=payload.custom_name or cat_subject.name,
+        department=payload.department or cat_subject.category,
+        institution_level=payload.institution_level,
+        settings=payload.settings or {},
+        is_active=payload.is_active,
+        created_by=user.id
+    )
+    db.add(inst_sub)
+    await db.commit()
+    await db.refresh(inst_sub)
+
+    return InstitutionSubjectOut(
+        id=inst_sub.id,
+        tenant_id=inst_sub.tenant_id,
+        subject_id=inst_sub.subject_id,
+        code=inst_sub.custom_code or cat_subject.code,
+        name=inst_sub.custom_name or cat_subject.name,
+        category=cat_subject.category,
+        department=inst_sub.department,
+        institution_level=inst_sub.institution_level,
+        has_practical=cat_subject.has_practical,
+        settings=inst_sub.settings or {},
+        is_active=inst_sub.is_active,
+        catalogue_subject=SubjectCatalogOut.model_validate(cat_subject)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Class Subject Mapping (Curriculum Mapping) Endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/curriculum", response_model=List[ClassSubjectMappingOut])
+async def list_class_curriculum_mappings(
+    academic_year: str = "2026-2027",
+    institution_level: Optional[str] = None,
+    class_name: Optional[str] = None,
+    stream: Optional[str] = None,
+    active_only: bool = True,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Retrieve class-wise curriculum mappings for the active institution.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+
+    stmt = (
+        select(ClassSubjectMapping)
+        .options(
+            joinedload(ClassSubjectMapping.institution_subject)
+            .joinedload(InstitutionSubject.catalogue_subject)
+        )
+        .where(
+            ClassSubjectMapping.tenant_id == tenant_id,
+            ClassSubjectMapping.academic_year == academic_year
+        )
+    )
+    if active_only:
+        stmt = stmt.where(ClassSubjectMapping.is_active == True)
+    if institution_level:
+        stmt = stmt.where(ClassSubjectMapping.institution_level == institution_level)
+    if class_name:
+        stmt = stmt.where(ClassSubjectMapping.class_name == class_name)
+    if stream:
+        stmt = stmt.where(
+            or_(
+                ClassSubjectMapping.stream == stream,
+                ClassSubjectMapping.stream == None
+            )
+        )
+
+    stmt = stmt.order_by(ClassSubjectMapping.display_order.asc(), ClassSubjectMapping.created_at.asc())
+    res = await db.execute(stmt)
+    mappings = res.scalars().all()
+
+    output = []
+    for m in mappings:
+        ins = m.institution_subject
+        cat = ins.catalogue_subject if ins else None
+
+        subj_code = (ins.custom_code if ins and ins.custom_code else (cat.code if cat else "UNKNOWN"))
+        subj_name = (ins.custom_name if ins and ins.custom_name else (cat.name if cat else "Unknown Subject"))
+        subj_cat = cat.category if cat else "General"
+
+        output.append(
+            ClassSubjectMappingOut(
+                id=m.id,
+                tenant_id=m.tenant_id,
+                academic_year=m.academic_year,
+                institution_level=m.institution_level,
+                class_name=m.class_name,
+                stream=m.stream,
+                institution_subject_id=m.institution_subject_id,
+                subject_code=subj_code,
+                subject_name=subj_name,
+                category=subj_cat,
+                is_compulsory=m.is_compulsory,
+                has_theory=m.has_theory,
+                has_practical=m.has_practical,
+                theory_max_marks=m.theory_max_marks,
+                practical_max_marks=m.practical_max_marks,
+                total_max_marks=m.total_max_marks,
+                theory_pass_marks=m.theory_pass_marks,
+                practical_pass_marks=m.practical_pass_marks,
+                total_pass_marks=m.total_pass_marks,
+                weekly_periods=m.weekly_periods,
+                assigned_teacher_id=m.assigned_teacher_id,
+                assigned_teacher_name=m.assigned_teacher_name,
+                display_order=m.display_order,
+                is_active=m.is_active,
+                notes=m.notes,
+                created_at=m.created_at
+            )
+        )
+    return output
+
+
+@router.post("/curriculum/map", response_model=ClassSubjectMappingOut, status_code=status.HTTP_201_CREATED)
+async def map_subject_to_class_curriculum(
+    payload: ClassSubjectMappingCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Map an institution subject to a specific Class and Stream.
+    Prevents duplicate mappings and validates marks calculation integrity.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+
+    # 1. Resolve institution_subject_id
+    inst_subject = None
+    if payload.institution_subject_id:
+        inst_subject = await db.get(InstitutionSubject, payload.institution_subject_id)
+        if not inst_subject or inst_subject.tenant_id != tenant_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution subject not found.")
+    elif payload.subject_id:
+        # Check if already adopted in institution_subjects
+        stmt_is = select(InstitutionSubject).where(
+            InstitutionSubject.tenant_id == tenant_id,
+            InstitutionSubject.subject_id == payload.subject_id
+        )
+        inst_subject = (await db.execute(stmt_is)).scalars().first()
+        if not inst_subject:
+            cat_s = await db.get(SubjectCatalog, payload.subject_id)
+            if not cat_s:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Catalogue subject not found.")
+            inst_subject = InstitutionSubject(
+                tenant_id=tenant_id,
+                subject_id=cat_s.id,
+                custom_code=cat_s.code,
+                custom_name=cat_s.name,
+                department=cat_s.category,
+                institution_level=payload.institution_level,
+                is_active=True,
+                created_by=user.id
+            )
+            db.add(inst_subject)
+            await db.flush()
+    elif payload.subject_code:
+        # Look up by code
+        stmt_code = (
+            select(InstitutionSubject)
+            .join(SubjectCatalog, InstitutionSubject.subject_id == SubjectCatalog.id)
+            .where(
+                InstitutionSubject.tenant_id == tenant_id,
+                or_(
+                    InstitutionSubject.custom_code == payload.subject_code.upper(),
+                    SubjectCatalog.code == payload.subject_code.upper()
+                )
+            )
+        )
+        inst_subject = (await db.execute(stmt_code)).scalars().first()
+        if not inst_subject:
+            # Find in catalogue and auto-adopt
+            stmt_cat = select(SubjectCatalog).where(
+                SubjectCatalog.code == payload.subject_code.upper(),
+                or_(SubjectCatalog.tenant_id == tenant_id, SubjectCatalog.tenant_id == None)
+            )
+            cat_s = (await db.execute(stmt_cat)).scalars().first()
+            if not cat_s:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Subject code '{payload.subject_code}' not found.")
+            inst_subject = InstitutionSubject(
+                tenant_id=tenant_id,
+                subject_id=cat_s.id,
+                custom_code=cat_s.code,
+                custom_name=cat_s.name,
+                department=cat_s.category,
+                institution_level=payload.institution_level,
+                is_active=True,
+                created_by=user.id
+            )
+            db.add(inst_subject)
+            await db.flush()
+
+    if not inst_subject:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must specify institution_subject_id, subject_id, or subject_code."
+        )
+
+    # 2. Duplicate Detection
+    clean_stream = payload.stream.strip() if payload.stream else None
+    stmt_dup = select(ClassSubjectMapping).where(
+        ClassSubjectMapping.tenant_id == tenant_id,
+        ClassSubjectMapping.academic_year == payload.academic_year,
+        ClassSubjectMapping.class_name == payload.class_name,
+        ClassSubjectMapping.stream == clean_stream,
+        ClassSubjectMapping.institution_subject_id == inst_subject.id
+    )
+    dup_res = await db.execute(stmt_dup)
+    existing_map = dup_res.scalars().first()
+    if existing_map:
+        if existing_map.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Subject '{inst_subject.custom_code}' is already mapped to {payload.class_name} ({clean_stream or 'General'}) for academic year {payload.academic_year}."
+            )
+        else:
+            # Reactivate
+            existing_map.is_active = True
+            existing_map.theory_max_marks = payload.theory_max_marks
+            existing_map.practical_max_marks = payload.practical_max_marks
+            existing_map.total_max_marks = payload.theory_max_marks + payload.practical_max_marks
+            existing_map.theory_pass_marks = payload.theory_pass_marks
+            existing_map.practical_pass_marks = payload.practical_pass_marks
+            existing_map.total_pass_marks = payload.theory_pass_marks + payload.practical_pass_marks
+            existing_map.assigned_teacher_name = payload.assigned_teacher_name
+            await db.commit()
+            await db.refresh(existing_map)
+            mapping_to_return = existing_map
+    else:
+        # 3. Marks Validation
+        t_max = payload.theory_max_marks
+        p_max = payload.practical_max_marks if payload.has_practical else 0.0
+        tot_max = payload.total_max_marks or (t_max + p_max)
+
+        t_pass = payload.theory_pass_marks
+        p_pass = payload.practical_pass_marks if payload.has_practical else 0.0
+        tot_pass = payload.total_pass_marks or (t_pass + p_pass)
+
+        if t_pass > t_max:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Theory passing marks ({t_pass}) cannot exceed theory maximum marks ({t_max})."
+            )
+        if payload.has_practical and p_pass > p_max:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Practical passing marks ({p_pass}) cannot exceed practical maximum marks ({p_max})."
+            )
+        if tot_pass > tot_max:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Total passing marks ({tot_pass}) cannot exceed total maximum marks ({tot_max})."
+            )
+
+        # Get next display order
+        order_stmt = select(func.count(ClassSubjectMapping.id)).where(
+            ClassSubjectMapping.tenant_id == tenant_id,
+            ClassSubjectMapping.academic_year == payload.academic_year,
+            ClassSubjectMapping.class_name == payload.class_name
+        )
+        current_count = (await db.execute(order_stmt)).scalar() or 0
+
+        new_mapping = ClassSubjectMapping(
+            tenant_id=tenant_id,
+            academic_year=payload.academic_year,
+            institution_level=payload.institution_level,
+            class_name=payload.class_name,
+            stream=clean_stream,
+            institution_subject_id=inst_subject.id,
+            is_compulsory=payload.is_compulsory,
+            has_theory=payload.has_theory,
+            has_practical=payload.has_practical,
+            theory_max_marks=t_max,
+            practical_max_marks=p_max,
+            total_max_marks=tot_max,
+            theory_pass_marks=t_pass,
+            practical_pass_marks=p_pass,
+            total_pass_marks=tot_pass,
+            weekly_periods=payload.weekly_periods,
+            assigned_teacher_id=payload.assigned_teacher_id,
+            assigned_teacher_name=payload.assigned_teacher_name,
+            display_order=current_count + 1,
+            is_active=True,
+            notes=payload.notes,
+            created_by=user.id
+        )
+        db.add(new_mapping)
+        await db.commit()
+        await db.refresh(new_mapping)
+        mapping_to_return = new_mapping
+
+    # Load catalogue subject for output
+    await db.refresh(mapping_to_return, ["institution_subject"])
+    cat = (await db.get(SubjectCatalog, inst_subject.subject_id))
+
+    return ClassSubjectMappingOut(
+        id=mapping_to_return.id,
+        tenant_id=mapping_to_return.tenant_id,
+        academic_year=mapping_to_return.academic_year,
+        institution_level=mapping_to_return.institution_level,
+        class_name=mapping_to_return.class_name,
+        stream=mapping_to_return.stream,
+        institution_subject_id=mapping_to_return.institution_subject_id,
+        subject_code=inst_subject.custom_code or (cat.code if cat else "UNKNOWN"),
+        subject_name=inst_subject.custom_name or (cat.name if cat else "Unknown Subject"),
+        category=cat.category if cat else "General",
+        is_compulsory=mapping_to_return.is_compulsory,
+        has_theory=mapping_to_return.has_theory,
+        has_practical=mapping_to_return.has_practical,
+        theory_max_marks=mapping_to_return.theory_max_marks,
+        practical_max_marks=mapping_to_return.practical_max_marks,
+        total_max_marks=mapping_to_return.total_max_marks,
+        theory_pass_marks=mapping_to_return.theory_pass_marks,
+        practical_pass_marks=mapping_to_return.practical_pass_marks,
+        total_pass_marks=mapping_to_return.total_pass_marks,
+        weekly_periods=mapping_to_return.weekly_periods,
+        assigned_teacher_id=mapping_to_return.assigned_teacher_id,
+        assigned_teacher_name=mapping_to_return.assigned_teacher_name,
+        display_order=mapping_to_return.display_order,
+        is_active=mapping_to_return.is_active,
+        notes=mapping_to_return.notes,
+        created_at=mapping_to_return.created_at
+    )
+
+
+@router.put("/curriculum/mappings/{mapping_id}", response_model=ClassSubjectMappingOut)
+async def update_class_subject_mapping(
+    mapping_id: uuid.UUID,
+    payload: ClassSubjectMappingUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Update curriculum assessment scheme (theory/practical marks, pass criteria, assigned faculty).
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    mapping = await db.get(ClassSubjectMapping, mapping_id)
+    if not mapping or mapping.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curriculum mapping not found.")
+
+    if payload.is_compulsory is not None:
+        mapping.is_compulsory = payload.is_compulsory
+    if payload.has_theory is not None:
+        mapping.has_theory = payload.has_theory
+    if payload.has_practical is not None:
+        mapping.has_practical = payload.has_practical
+
+    # Recalculate marks
+    t_max = payload.theory_max_marks if payload.theory_max_marks is not None else mapping.theory_max_marks
+    p_max = payload.practical_max_marks if payload.practical_max_marks is not None else mapping.practical_max_marks
+    if not mapping.has_practical:
+        p_max = 0.0
+
+    tot_max = payload.total_max_marks if payload.total_max_marks is not None else (t_max + p_max)
+    t_pass = payload.theory_pass_marks if payload.theory_pass_marks is not None else mapping.theory_pass_marks
+    p_pass = payload.practical_pass_marks if payload.practical_pass_marks is not None else mapping.practical_pass_marks
+    tot_pass = payload.total_pass_marks if payload.total_pass_marks is not None else (t_pass + p_pass)
+
+    if t_pass > t_max:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Theory passing marks ({t_pass}) cannot exceed theory maximum marks ({t_max})."
+        )
+    if mapping.has_practical and p_pass > p_max:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Practical passing marks ({p_pass}) cannot exceed practical maximum marks ({p_max})."
+        )
+    if tot_pass > tot_max:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Total passing marks ({tot_pass}) cannot exceed total maximum marks ({tot_max})."
+        )
+
+    mapping.theory_max_marks = t_max
+    mapping.practical_max_marks = p_max
+    mapping.total_max_marks = tot_max
+    mapping.theory_pass_marks = t_pass
+    mapping.practical_pass_marks = p_pass
+    mapping.total_pass_marks = tot_pass
+
+    if payload.weekly_periods is not None:
+        mapping.weekly_periods = payload.weekly_periods
+    if payload.assigned_teacher_id is not None:
+        mapping.assigned_teacher_id = payload.assigned_teacher_id
+    if payload.assigned_teacher_name is not None:
+        mapping.assigned_teacher_name = payload.assigned_teacher_name
+    if payload.display_order is not None:
+        mapping.display_order = payload.display_order
+    if payload.is_active is not None:
+        mapping.is_active = payload.is_active
+    if payload.notes is not None:
+        mapping.notes = payload.notes
+    mapping.updated_by = user.id
+
+    await db.commit()
+    await db.refresh(mapping, ["institution_subject"])
+
+    inst_subject = mapping.institution_subject
+    cat = (await db.get(SubjectCatalog, inst_subject.subject_id)) if inst_subject else None
+
+    return ClassSubjectMappingOut(
+        id=mapping.id,
+        tenant_id=mapping.tenant_id,
+        academic_year=mapping.academic_year,
+        institution_level=mapping.institution_level,
+        class_name=mapping.class_name,
+        stream=mapping.stream,
+        institution_subject_id=mapping.institution_subject_id,
+        subject_code=inst_subject.custom_code or (cat.code if cat else "UNKNOWN"),
+        subject_name=inst_subject.custom_name or (cat.name if cat else "Unknown Subject"),
+        category=cat.category if cat else "General",
+        is_compulsory=mapping.is_compulsory,
+        has_theory=mapping.has_theory,
+        has_practical=mapping.has_practical,
+        theory_max_marks=mapping.theory_max_marks,
+        practical_max_marks=mapping.practical_max_marks,
+        total_max_marks=mapping.total_max_marks,
+        theory_pass_marks=mapping.theory_pass_marks,
+        practical_pass_marks=mapping.practical_pass_marks,
+        total_pass_marks=mapping.total_pass_marks,
+        weekly_periods=mapping.weekly_periods,
+        assigned_teacher_id=mapping.assigned_teacher_id,
+        assigned_teacher_name=mapping.assigned_teacher_name,
+        display_order=mapping.display_order,
+        is_active=mapping.is_active,
+        notes=mapping.notes,
+        created_at=mapping.created_at
+    )
+
+
+@router.delete("/curriculum/mappings/{mapping_id}", status_code=status.HTTP_200_OK)
+async def remove_class_subject_mapping(
+    mapping_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """
+    Safely remove a class subject mapping.
+    If historical exam marks exist, soft-deactivates the mapping (is_active = False)
+    so academic grade history and transcripts remain intact.
+    """
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    mapping = await db.get(ClassSubjectMapping, mapping_id)
+    if not mapping or mapping.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curriculum mapping not found.")
+
+    await db.refresh(mapping, ["institution_subject"])
+    inst_sub = mapping.institution_subject
+    cat_code = inst_sub.custom_code if inst_sub else ""
+
+    # Check if examination records exist for this subject in examinations
+    stmt_exam = select(Examination).where(
+        Examination.tenant_id == tenant_id,
+        Examination.subject_code == cat_code,
+        Examination.target_class == mapping.class_name
+    )
+    exam_exists = (await db.execute(stmt_exam)).scalars().first() is not None
+
+    if exam_exists:
+        mapping.is_active = False
+        await db.commit()
+        return {
+            "status": "ARCHIVED",
+            "message": f"Subject '{cat_code}' has recorded examination schedules. It has been safely archived from the active {mapping.class_name} syllabus without deleting past results."
+        }
+
+    await db.delete(mapping)
+    await db.commit()
+    return {
+        "status": "DELETED",
+        "message": f"Curriculum mapping for '{cat_code}' in {mapping.class_name} removed successfully."
+    }
+
+
+@router.patch("/curriculum/reorder", status_code=status.HTTP_200_OK)
+async def reorder_curriculum_mappings(
+    payload: ReorderCurriculumRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_permission("curriculum.manage"))
+):
+    """Update display order priority of subjects in syllabus."""
+    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    for idx, mid in enumerate(payload.mapping_ids):
+        mapping = await db.get(ClassSubjectMapping, mid)
+        if mapping and mapping.tenant_id == tenant_id:
+            mapping.display_order = idx + 1
+    await db.commit()
+    return {"status": "SUCCESS", "message": "Curriculum order updated successfully."}
 

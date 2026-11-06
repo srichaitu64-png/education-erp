@@ -46,12 +46,13 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'platform': true,
     'main': true,
+    'students': true,
     'academic': true,
+    'examinations': true,
     'finance': true,
-    'people': true,
+    'staff': true,
     'campus': true,
-    'communication': true,
-    'data': true,
+    'administration': true,
   });
 
   const toggleGroup = (groupId: string) => {
@@ -64,7 +65,7 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
   const isSuperAdmin = currentRole === 'SUPER_ADMIN' || currentRole === 'BACKUP_SUPER_ADMIN';
   const isLeadership = isSuperAdmin || ['CHAIRMAN_DIRECTOR', 'DIRECTOR', 'MANAGING_DIRECTOR'].includes(currentRole);
 
-  // 7 Professional Collapsible Groups + Dedicated Platform Owner Group
+  // 8 Professional Collapsible Groups + Dedicated Platform Owner Group
   const navigationHierarchy: NavGroupConfig[] = [
     ...(isSuperAdmin ? [{
       id: 'platform',
@@ -77,74 +78,93 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
     }] : []),
     {
       id: 'main',
-      title: 'Main',
+      title: 'Overview',
       items: [
         { id: 'dashboard', label: 'Dashboard Overview', icon: Layers }
       ]
     },
     {
-      id: 'academic',
-      title: 'Academic Management',
+      id: 'students',
+      title: 'Students & Admission',
       items: [
-        { id: 'academics', label: 'Academic & Subjects', icon: BookOpen },
-        { id: 'academic-structure', label: 'Class & Section Capacity', icon: Layers },
-        { id: 'admissions', label: 'Admissions Pipeline', icon: GraduationCap },
-        { id: 'students', label: 'Students (SIS)', icon: Users },
+        { id: 'admissions', label: 'New Admissions & Enquiries', icon: GraduationCap },
+        { id: 'students', label: 'Student Directory (SIS)', icon: Users },
         { id: 'attendance', label: 'Daily Attendance', icon: CalendarCheck },
+      ]
+    },
+    {
+      id: 'academic',
+      title: 'Teaching & Academics',
+      items: [
+        { id: 'academics', label: 'Subject Catalogue & Syllabus', icon: BookOpen },
+        { id: 'academic-structure', label: 'Class, Section & Seats', icon: Layers },
         { id: 'timetable', label: 'Weekly Timetable', icon: Clock },
-        { id: 'examinations', label: 'Examinations Lifecycle', icon: Award },
-        { id: 'marks-register', label: 'Marks Register (Theory/Prac)', icon: FileSpreadsheet },
+      ]
+    },
+    {
+      id: 'examinations',
+      title: 'Exams & Results',
+      items: [
+        { id: 'examinations', label: 'Exam Schedules & Approvals', icon: Award },
         { id: 'hall-tickets', label: 'Hall Tickets & Verification', icon: QrCode },
+        { id: 'marks-register', label: 'Marks Register (Theory/Lab)', icon: FileSpreadsheet },
         { id: 'notice-board', label: 'Result Notice Board', icon: Award },
-        { id: 'progress-cards', label: 'Student Progress Cards', icon: FileCheck }
+        { id: 'progress-cards', label: 'Student Progress Cards', icon: FileCheck },
       ]
     },
     {
       id: 'finance',
-      title: 'Finance & Accounts',
+      title: 'Fees & Accounts',
       items: [
-        { id: 'fees', label: 'Fee Invoices & Statements', icon: CreditCard },
-        { id: 'fee-review', label: 'Consolidated Ledger & Signoff', icon: DollarSign }
+        { id: 'fees', label: 'Fee Invoices & Receipts', icon: CreditCard },
+        { id: 'fee-review', label: 'Consolidated Ledger & Signoff', icon: DollarSign },
       ]
     },
     {
-      id: 'people',
-      title: 'People & Administration',
+      id: 'staff',
+      title: 'Staff & Duties',
       items: [
-        { id: 'security-password', label: 'Security & Password', icon: ShieldCheck, badge: 'Protected' },
-        { id: 'staff', label: 'Faculty & HR', icon: Users },
+        { id: 'staff', label: 'Faculty & HR Directory', icon: Users },
         { id: 'staff-duties', label: 'Staff Duty Assignments', icon: UserCheck },
-        { id: 'institution-login', label: 'User Directory & Login', icon: UserCheck },
-        ...(isLeadership ? [
-          { id: 'institution-control-centre', label: 'Institution Control Centre', icon: Building2 },
-          { id: 'permissions-centre', label: 'Roles & Permission Matrix', icon: Key, isSuperAdminOnly: true },
-          { id: 'dashboard-designer', label: 'Dashboard & Access Designer', icon: Layout, isSuperAdminOnly: true }
-        ] : [])
       ]
     },
     {
       id: 'campus',
-      title: 'Campus Operations',
+      title: 'Campus Services',
       items: [
-        { id: 'laboratory', label: 'Laboratory & QR Inventory', icon: FlaskConical },
-        { id: 'transport', label: 'Transport Fleet & GPS', icon: Bus }
+        { id: 'transport', label: 'School Buses & Transport', icon: Bus },
+        { id: 'laboratory', label: 'Science Lab & Inventory', icon: FlaskConical },
+        { id: 'communication', label: 'Communication Hub (WhatsApp)', icon: MessageSquare },
       ]
     },
     {
-      id: 'communication',
-      title: 'Communication',
+      id: 'administration',
+      title: 'Settings & Administration',
       items: [
-        { id: 'communication', label: 'Communication Hub (WhatsApp)', icon: MessageSquare }
-      ]
-    },
-    {
-      id: 'data',
-      title: 'Data Management',
-      items: [
-        { id: 'data-migration', label: 'Data Migration Centre', icon: Upload }
+        { id: 'security-password', label: 'Security & Password', icon: ShieldCheck, badge: 'Protected' },
+        { id: 'institution-login', label: 'User Directory & Login', icon: UserCheck },
+        ...(isLeadership ? [
+          { id: 'institution-control-centre', label: 'Campus Setup & Settings', icon: Building2 },
+          { id: 'permissions-centre', label: 'Roles & Permission Matrix', icon: Key, isSuperAdminOnly: true },
+          { id: 'dashboard-designer', label: 'Dashboard & Access Designer', icon: Layout, isSuperAdminOnly: true },
+          { id: 'data-migration', label: 'Data Import & Migration', icon: Upload }
+        ] : [
+          { id: 'data-migration', label: 'Data Import & Migration', icon: Upload }
+        ])
       ]
     }
   ];
+
+  // Auto-expand group of activeTab
+  React.useEffect(() => {
+    const parentGroup = navigationHierarchy.find(g => g.items.some(item => item.id === activeTab));
+    if (parentGroup && expandedGroups[parentGroup.id] === false) {
+      setExpandedGroups(prev => ({
+        ...prev,
+        [parentGroup.id]: true
+      }));
+    }
+  }, [activeTab]);
 
   // Helper to determine if an item is visible for current role
   const isItemVisible = (item: NavItemConfig) => {
@@ -223,7 +243,12 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
                   onClick={() => toggleGroup(group.id)}
                   className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors cursor-pointer group"
                 >
-                  <span className="group-hover:text-blue-600 transition-colors">{group.title}</span>
+                  <span className="group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                    {group.title}
+                    <span className="text-[9px] font-medium text-slate-400 group-hover:text-blue-500">
+                      ({visibleItems.length})
+                    </span>
+                  </span>
                   {isExpanded ? (
                     <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-600" />
                   ) : (
