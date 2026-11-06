@@ -2,6 +2,7 @@ from contextvars import ContextVar
 from typing import AsyncGenerator, Optional
 import uuid
 from sqlalchemy import text
+from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -29,7 +30,8 @@ engine = create_async_engine(
     echo=(settings.ENVIRONMENT == "development_verbose"),
     pool_size=15,
     max_overflow=20,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    **({"poolclass": NullPool} if settings.ENVIRONMENT == "testing" else {})
 )
 
 AsyncSessionLocal = async_sessionmaker(
