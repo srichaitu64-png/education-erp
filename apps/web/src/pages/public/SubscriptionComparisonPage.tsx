@@ -24,13 +24,12 @@ export const SubscriptionComparisonPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [showTechDetails, setShowTechDetails] = useState(false);
 
+  // Keep this matrix aligned with the three paid offers on the homepage.
   const plans = [
-    { code: 'TRIAL', name: 'Free Trial', badge: '14 Days', price: '₹0', students: '50 Students', highlight: false },
-    { code: 'STARTER', name: 'Starter', badge: 'Tier 1', price: '₹999/mo', students: '300 Students', highlight: false },
+    { code: 'TRIAL', name: '30-Day Free Trial', badge: 'Evaluation', price: '₹0', students: '100 Students', highlight: false },
+    { code: 'STARTER', name: 'Starter', badge: '1 Campus', price: '₹999/mo', students: '300 Students', highlight: false },
     { code: 'STANDARD', name: 'Standard', badge: 'Most Popular', price: '₹1,999/mo', students: '750 Students', highlight: true, popular: true },
-    { code: 'PRO', name: 'Professional', badge: 'Tier 3', price: '₹3,499/mo', students: '1,500 Students', highlight: false },
-    { code: 'PREMIUM', name: 'Premium Group', badge: 'Multi-Campus', price: '₹5,999/mo', students: '5,000 Students', highlight: false },
-    { code: 'ENTERPRISE', name: 'Enterprise', badge: 'Dedicated SLA', price: '₹9,999/mo', students: 'Unlimited', highlight: true, enterprise: true }
+    { code: 'ENTERPRISE', name: 'Enterprise', badge: 'Up to 20 Campuses', price: '₹9,999/mo', students: '10,000 Students', highlight: true, enterprise: true }
   ];
 
   const comparisonData: ComparisonRow[] = [
@@ -142,7 +141,7 @@ export const SubscriptionComparisonPage: React.FC = () => {
         </div>
 
         {/* Plan Header Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {plans.map((p) => (
             <div
               key={p.code}
@@ -229,9 +228,7 @@ export const SubscriptionComparisonPage: React.FC = () => {
                   <th className="p-4 text-center min-w-[100px] bg-indigo-900/90 text-indigo-200 border-x border-indigo-800">
                     Standard
                   </th>
-                  <th className="p-4 text-center min-w-[90px]">Pro</th>
-                  <th className="p-4 text-center min-w-[95px]">Premium</th>
-                  <th className="p-4 text-center min-w-[110px] bg-slate-950 text-teal-300 border-l border-slate-800">
+                                    <th className="p-4 text-center min-w-[110px] bg-slate-950 text-teal-300 border-l border-slate-800">
                     Enterprise
                   </th>
                 </tr>
@@ -291,28 +288,6 @@ export const SubscriptionComparisonPage: React.FC = () => {
                       {row.std ? (
                         <div className="w-6 h-6 rounded-full bg-indigo-100 border border-indigo-300 flex items-center justify-center mx-auto text-indigo-700 shadow-xs">
                           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono text-sm">—</span>
-                      )}
-                    </td>
-
-                    {/* Pro */}
-                    <td className="p-4 text-center">
-                      {row.pro ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto text-emerald-600">
-                          <Check className="w-3.5 h-3.5" />
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 font-mono text-sm">—</span>
-                      )}
-                    </td>
-
-                    {/* Premium */}
-                    <td className="p-4 text-center">
-                      {row.prem ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto text-emerald-600">
-                          <Check className="w-3.5 h-3.5" />
                         </div>
                       ) : (
                         <span className="text-slate-300 font-mono text-sm">—</span>
