@@ -29,6 +29,10 @@ async def get_test_auth_headers(db_session: AsyncSession, tenant_code: str = "ou
     stmt_user = select(User).where(User.email == login_email)
     institution_head = (await db_session.execute(stmt_user)).scalars().first()
     assert institution_head is not None
+    if tenant_code == "akshara-trial" and institution_head.must_change_password:
+        # Test fixture represents the Chairman after completing the required first-login setup.
+        institution_head.must_change_password = False
+        await db_session.commit()
 
     token = create_access_token(
         subject=str(institution_head.id), tenant_id=str(tenant.id), is_superadmin=False
