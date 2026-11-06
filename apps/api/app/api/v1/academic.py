@@ -1098,6 +1098,8 @@ async def update_subject_catalogue_entry(
     subject = await db.get(SubjectCatalog, subject_id)
     if not subject:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Global catalogue subjects are read-only for institutions. Create an institution-specific subject instead.")
     if subject.tenant_id is not None and subject.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
     if subject.tenant_id is not None and subject.tenant_id != tenant_id and not user.is_superadmin:
@@ -1140,6 +1142,8 @@ async def archive_or_delete_subject(
     subject = await db.get(SubjectCatalog, subject_id)
     if not subject:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
+    if subject.tenant_id is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Global catalogue subjects cannot be archived by an institution.")
     if subject.tenant_id is not None and subject.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found.")
 
@@ -1539,15 +1543,35 @@ async def map_subject_to_class_curriculum(
                 detail=f"Subject '{inst_subject.custom_code}' is already mapped to {payload.class_name} ({clean_stream or 'General'}) for academic year {payload.academic_year}."
             )
         else:
-            # Reactivate
+            # Revalidate and fully refresh archived mappings before reactivation.
+            t_max = payload.theory_max_marks
+            p_max = payload.practical_max_marks if payload.has_practical else 0.0
+            tot_max = payload.total_max_marks if payload.total_max_marks is not None else t_max + p_max
+            t_pass = payload.theory_pass_marks
+            p_pass = payload.practical_pass_marks if payload.has_practical else 0.0
+            tot_pass = payload.total_pass_marks if payload.total_pass_marks is not None else t_pass + p_pass
+            if t_max < 0 or p_max < 0 or tot_max <= 0:
+                raise HTTPException(status_code=422, detail="Maximum marks must be non-negative and total maximum marks must be greater than zero.")
+            if t_pass < 0 or p_pass < 0 or tot_pass < 0 or t_pass > t_max or (payload.has_practical and p_pass > p_max) or tot_pass > tot_max:
+                raise HTTPException(status_code=422, detail="Passing marks cannot be negative or exceed the corresponding maximum marks.")
+            if abs(tot_max - (t_max + p_max)) > 0.001:
+                raise HTTPException(status_code=422, detail="Total maximum marks must equal theory plus practical maximum marks.")
+            if abs(tot_pass - (t_pass + p_pass)) > 0.001:
+                raise HTTPException(status_code=422, detail="Total passing marks must equal theory plus practical passing marks.")
             existing_map.is_active = True
-            existing_map.theory_max_marks = payload.theory_max_marks
-            existing_map.practical_max_marks = payload.practical_max_marks
-            existing_map.total_max_marks = payload.theory_max_marks + payload.practical_max_marks
-            existing_map.theory_pass_marks = payload.theory_pass_marks
-            existing_map.practical_pass_marks = payload.practical_pass_marks
-            existing_map.total_pass_marks = payload.theory_pass_marks + payload.practical_pass_marks
+            existing_map.is_compulsory = payload.is_compulsory
+            existing_map.has_theory = payload.has_theory
+            existing_map.has_practical = payload.has_practical
+            existing_map.theory_max_marks = t_max
+            existing_map.practical_max_marks = p_max
+            existing_map.total_max_marks = tot_max
+            existing_map.theory_pass_marks = t_pass
+            existing_map.practical_pass_marks = p_pass
+            existing_map.total_pass_marks = tot_pass
+            existing_map.weekly_periods = payload.weekly_periods
+            existing_map.assigned_teacher_id = payload.assigned_teacher_id
             existing_map.assigned_teacher_name = payload.assigned_teacher_name
+            existing_map.updated_by = user.id
             await db.commit()
             await db.refresh(existing_map)
             mapping_to_return = existing_map
