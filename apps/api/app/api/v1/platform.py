@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import hash_password, generate_temporary_password
-from app.database.session import get_db
+from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import (
     User,
     Role,
@@ -49,7 +49,7 @@ from app.modules.tenants.schemas import (
     TenantPlanChangeRequest,
     TenantFullDetailsOut
 )
-from app.security.deps import get_current_superadmin
+from app.security.deps import get_current_superadmin, get_current_user
 
 router = APIRouter(prefix="/platform", tags=["Platform Super Admin"])
 
@@ -1226,31 +1226,47 @@ async def approve_support_access(
     session_id: uuid.UUID,
     duration_minutes: int = 120,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(get_current_superadmin)
+    approver: User = Depends(get_current_user)
 ):
     """
-    Approve a support access session and establish an unexpired, time-limited window.
+    Institution leadership approves a support request for its own tenant only.
+    The platform owner who requested access cannot silently approve their own request.
     """
-    stmt = select(PlatformSupportAccessSession).where(PlatformSupportAccessSession.id == session_id)
+    tenant_id = get_current_tenant_id()
+    if not tenant_id or approver.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution leadership approval is required.")
+
+    allowed_approver_roles = {"CHAIRMAN_DIRECTOR", "DIRECTOR", "INSTITUTION_ADMIN"}
+    tenant_roles = {
+        user_role.role.code
+        for user_role in approver.roles
+        if user_role.tenant_id == tenant_id
+    }
+    if not tenant_roles.intersection(allowed_approver_roles):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the institution's Chairman or Institutional Head can approve support access.")
+
+    stmt = select(PlatformSupportAccessSession).where(
+        PlatformSupportAccessSession.id == session_id,
+        PlatformSupportAccessSession.tenant_id == tenant_id,
+        PlatformSupportAccessSession.status == "REQUESTED",
+    )
     res = await db.execute(stmt)
     session = res.scalars().first()
-
     if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Support session not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pending support request not found for this institution.")
 
     now = datetime.now(timezone.utc)
     session.status = "APPROVED"
-    session.approved_by_institution_admin_id = admin.id
-    session.expires_at = now + timedelta(minutes=duration_minutes)
+    session.approved_by_institution_admin_id = approver.id
+    session.expires_at = now + timedelta(minutes=max(5, min(duration_minutes, 480)))
 
     audit = PlatformAuditAction(
-        admin_id=admin.id,
+        admin_id=approver.id,
         action_type="SUPPORT_SESSION_APPROVED",
-        target_tenant_id=session.tenant_id,
+        target_tenant_id=tenant_id,
         details={"ticket_number": session.ticket_number, "duration_minutes": duration_minutes}
     )
     db.add(audit)
-
     await db.commit()
     await db.refresh(session)
 
@@ -1264,11 +1280,20 @@ async def approve_support_access(
 
 @router.get("/support-sessions")
 async def list_support_sessions(
+    tenant_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_superadmin)
 ):
-    """List all consent-based tenant support access sessions."""
-    stmt = select(PlatformSupportAccessSession).order_by(PlatformSupportAccessSession.created_at.desc())
+    """List support-session metadata for one explicitly selected institution."""
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant_id)},
+    )
+    stmt = (
+        select(PlatformSupportAccessSession)
+        .where(PlatformSupportAccessSession.tenant_id == tenant_id)
+        .order_by(PlatformSupportAccessSession.created_at.desc())
+    )
     res = await db.execute(stmt)
     sessions = res.scalars().all()
 
@@ -1293,11 +1318,19 @@ async def list_support_sessions(
 @router.post("/support-sessions/{session_id}/revoke")
 async def revoke_support_access(
     session_id: uuid.UUID,
+    tenant_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_superadmin)
 ):
-    """Immediately revoke and terminate an active tenant support access session."""
-    stmt = select(PlatformSupportAccessSession).where(PlatformSupportAccessSession.id == session_id)
+    """Immediately revoke support access for one explicitly selected institution."""
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant_id)},
+    )
+    stmt = select(PlatformSupportAccessSession).where(
+        PlatformSupportAccessSession.id == session_id,
+        PlatformSupportAccessSession.tenant_id == tenant_id,
+    )
     res = await db.execute(stmt)
     session = res.scalars().first()
 
