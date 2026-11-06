@@ -66,4 +66,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.rollback()
             raise
         finally:
+            # Clear request-scoped tenant context before the async task is reused.
+            set_current_tenant_id(None)
             await session.close()
