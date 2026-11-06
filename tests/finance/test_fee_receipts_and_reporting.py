@@ -21,16 +21,16 @@ async def test_two_institutions_flexible_fee_structures(client: httpx.AsyncClien
     Verify both configure their fee schedules independently without hardcoded amounts.
     """
     # 1. Fetch pilot tenant & Superadmin
-    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     pilot_tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert pilot_tenant is not None
 
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
     assert super_admin is not None
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(pilot_tenant.id), is_superadmin=True
+        subject=str(super_admin.id), tenant_id=str(pilot_tenant.id), is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -168,7 +168,7 @@ async def test_reopen_and_reprint_historical_receipt(client: httpx.AsyncClient, 
     headers = {"Authorization": f"Bearer {token}"}
 
     # Fetch seeded receipt
-    stmt_rcp = select(FeeReceipt).where(FeeReceipt.receipt_number == "RCP-AKSH-2026-1001")
+    stmt_rcp = select(FeeReceipt).where(FeeReceipt.receipt_number == "RCP-OURSCHOOL-2026-1001")
     rcp = (await db_session.execute(stmt_rcp)).scalars().first()
     assert rcp is not None
 
