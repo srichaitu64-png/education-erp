@@ -1611,6 +1611,10 @@ async def map_subject_to_class_curriculum(
         p_pass = payload.practical_pass_marks if payload.has_practical else 0.0
         tot_pass = payload.total_pass_marks or (t_pass + p_pass)
 
+        if not payload.has_theory and t_max != 0:
+            raise HTTPException(status_code=422, detail="Theory maximum marks must be zero when theory is disabled.")
+        if t_max < 0 or p_max < 0 or tot_max <= 0 or t_pass < 0 or p_pass < 0 or tot_pass < 0:
+            raise HTTPException(status_code=422, detail="Marks must be non-negative and total maximum marks must be greater than zero.")
         if t_pass > t_max:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -1626,6 +1630,10 @@ async def map_subject_to_class_curriculum(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Total passing marks ({tot_pass}) cannot exceed total maximum marks ({tot_max})."
             )
+        if abs(tot_max - (t_max + p_max)) > 0.001:
+            raise HTTPException(status_code=422, detail="Total maximum marks must equal theory plus practical maximum marks.")
+        if abs(tot_pass - (t_pass + p_pass)) > 0.001:
+            raise HTTPException(status_code=422, detail="Total passing marks must equal theory plus practical passing marks.")
 
         # Get next display order
         order_stmt = select(func.count(ClassSubjectMapping.id)).where(
@@ -1731,6 +1739,10 @@ async def update_class_subject_mapping(
     p_pass = payload.practical_pass_marks if payload.practical_pass_marks is not None else mapping.practical_pass_marks
     tot_pass = payload.total_pass_marks if payload.total_pass_marks is not None else (t_pass + p_pass)
 
+    if not mapping.has_theory and t_max != 0:
+        raise HTTPException(status_code=422, detail="Theory maximum marks must be zero when theory is disabled.")
+    if t_max < 0 or p_max < 0 or tot_max <= 0 or t_pass < 0 or p_pass < 0 or tot_pass < 0:
+        raise HTTPException(status_code=422, detail="Marks must be non-negative and total maximum marks must be greater than zero.")
     if t_pass > t_max:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -1746,6 +1758,10 @@ async def update_class_subject_mapping(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Total passing marks ({tot_pass}) cannot exceed total maximum marks ({tot_max})."
         )
+    if abs(tot_max - (t_max + p_max)) > 0.001:
+        raise HTTPException(status_code=422, detail="Total maximum marks must equal theory plus practical maximum marks.")
+    if abs(tot_pass - (t_pass + p_pass)) > 0.001:
+        raise HTTPException(status_code=422, detail="Total passing marks must equal theory plus practical passing marks.")
 
     mapping.theory_max_marks = t_max
     mapping.practical_max_marks = p_max
