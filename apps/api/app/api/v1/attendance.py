@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
 
 from app.database.session import get_db, get_current_tenant_id
-from app.security.deps import get_current_user
+from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User
 from app.modules.academic.models import AcademicSection, StudentSectionEnrolment
 from app.modules.attendance.models import (
@@ -77,7 +77,7 @@ async def get_attendance_config(
 async def update_attendance_config(
     payload: AttendanceConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("attendance.verify")),
     tenant_id: uuid.UUID = Depends(get_current_tenant_id)
 ):
     """
@@ -323,7 +323,7 @@ async def get_absent_students(
 async def batch_mark_daily_attendance(
     payload: BatchMarkDailyAttendanceRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("attendance.mark")),
     tenant_id: uuid.UUID = Depends(get_current_tenant_id)
 ):
     """
@@ -397,7 +397,7 @@ async def batch_mark_daily_attendance(
 async def batch_mark_period_attendance(
     payload: BatchMarkPeriodAttendanceRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission("attendance.mark")),
     tenant_id: uuid.UUID = Depends(get_current_tenant_id)
 ):
     """

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 
 from app.database.session import get_db, get_current_tenant_id
-from app.security.deps import get_current_user
+from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User, UserRole, Role
 from app.modules.tenants.models import Tenant
 from app.modules.finance.models import FeeInvoice
@@ -70,7 +70,7 @@ async def list_academic_sections(
 async def create_academic_section(
     payload: AcademicSectionCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """
     Create a new academic section (e.g. Class 6 Section D, or I PUC PCMB Section F).
@@ -115,7 +115,7 @@ async def create_academic_section(
 async def transfer_student_section(
     payload: SectionTransferRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.edit"))
 ):
     """
     Transfer a student from one section to another.
@@ -178,7 +178,7 @@ async def transfer_student_section(
 async def assign_staff_duty(
     payload: StaffDutyAssignmentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("staff.manage"))
 ):
     """
     Assign staff responsibilities (Class Teacher, Subject Teacher, Computer Operator).
@@ -217,7 +217,7 @@ async def assign_staff_duty(
 async def submit_fee_report_snapshot(
     payload: FeeReportSnapshotSubmit,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("fees.reconcile"))
 ):
     """
     Accountant submits a formal consolidated fee report snapshot to the Chairman/Director.
@@ -263,7 +263,7 @@ async def review_fee_report_snapshot(
     snapshot_code: str,
     payload: FeeReportSnapshotReview,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("fees.configure"))
 ):
     """
     Chairman / Director reviews a submitted fee report snapshot: Accepts or Returns with remarks.
@@ -351,7 +351,7 @@ async def list_students(
 async def create_student(
     payload: StudentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.import"))
 ):
     """
     Register a student into the canonical student master.
@@ -517,7 +517,7 @@ async def update_student(
     student_id: uuid.UUID,
     payload: StudentUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.edit"))
 ):
     """Update canonical student record attributes."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
@@ -537,7 +537,7 @@ async def update_student(
 async def withdraw_student(
     student_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.archive"))
 ):
     """Soft-delete / mark student as WITHDRAWN."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
@@ -573,7 +573,7 @@ async def list_admission_applications(
 async def submit_admission_application(
     payload: AdmissionApplicationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("admissions.manage"))
 ):
     """Submit a prospective student admission application."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
@@ -609,35 +609,81 @@ async def approve_admission_application(
     admission_id: uuid.UUID,
     payload: AdmissionApproveRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("admissions.manage"))
 ):
     """
-    Approve an admission application:
-    Automatically enrolls the applicant as a canonical Student and registers section enrolment.
+    Atomically convert an approved admission into one canonical student and one
+    section enrolment. A retry returns the existing student instead of duplicating it.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
-    app_entry = await db.get(AdmissionApplication, admission_id)
-    if not app_entry or app_entry.tenant_id != tenant_id:
+    tenant_id = get_current_tenant_id() or next(
+        (role.tenant_id for role in user.roles if role.tenant_id), None
+    )
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An active institution context is required.")
+
+    app_result = await db.execute(
+        select(AdmissionApplication)
+        .where(
+            AdmissionApplication.id == admission_id,
+            AdmissionApplication.tenant_id == tenant_id,
+        )
+        .with_for_update()
+    )
+    app_entry = app_result.scalars().first()
+    if not app_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admission application not found.")
 
     if app_entry.status == "APPROVED":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Application is already approved.")
+        if app_entry.enrolled_student_id:
+            existing = await db.execute(
+                select(Student).where(
+                    Student.id == app_entry.enrolled_student_id,
+                    Student.tenant_id == tenant_id,
+                )
+            )
+            student = existing.scalars().first()
+            if student:
+                return {
+                    "status": "APPROVED",
+                    "message": "This application was already converted; returning its existing student record.",
+                    "student_id": str(student.id),
+                    "admission_number": student.admission_number,
+                    "already_converted": True,
+                }
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Application is approved but its linked student record is missing. Contact support; do not submit a duplicate.")
 
-    parts = app_entry.applicant_name.strip().split(" ", 1)
-    f_name = parts[0]
-    l_name = parts[1] if len(parts) > 1 else "Student"
+    if app_entry.status not in {"PENDING", "SUBMITTED", "UNDER_REVIEW", "VERIFIED"}:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Application in status '{app_entry.status}' cannot be approved.")
 
-    count_res = await db.execute(
-        select(func.count(Student.id)).where(Student.tenant_id == tenant_id)
+    section_result = await db.execute(
+        select(AcademicSection)
+        .where(
+            AcademicSection.tenant_id == tenant_id,
+            AcademicSection.academic_year == payload.academic_year,
+            AcademicSection.class_name == app_entry.target_class,
+            AcademicSection.section_code == payload.section_code.strip().upper(),
+            AcademicSection.status == "ACTIVE",
+        )
+        .with_for_update()
     )
-    total_students = count_res.scalar_one() or 0
-    adm_no = f"ADM-{datetime.now().year}-{total_students + 1:04d}"
+    matching_sec = section_result.scalars().first()
+    if not matching_sec:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="The selected class/section is not configured for this academic year. Configure it before approving the admission.")
+    if matching_sec.enrolled_count >= matching_sec.max_capacity:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The selected section has reached its configured capacity.")
+
+    parts = app_entry.applicant_name.strip().split()
+    if not parts:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Applicant name is required before conversion.")
+    first_name = parts[0]
+    last_name = " ".join(parts[1:]) or "Student"
+    admission_number = f"ADM-{datetime.now().year}-{uuid.uuid4().hex[:8].upper()}"
 
     new_student = Student(
         tenant_id=tenant_id,
-        admission_number=adm_no,
-        first_name=f_name,
-        last_name=l_name,
+        admission_number=admission_number,
+        first_name=first_name,
+        last_name=last_name,
         date_of_birth=app_entry.date_of_birth,
         gender=app_entry.gender,
         father_name=app_entry.parent_name,
@@ -649,45 +695,37 @@ async def approve_admission_application(
         academic_year=payload.academic_year,
         institution_level=app_entry.level,
         class_name=app_entry.target_class,
-        section_or_stream=payload.section_code,
+        section_or_stream=matching_sec.section_code,
         admission_date=date.today(),
-        status="ACTIVE"
+        status="ACTIVE",
     )
     db.add(new_student)
     await db.flush()
+
+    db.add(StudentSectionEnrolment(
+        tenant_id=tenant_id,
+        section_id=matching_sec.id,
+        student_id=new_student.id,
+        student_name=app_entry.applicant_name,
+        admission_number=admission_number,
+        enrolment_date=date.today(),
+        status="ACTIVE",
+    ))
+    matching_sec.enrolled_count += 1
 
     app_entry.status = "APPROVED"
     app_entry.reviewed_by = user.full_name
     app_entry.review_notes = payload.review_notes or "Admission approved and student enrolled."
     app_entry.enrolled_student_id = new_student.id
 
-    sec_stmt = select(AcademicSection).where(
-        AcademicSection.tenant_id == tenant_id,
-        AcademicSection.academic_year == payload.academic_year,
-        AcademicSection.class_name == app_entry.target_class,
-        AcademicSection.section_code == payload.section_code.upper()
-    )
-    sec_res = await db.execute(sec_stmt)
-    matching_sec = sec_res.scalars().first()
-    if matching_sec:
-        enrol = StudentSectionEnrolment(
-            tenant_id=tenant_id,
-            section_id=matching_sec.id,
-            student_id=new_student.id,
-            student_name=app_entry.applicant_name,
-            admission_number=adm_no,
-            enrolment_date=date.today(),
-            status="ACTIVE"
-        )
-        db.add(enrol)
-        matching_sec.enrolled_count += 1
-
     await db.commit()
+    await db.refresh(new_student)
     return {
         "status": "APPROVED",
-        "message": f"Application approved! Student enrolled successfully with Admission Number {adm_no}.",
+        "message": "Admission converted to a student record and section enrolment.",
         "student_id": str(new_student.id),
-        "admission_number": adm_no
+        "admission_number": admission_number,
+        "already_converted": False,
     }
 
 
@@ -758,7 +796,7 @@ async def list_institution_staff(
 async def generate_hall_tickets(
     payload: HallTicketCreateRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """Batch generate official examination hall tickets for students in class/section."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())

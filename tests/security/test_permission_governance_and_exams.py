@@ -20,18 +20,24 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
     # Create Institution Principal / Admin (non-superadmin)
-    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_t = select(Tenant).where(Tenant.code == "our-school-demo")
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
     inst_user = User(
-        email=f"principal_{uuid.uuid4().hex[:6]}@akshara.edu.in",
+        email=f"principal_{uuid.uuid4().hex[:6]}@ourschool.edu.in",
         hashed_password=hash_password("Pass123!"),
         full_name="Principal User",
         is_active=True,
         is_superadmin=False
     )
     db_session.add(inst_user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=inst_user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
@@ -44,7 +50,7 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
     # Attempt to access Super Admin Permission Matrix
     resp = await client.get("/api/v1/platform/permissions/matrix", headers=headers)
     assert resp.status_code == 403
-    assert "Super Admin" in resp.json()["detail"]
+    assert "Platform Super Admin" in resp.json()["detail"] or "Super Admin" in resp.json()["detail"]
 
     # Attempt to assign role
     resp_assign = await client.post(
@@ -104,7 +110,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     """
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
-    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_t = select(Tenant).where(Tenant.code == "our-school-demo")
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
@@ -151,7 +157,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     await db_session.commit()
 
     # Fetch admin user for valid token subject
-    stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_adm = select(User).where(User.email == "chairman@ourschool.edu.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
 
@@ -159,7 +165,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     token = create_access_token(
         subject=str(admin_user.id),
         tenant_id=str(tenant.id),
-        is_superadmin=True
+        is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -207,14 +213,14 @@ async def test_external_exam_provider_credentials_not_leaked(client, db_session:
     db_session.add(provider)
     await db_session.commit()
 
-    stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_adm = select(User).where(User.email == "chairman@ourschool.edu.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
 
     token = create_access_token(
         subject=str(admin_user.id),
         tenant_id=str(tenant.id),
-        is_superadmin=True
+        is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -263,13 +269,19 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
 
     # Create a non-superadmin operator user
     user = User(
-        email=f"operator_{uuid.uuid4().hex[:6]}@akshara.edu.in",
+        email=f"operator_{uuid.uuid4().hex[:6]}@ourschool.edu.in",
         hashed_password=hash_password("Pass123!"),
         full_name="Exam Operator",
         is_active=True,
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    exam_controller_role = (await db_session.execute(
+        select(Role).where(Role.code == "EXAM_CONTROLLER", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert exam_controller_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=exam_controller_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
@@ -301,7 +313,7 @@ async def test_role_based_user_autocomplete_prevents_cross_tenant_leakage(client
     resp = await client.post(
         "/api/v1/auth/user-autocomplete",
         json={
-            "tenant_code": "akshara",
+            "tenant_code": "our-school-demo",
             "role_code": "INSTITUTION_ADMIN",
             "query": "Ram"
         }

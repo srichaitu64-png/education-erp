@@ -82,7 +82,7 @@ async def list_examinations(
 async def create_examination(
     req: ExaminationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """
     Schedule a new institutional examination.
@@ -146,7 +146,7 @@ async def batch_enter_marks(
     exam_id: uuid.UUID,
     req: ExamMarksBatchEntryRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("marks.enter"))
 ):
     """
     Teacher/operator enters student marks.
@@ -225,7 +225,7 @@ async def batch_enter_marks(
 async def process_approval_workflow(
     req: ExamApprovalActionRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """
     Strict 4-stage examination approval workflow:
@@ -315,7 +315,7 @@ async def sync_offline_operations(
             continue
 
         if op.entity_type == "exam_marks":
-            stmt_mark = select(ExamAttendanceAndMarks).where(ExamAttendanceAndMarks.id == op.entity_id)
+            stmt_mark = select(ExamAttendanceAndMarks).options(selectinload(ExamAttendanceAndMarks.examination)).where(ExamAttendanceAndMarks.id == op.entity_id)
             res_mark = await db.execute(stmt_mark)
             mark_rec = res_mark.scalars().first()
 
@@ -469,7 +469,7 @@ async def list_external_exam_providers(
 async def configure_external_exam_provider(
     req: ExternalProviderConfigCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """
     Configure external examination provider adapter.

@@ -18,7 +18,7 @@ from app.core.security import (
     hash_token,
     generate_temporary_password
 )
-from app.database.session import get_db
+from app.database.session import get_db, set_current_tenant_id
 from app.modules.subscriptions.service import EntitlementService
 from app.modules.identity.models import (
     User,
@@ -86,50 +86,14 @@ async def login(
             detail="Username or email is required"
         )
 
-    # Institutional alias / code resolution for student & staff IDs
-    clean_pass = req.password.strip() if req.password else ""
-    if login_id in ("admin", "our-school-demo", "demo", "ourschool", "our-school") and clean_pass in ("demo123", "demo"):
-        resolved_email = "admin@ourschool.edu.in"
-    else:
-        CODE_TO_EMAIL = {
-            "emp-chair-01": "chairman@akshara.edu.in",
-            "emp-prin-01": "principal@akshara.edu.in",
-            "emp-acc-01": "accountant@akshara.edu.in",
-            "emp-exam-01": "exams@akshara.edu.in",
-            "emp-tch-01": "teacher.physics@akshara.edu.in",
-            "adm-2026-001": "student.rahul@akshara.edu.in",
-            "par-2026-001": "parent.rahul@akshara.edu.in",
-            "emp-lib-01": "librarian@akshara.edu.in",
-            "superadmin": "admin@platform.erp.in",
-            "admin": "admin@platform.erp.in",
-            "siva": "admin@platform.erp.in",
-            "owner": "admin@platform.erp.in",
-            "our-school-demo": "principal@akshara.edu.in",
-            "akshara": "chairman@akshara-trial.edu.in",
-            "akshara-trial": "chairman@akshara-trial.edu.in",
-            "trial": "chairman@akshara-trial.edu.in",
-            "trial-chair": "chairman@akshara-trial.edu.in",
-            "trial-school-prin": "school.principal@akshara-trial.edu.in",
-            "trial-pu-prin": "pu.principal@akshara-trial.edu.in",
-            "principal": "principal@akshara.edu.in",
-            "accountant": "accountant@akshara.edu.in",
-            "exams": "exams@akshara.edu.in",
-            "teacher": "teacher.physics@akshara.edu.in",
-            "librarian": "librarian@akshara.edu.in",
-            "student": "student.rahul@akshara.edu.in",
-            "parent": "parent.rahul@akshara.edu.in",
-        }
-        resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
+    # Authenticate only against an account identifier actually stored for this user.
+    # Never map public aliases to privileged accounts or rely on demo credentials.
+    resolved_email = login_id
 
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # Resolve the account without loading tenant-scoped role rows. Never elevate
+    # the database session to the platform-superadmin RLS bypass for login.
     stmt = (
         select(User)
-        .options(
-            selectinload(User.roles)
-            .selectinload(UserRole.role)
-            .selectinload(Role.permissions)
-        )
         .where(
             or_(
                 func.lower(User.email) == resolved_email,
@@ -152,33 +116,7 @@ async def login(
                 detail=f"Account is temporarily locked due to consecutive failed login attempts. Lockout active until {user.locked_until.strftime('%H:%M:%S UTC')}."
             )
 
-    valid_password = False
-    if user and verify_password(req.password, user.hashed_password):
-        valid_password = True
-    elif user and user.is_superadmin and req.password in (
-        "AdminSecurePassword2026!",
-        "Adm1nSecurePassword2026!",
-        "SuperAdmin@2026!",
-        "SuperAdm1n@2026!",
-        "Myerp2026@",
-        "admin123",
-        "siva",
-        "admin",
-        "superadmin",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
-        user.must_change_password = False
-    elif user and req.password in (
-        "ChairmanTrialSecure2026!",
-        "PrincipalSecurePassword2026!",
-        "admin123@",
-        "admin123",
-        "demo123",
-        "demo",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
+    valid_password = bool(user and verify_password(req.password, user.hashed_password))
 
     if not user or not valid_password:
         if user:
@@ -187,7 +125,7 @@ async def login(
                 user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
                 sec_event = AccountSecurityEvent(
                     user_id=user.id,
-                    tenant_id=user.roles[0].tenant_id if user.roles else None,
+                    tenant_id=None,
                     event_type="ACCOUNT_LOCKED",
                     ip_address=ip_addr,
                     user_agent=user_agent,
@@ -197,7 +135,9 @@ async def login(
             else:
                 sec_event = AccountSecurityEvent(
                     user_id=user.id,
-                    tenant_id=user.roles[0].tenant_id if user.roles else None,
+                    # Do not lazy-load tenant roles during an unauthenticated request.
+                    # The tenant is unknown until the institution code is validated.
+                    tenant_id=None,
                     event_type="LOGIN_FAILED",
                     ip_address=ip_addr,
                     user_agent=user_agent,
@@ -222,12 +162,20 @@ async def login(
     user.failed_login_attempts = 0
     user.locked_until = None
 
+    # Institutional identities must choose their tenant before an MFA challenge
+    # is issued; the tenant code is then bound into the signed short-lived challenge.
+    if not user.is_superadmin and not (req.tenant_code and req.tenant_code.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Institution code is required for institutional sign-in."
+        )
+
     # Multi-Factor Authentication Challenge Gate
     if getattr(user, "mfa_enabled", False):
         challenge_token = create_access_token(
             subject=str(user.id),
             expires_delta=timedelta(minutes=5),
-            extra_claims={"type": "mfa_challenge"}
+            extra_claims={"type": "mfa_challenge", "tenant_code": req.tenant_code}
         )
         return TokenResponse(
             access_token=None,
@@ -245,13 +193,26 @@ async def login(
     authority_level = "INSTITUTION"
     destination = "/app"
     primary_role = None
+    scoped_roles = []
     available_workspaces: List[WorkspaceOut] = []
     tenant_info = None
     entitled_modules: List[str] = []
     effective_permissions: List[str] = []
     tenant_id = None
 
-    if user.is_superadmin or any(ur.role.code in ("SUPER_ADMIN", "PLATFORM_OWNER") for ur in user.roles):
+    if user.is_superadmin:
+        # Platform accounts may only see global (tenant_id IS NULL) role rows;
+        # the default RLS context remains non-privileged.
+        platform_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = platform_user_result.scalars().first()
         authority_level = "PLATFORM"
         destination = "/platform"
         primary_role = "SUPER_ADMIN"
@@ -259,38 +220,59 @@ async def login(
         entitled_modules = ["platform", "tenants", "subscriptions", "governance", "audit"]
         effective_permissions = ["*"]
     else:
-        # Institutional user account resolution
-        tenant = None
-        target_tenant_id = None
+        # Institution code is required so tenant-scoped role rows can be loaded
+        # only after the database transaction has the corresponding RLS context.
+        if not req.tenant_code or not req.tenant_code.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Institution code is required for institutional sign-in."
+            )
+        req_code = req.tenant_code.lower().strip()
+        tenant_result = await db.execute(select(Tenant).where(Tenant.code == req_code))
+        tenant = tenant_result.scalars().first()
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found.")
 
-        if req.tenant_code:
-            req_code = req.tenant_code.lower().strip()
-            target_code = "our-school-demo" if req_code == "akshara" else req_code
-            stmt_t = select(Tenant).where(or_(Tenant.code == target_code, Tenant.code == req_code))
-            res_t = await db.execute(stmt_t)
-            tenant = res_t.scalars().first()
-            if not tenant:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
-            
-            user_tenant_ids = {str(ur.tenant_id) for ur in user.roles if ur.tenant_id}
-            if str(tenant.id) not in user_tenant_ids:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Unauthorized tenant selection: User does not hold an active role assignment in this institution."
-                )
-            target_tenant_id = tenant.id
-        elif user.roles:
-            for ur in user.roles:
-                if ur.tenant_id:
-                    target_tenant_id = ur.tenant_id
-                    break
-            if target_tenant_id:
-                stmt_t = select(Tenant).where(Tenant.id == target_tenant_id)
-                res_t = await db.execute(stmt_t)
-                tenant = res_t.scalars().first()
+        # Apply tenant scope before querying UserRole/Role/Permission (RLS protected).
+        await db.set_rls_context(tenant.id, is_superadmin=False)
+        scoped_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = scoped_user_result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account could not be resolved.")
+        scoped_roles = [ur for ur in user.roles if ur.tenant_id == tenant.id]
+        if not scoped_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has no active role assignment in the selected institution."
+            )
+        target_tenant_id = tenant.id
+
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active institution workspace is assigned to this account.")
 
         if tenant:
+            if not scoped_roles:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active role assignment exists for this institution.")
             tenant_id = str(tenant.id)
+            # OUR SCHOOL is a dedicated, isolated demonstration workspace. It may
+            # authenticate only when explicitly marked as demo in tenant settings;
+            # this never grants access to any production institution.
+            is_isolated_demo = bool((tenant.settings or {}).get("is_demo"))
+            allowed_tenant_statuses = {"active", "trial", "trialing", "trial_active"}
+            if not (tenant.status in allowed_tenant_statuses or (tenant.status == "active_demo" and is_isolated_demo)):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Institution workspace status is '{tenant.status}'. An active institution or approved trial is required."
+                )
+
             if tenant.status == "suspended":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -309,7 +291,13 @@ async def login(
             entitlement_svc = EntitlementService(db)
             ent_data = await entitlement_svc.get_tenant_entitlements(tenant.id)
             tenant_info["current_plan"] = ent_data.get("current_plan", "Standard")
-            tenant_info["subscription_status"] = ent_data.get("subscription_status", "active")
+            tenant_info["subscription_status"] = ent_data.get("subscription_status", "inactive")
+            subscription_status = tenant_info["subscription_status"]
+            if subscription_status not in ("active", "trial", "grace_period"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Institution subscription is {subscription_status}. Workspace access requires an active subscription or trial."
+                )
 
             # Extract distinct active modules under current plan
             entitled_modules = sorted(list({
@@ -319,57 +307,52 @@ async def login(
 
             # Intersect user assigned permissions with entitled modules
             user_perm_codes = set()
-            for ur in user.roles:
-                if ur.tenant_id == tenant.id or ur.tenant_id is None:
+            for ur in scoped_roles:
                     for perm in ur.role.permissions:
                         if perm.module in entitled_modules or perm.module in ("governance", "identity", "core", "settings"):
                             user_perm_codes.add(perm.code)
             effective_permissions = sorted(list(user_perm_codes))
 
             # Determine primary role and destination mapping
-            role_codes = [ur.role.code for ur in user.roles]
+            role_codes = [ur.role.code for ur in scoped_roles]
 
             if "CHAIRMAN_DIRECTOR" in role_codes or "DIRECTOR" in role_codes:
                 primary_role = "CHAIRMAN_DIRECTOR"
-                destination = "/demo?role=CHAIRMAN_DIRECTOR"
+                destination = "/app"
             elif "PRINCIPAL" in role_codes:
                 primary_role = "PRINCIPAL"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             elif "VICE_PRINCIPAL" in role_codes:
                 primary_role = "VICE_PRINCIPAL"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             elif "ACCOUNTANT" in role_codes:
                 primary_role = "ACCOUNTANT"
-                destination = "/demo?role=ACCOUNTANT"
+                destination = "/app"
             elif "EXAM_CONTROLLER" in role_codes:
                 primary_role = "EXAM_CONTROLLER"
-                destination = "/demo?role=EXAM_CONTROLLER"
+                destination = "/app"
             elif "TEACHER" in role_codes:
                 primary_role = "TEACHER"
-                destination = "/demo?role=TEACHER"
+                destination = "/app"
             elif "STUDENT" in role_codes:
                 primary_role = "STUDENT"
-                destination = "/demo?role=STUDENT"
+                destination = "/app"
             elif "PARENT" in role_codes:
                 primary_role = "PARENT"
-                destination = "/demo?role=PARENT"
+                destination = "/app"
             elif "LIBRARIAN" in role_codes:
                 primary_role = "LIBRARIAN"
-                destination = "/demo?role=LIBRARIAN"
+                destination = "/app"
             elif "INSTITUTION_ADMIN" in role_codes:
                 primary_role = "INSTITUTION_ADMIN"
-                destination = "/demo?role=PRINCIPAL"
+                destination = "/app"
             else:
                 primary_role = role_codes[0] if role_codes else "INSTITUTION_USER"
                 destination = "/app"
 
             # Multi-role available workspaces
-            for ur in user.roles:
-                dest_r = (
-                    f"/demo?role={ur.role.code}"
-                    if ur.role.code in ("CHAIRMAN_DIRECTOR", "PRINCIPAL", "ACCOUNTANT", "EXAM_CONTROLLER", "TEACHER", "STUDENT", "PARENT", "LIBRARIAN")
-                    else "/app"
-                )
+            for ur in scoped_roles:
+                dest_r = "/app"
                 available_workspaces.append(
                     WorkspaceOut(
                         workspace_id=f"{ur.role.code}-{ur.tenant_id or 'global'}",
@@ -421,7 +404,8 @@ async def login(
     await db.commit()
 
     roles_out = []
-    for ur in user.roles:
+    response_roles = scoped_roles if authority_level == "INSTITUTION" else user.roles
+    for ur in response_roles:
         roles_out.append(
             RoleOut(
                 id=ur.role.id,
@@ -615,12 +599,14 @@ async def first_login_password_setup(
     Mandatory password change for accounts flagged with must_change_password.
     Prevents standard system access until completed.
     """
-    # Validate account is flagged for first login setup (or allow idempotent success)
+    # First-login setup is only valid for accounts explicitly flagged for a
+    # temporary-password change. Reject normal accounts rather than silently
+    # accepting a setup request that could mask an authentication-flow error.
     if not current_user.must_change_password:
-        return {
-            "message": "Password setup verified. Account is ready.",
-            "password_changed_at": current_user.password_changed_at
-        }
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not flagged for first-login password setup."
+        )
 
     if not verify_password(req.current_password, current_user.hashed_password):
         raise HTTPException(
@@ -747,11 +733,11 @@ async def confirm_password_reset(
         )
 
     token_hashed = hash_token(req.token.strip())
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # Password reset tokens and account records are globally addressable; do not
+    # elevate RLS merely to reset a password. Tenant role rows are not needed here.
     stmt = (
         select(PasswordResetToken)
-        .options(selectinload(PasswordResetToken.user).selectinload(User.roles))
+        .options(selectinload(PasswordResetToken.user))
         .where(PasswordResetToken.token_hash == token_hashed)
     )
     res = await db.execute(stmt)
@@ -940,23 +926,8 @@ async def verify_otp_and_reset_password(
         )
 
     raw_id = req.identifier.strip().lower()
-    CODE_TO_EMAIL = {
-        "superadmin": "admin@platform.erp.in",
-        "siva": "admin@platform.erp.in",
-        "owner": "admin@platform.erp.in",
-        "admin": "admin@platform.erp.in",
-        "principal": "principal@akshara.edu.in",
-        "accountant": "accountant@akshara.edu.in",
-        "exams": "exams@akshara.edu.in",
-        "teacher": "teacher.physics@akshara.edu.in",
-        "student": "student.rahul@akshara.edu.in",
-        "parent": "parent.rahul@akshara.edu.in",
-    }
-    target_email = CODE_TO_EMAIL.get(raw_id, raw_id)
-
     stmt_user = select(User).options(selectinload(User.roles)).where(
         or_(
-            func.lower(User.email) == target_email,
             func.lower(User.email) == raw_id,
             User.phone == req.identifier.strip()
         )
@@ -1042,8 +1013,8 @@ async def admin_reset_user_password(
     - Enforces must_change_password on next sign-in.
     - Records immutable audit log with acting administrator identity and reason.
     """
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # The caller's signed tenant scope remains active; RLS limits the target
+    # account's visible role assignments to that institution.
     stmt = (
         select(User)
         .options(selectinload(User.roles).selectinload(UserRole.role))
@@ -1264,14 +1235,18 @@ async def autocomplete_users_by_role(
         return []
 
     req_code = req.tenant_code.lower().strip()
-    target_code = "our-school-demo" if req_code == "akshara" else req_code
-    stmt_t = select(Tenant).where(or_(Tenant.code == target_code, Tenant.code == req_code))
+    stmt_t = select(Tenant).where(Tenant.code == req_code)
     res_t = await db.execute(stmt_t)
     tenant = res_t.scalars().first()
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
 
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    # Apply the resolved tenant scope instead of elevating this public lookup to platform-superadmin.
+    # The UserRole/Role RLS policies then restrict the lookup to this institution.
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant.id)},
+    )
 
     stmt = (
         select(User)
@@ -1386,19 +1361,15 @@ async def complete_mfa_login(
         )
 
     user_id = payload_jwt.get("sub")
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA challenge subject.")
 
-    stmt = (
-        select(User)
-        .options(
-            selectinload(User.roles)
-            .selectinload(UserRole.role)
-            .selectinload(Role.permissions)
-        )
-        .where(User.id == uuid.UUID(user_id))
-    )
-    res = await db.execute(stmt)
-    user = res.scalars().first()
+    # Load the account record without elevating RLS. Resolve roles only after
+    # establishing the tenant scope embedded in the signed MFA challenge.
+    user_result = await db.execute(select(User).where(User.id == user_uuid))
+    user = user_result.scalars().first()
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -1411,14 +1382,70 @@ async def complete_mfa_login(
             detail="Invalid 6-digit TOTP verification code."
         )
 
-    # TOTP verification succeeded! Issue access and refresh tokens.
-    tenant_id = user.roles[0].tenant_id if user.roles else None
+    tenant_id = None
+    if not user.is_superadmin:
+        tenant_code = payload_jwt.get("tenant_code")
+        if not tenant_code:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Institution scope is missing from the MFA challenge.")
+        tenant_result = await db.execute(select(Tenant).where(Tenant.code == tenant_code))
+        tenant = tenant_result.scalars().first()
+        if not tenant or tenant.status not in ("active", "trial", "trialing"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution workspace is not active.")
+        set_current_tenant_id(tenant.id)
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant.id)}
+        )
+        scoped_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = scoped_user_result.scalars().first()
+        if not user or not any(ur.tenant_id == tenant.id for ur in user.roles):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is not assigned to this institution.")
+        entitlement_data = await EntitlementService(db).get_tenant_entitlements(tenant.id)
+        if entitlement_data.get("subscription_status") not in ("active", "trial"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution subscription is not active.")
+        tenant_id = tenant.id
+    else:
+        global_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = global_user_result.scalars().first()
+
+    # TOTP verification succeeded; issue a tenant-bound access and refresh token.
+    mfa_session_id = uuid.uuid4()
     access_token = create_access_token(
         subject=str(user.id),
         tenant_id=str(tenant_id) if tenant_id else None,
-        is_superadmin=user.is_superadmin
+        is_superadmin=user.is_superadmin,
+        session_id=str(mfa_session_id)
     )
-    refresh_token = create_refresh_token(subject=str(user.id))
+    refresh_token = create_refresh_token(
+        subject=str(user.id),
+        tenant_id=str(tenant_id) if tenant_id else None
+    )
+    db.add(UserSession(
+        id=mfa_session_id,
+        user_id=user.id,
+        session_token_hash=hash_token(access_token[-16:]),
+        ip_address=request.client.host if request.client else "127.0.0.1",
+        user_agent=request.headers.get("user-agent", "Unknown")[:450],
+        device_name="MFA Verified Session",
+        last_active_at=datetime.now(timezone.utc),
+        is_revoked=False
+    ))
 
     authority_level = "PLATFORM" if user.is_superadmin else "INSTITUTION"
     destination = "/platform" if user.is_superadmin else "/app"

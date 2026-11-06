@@ -21,7 +21,8 @@ import { PublicLayout } from '../../layouts/PublicLayout';
 export const RegisterInstitutionPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const initialPlan = searchParams.get('plan') || 'standard';
+  const requestedPlan = (searchParams.get('plan') || 'TRIAL').toUpperCase();
+  const initialPlan = ['TRIAL', 'STARTER', 'STANDARD', 'ENTERPRISE'].includes(requestedPlan) ? requestedPlan : 'TRIAL';
 
   const [formData, setFormData] = useState({
     institutionName: '',
@@ -34,13 +35,12 @@ export const RegisterInstitutionPage: React.FC = () => {
     state: 'Karnataka',
     studentStrength: '500-1500',
     selectedPlan: initialPlan,
-    password: '',
-    confirmPassword: '',
     acceptTerms: true,
   });
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [leadReference, setLeadReference] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,50 +61,45 @@ export const RegisterInstitutionPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
     if (!formData.subdomain || !/^[a-z0-9-]+$/.test(formData.subdomain)) {
-      setError('Subdomain must contain only lowercase letters, numbers, and hyphens.');
+      setError('Institution code must contain only lowercase letters, numbers, and hyphens.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Post to backend platform API or fallback gracefully
-      const res = await fetch('/api/v1/platform/tenants', {
+      // Public sign-up creates a verified sales/trial request. Tenant credentials
+      // and production access are issued only after platform-owner approval.
+      const res = await fetch('/api/v1/leads/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.institutionName,
-          code: formData.subdomain,
-          plan_code: formData.selectedPlan,
-          admin_email: formData.email,
-          admin_name: formData.adminName,
-          admin_password: formData.password,
+          contact_name: formData.adminName,
+          email: formData.email,
+          phone: formData.phone,
+          institution_name: formData.institutionName,
+          institution_type: formData.institutionType,
           city: formData.city,
           state: formData.state,
-          institution_type: formData.institutionType,
+          student_strength: formData.studentStrength,
+          enquiry_type: formData.selectedPlan === 'TRIAL' ? 'trial' : 'pricing',
+          requested_modules: [],
+          message: `Requested plan: ${formData.selectedPlan}. Preferred institution code: ${formData.subdomain}.`,
+          consent_given: formData.acceptTerms,
+          page_url: window.location.href,
+          source: 'website',
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail || `Failed to create institution account (Status ${res.status}).`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.detail || `Unable to submit your request (Status ${res.status}).`);
       }
-
+      setLeadReference(data.reference_no || '');
       setSuccess(true);
     } catch (err: any) {
-      // In development / demo environment without superadmin token, simulate instant onboarding
-      console.warn('Backend tenant registration response:', err.message);
-      // If unauthorized because superadmin is required for platform/tenants, we still display a successful onboarding simulation
-      setSuccess(true);
+      setError(err.message || 'Unable to submit your request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -117,7 +112,7 @@ export const RegisterInstitutionPage: React.FC = () => {
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100/80 text-blue-800 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-200">
-              <Sparkles className="w-3.5 h-3.5" /> 14-Day Free Unrestricted Trial
+              <Sparkles className="w-3.5 h-3.5" /> 30-Day Free Trial
             </div>
             <h1 className="text-4xl sm:text-5xl font-black text-gray-950 tracking-tight">
               Onboard Your Institution in <span className="text-blue-600">3 Minutes</span>
@@ -163,9 +158,9 @@ export const RegisterInstitutionPage: React.FC = () => {
                       3
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Full 14-Day Pro Access</h4>
+                      <h4 className="text-sm font-bold text-gray-900">30-Day Trial Evaluation</h4>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Experience automated admissions, fee collection, SMS alerts, biometric attendance, and report cards.
+                        Explore the core admissions, fee, attendance and examination workflows during your 30-day evaluation.
                       </p>
                     </div>
                   </li>
@@ -213,19 +208,19 @@ export const RegisterInstitutionPage: React.FC = () => {
                     <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
                       <CheckCircle2 className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900">Institution Registered Successfully!</h3>
+                    <h3 className="text-2xl font-black text-gray-900">Your Request Has Been Received!</h3>
                     <p className="text-sm text-gray-600 max-w-md mx-auto">
-                      Congratulations! Your tenant workspace has been provisioned at:
+                      Thank you. Our platform team will review your request and contact you to confirm the trial and institution setup.
                     </p>
                     <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl font-mono text-sm font-bold text-blue-800 max-w-sm mx-auto">
-                      https://{formData.subdomain || 'myschool'}.educationos.in
+                      Reference: {leadReference || 'Pending'}
                     </div>
                     <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <button
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/')}
                         className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
                       >
-                        Proceed to Login
+                        Return to Home
                         <ArrowRight className="w-4 h-4" />
                       </button>
                       <button
@@ -240,7 +235,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                       <h2 className="text-2xl font-black text-gray-900">Institution Details</h2>
-                      <p className="text-xs text-gray-500 mt-0.5">Please provide basic institution and campus information.</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Tell us about your institution and the plan you would like to explore.</p>
                     </div>
 
                     {error && (
@@ -272,7 +267,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                       {/* Institution Subdomain / Code */}
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                          Desired Subdomain Code *
+                          Preferred Institution Code *
                         </label>
                         <div className="flex items-center">
                           <input
@@ -287,7 +282,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                             .educationos.in
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-400 mt-1">This will be your institution's permanent URL and tenant identifier.</p>
+                        <p className="text-[11px] text-gray-400 mt-1">This is a requested code only; the platform team confirms availability before provisioning.</p>
                       </div>
 
                       {/* Institution Type */}
@@ -304,6 +299,23 @@ export const RegisterInstitutionPage: React.FC = () => {
                           <option value="pu_college">Pre-University College (+1 / +2)</option>
                           <option value="degree_college">Degree College / Autonomous</option>
                           <option value="group_institution">Educational Trust / Multi-Campus</option>
+                        </select>
+                      </div>
+
+                      {/* Requested Plan */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                          Plan to Explore *
+                        </label>
+                        <select
+                          value={formData.selectedPlan}
+                          onChange={(e) => setFormData({ ...formData, selectedPlan: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
+                        >
+                          <option value="TRIAL">30-Day Free Trial — ₹0</option>
+                          <option value="STARTER">Starter — ₹999/month or ₹9,999/year</option>
+                          <option value="STANDARD">Standard — ₹1,999/month or ₹19,999/year</option>
+                          <option value="ENTERPRISE">Enterprise — ₹9,999/month or ₹99,999/year</option>
                         </select>
                       </div>
 
@@ -326,7 +338,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                     </div>
 
                     <div className="pt-4 border-t border-gray-100">
-                      <h2 className="text-lg font-black text-gray-900 mb-3">Principal / Administrator Account</h2>
+                      <h2 className="text-lg font-black text-gray-900 mb-3">Contact Person</h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Admin Name */}
                         <div>
@@ -400,41 +412,7 @@ export const RegisterInstitutionPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Password */}
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Master Password *
-                          </label>
-                          <div className="relative">
-                            <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                            <input
-                              type="password"
-                              required
-                              placeholder="Min 8 characters"
-                              value={formData.password}
-                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                              className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
-                            />
-                          </div>
-                        </div>
 
-                        {/* Confirm Password */}
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Confirm Password *
-                          </label>
-                          <div className="relative">
-                            <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                            <input
-                              type="password"
-                              required
-                              placeholder="Re-enter password"
-                              value={formData.confirmPassword}
-                              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                              className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
-                            />
-                          </div>
-                        </div>
                       </div>
                     </div>
 
@@ -459,11 +437,11 @@ export const RegisterInstitutionPage: React.FC = () => {
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="w-5 h-5 animate-spin" /> Provisioning Tenant & RLS Isolation...
+                          <Loader2 className="w-5 h-5 animate-spin" /> Submitting Request...
                         </>
                       ) : (
                         <>
-                          Start 14-Day Free Trial
+                          Submit Trial / Plan Request
                           <ArrowRight className="w-5 h-5" />
                         </>
                       )}

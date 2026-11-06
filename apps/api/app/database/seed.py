@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.core.config import settings
 from app.modules.tenants.models import Tenant, Campus
 from app.modules.identity.models import User, Role, Permission, UserRole, role_permissions
 from app.modules.subscriptions.models import (
@@ -139,6 +140,7 @@ DEFAULT_PERMISSIONS: List[Dict[str, str]] = [
     # Students & Admissions
     {"code": "students.view", "name": "View Students", "module": "students"},
     {"code": "students.create", "name": "Register Students", "module": "students"},
+    {"code": "students.import", "name": "Import Existing Student Records", "module": "students"},
     {"code": "students.edit", "name": "Edit Students", "module": "students"},
     {"code": "students.archive", "name": "Archive Students", "module": "students"},
     {"code": "admissions.manage", "name": "Manage Admissions", "module": "admissions"},
@@ -315,43 +317,44 @@ async def seed_initial_data(db: AsyncSession) -> None:
                     r_obj.permissions.append(all_perms[pc])
     await db.flush()
 
-    # 5. Default Super Admin User
+    # 5. Default Platform Super Admin
     admin_email = "admin@platform.erp.in"
     stmt = select(User).where(User.email == admin_email)
     res = await db.execute(stmt)
     super_admin = res.scalars().first()
     if not super_admin:
-        super_admin = User(
-            email=admin_email,
-            hashed_password=hash_password("Myerp2026@"),
-            full_name="Platform Super Administrator",
-            is_active=True,
-            is_superadmin=True,
-            phone="+91 98450 12345"
-        )
-        db.add(super_admin)
-        await db.flush()
+        # A new production root account is created only from a one-time secret
+        # supplied by the deployment operator. Never use a repository password.
+        bootstrap_password = settings.INITIAL_SUPERADMIN_PASSWORD
+        if bootstrap_password:
+            super_admin = User(
+                email=admin_email,
+                hashed_password=hash_password(bootstrap_password),
+                full_name="Platform Super Administrator",
+                is_active=True,
+                is_superadmin=True,
+                must_change_password=settings.ENVIRONMENT == "production"
+            )
+            db.add(super_admin)
+            await db.flush()
+            stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
+            res_role = await db.execute(stmt_role)
+            s_role = res_role.scalars().first()
+            if s_role:
+                db.add(UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None))
+    # Existing platform administrator credentials and profile are never overwritten.
 
-        # Assign SUPER_ADMIN role
-        stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
-        res_role = await db.execute(stmt_role)
-        s_role = res_role.scalars().first()
-        if s_role:
-            ur = UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None)
-            db.add(ur)
-    else:
-        super_admin.hashed_password = hash_password("Myerp2026@")
-        super_admin.phone = "+91 98450 12345"
-        super_admin.failed_login_attempts = 0
-        super_admin.locked_until = None
-        await db.flush()
+    # Demo tenants and seeded personas are development/test fixtures only.
+    if settings.ENVIRONMENT == "production":
+        await db.commit()
+        return
 
     # 6. Seed Default Demonstration Institution: OUR SCHOOL (Live Demo)
-    stmt_tenant = select(Tenant).where(or_(Tenant.code == "our-school-demo", Tenant.code == "akshara"))
+    stmt_tenant = select(Tenant).where(Tenant.code == "our-school-demo")
     res_tenant = await db.execute(stmt_tenant)
-    pilot_tenant = res_tenant.scalars().first()
-    if not pilot_tenant:
-        pilot_tenant = Tenant(
+    demo_tenant = res_tenant.scalars().first()
+    if not demo_tenant:
+        demo_tenant = Tenant(
             name="OUR SCHOOL",
             code="our-school-demo",
             institution_type="demo",
@@ -374,12 +377,12 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 ]
             }
         )
-        db.add(pilot_tenant)
+        db.add(demo_tenant)
         await db.flush()
 
         # Add Main Campus
         campus = Campus(
-            tenant_id=pilot_tenant.id,
+            tenant_id=demo_tenant.id,
             name="OUR SCHOOL Demo Campus",
             code="DEMO-MAIN",
             is_main=True,
@@ -397,7 +400,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
         if std_plan:
             now = datetime.now(timezone.utc)
             sub = Subscription(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 plan_id=std_plan.id,
                 status="active",
                 billing_cycle="annual",
@@ -407,7 +410,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             db.add(sub)
 
     # Create Institution Principal User if not present
-    principal_email = "principal@akshara.edu.in"
+    principal_email = "principal@ourschool.edu.in"
     stmt_u = select(User).where(User.email == principal_email)
     res_u = await db.execute(stmt_u)
     principal = res_u.scalars().first()
@@ -426,24 +429,24 @@ async def seed_initial_data(db: AsyncSession) -> None:
         res_r = await db.execute(stmt_r)
         inst_role = res_r.scalars().first()
         if inst_role:
-            ur_inst = UserRole(user_id=principal.id, role_id=inst_role.id, tenant_id=pilot_tenant.id)
+            ur_inst = UserRole(user_id=principal.id, role_id=inst_role.id, tenant_id=demo_tenant.id)
             db.add(ur_inst)
 
         stmt_r_prin = select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id == None)
         res_r_prin = await db.execute(stmt_r_prin)
         prin_role = res_r_prin.scalars().first()
         if prin_role:
-            db.add(UserRole(user_id=principal.id, role_id=prin_role.id, tenant_id=pilot_tenant.id))
+            db.add(UserRole(user_id=principal.id, role_id=prin_role.id, tenant_id=demo_tenant.id))
 
-    # Seed standard institutional users for pilot tenant
+    # Seed demonstration users for OUR SCHOOL
     pilot_users = [
-        ("chairman@akshara.edu.in", "ChairmanSecure2026!", "Dr. S. K. Narayana (Chairman)", "CHAIRMAN_DIRECTOR"),
-        ("accountant@akshara.edu.in", "AccountantSecure2026!", "Venkatesh Iyer (Senior Accountant)", "ACCOUNTANT"),
-        ("exams@akshara.edu.in", "ExamController2026!", "Prof. Ananth Murthy (Exam Controller)", "EXAM_CONTROLLER"),
-        ("teacher.physics@akshara.edu.in", "TeacherPhysics2026!", "Lakshmi Prasad (Physics Faculty)", "TEACHER"),
-        ("librarian@akshara.edu.in", "LibrarianSecure2026!", "Smt. Geetha R. (Head Librarian)", "LIBRARIAN"),
-        ("student.rahul@akshara.edu.in", "StudentRahul2026!", "Rahul Kumar (Class I PUC Science)", "STUDENT"),
-        ("parent.rahul@akshara.edu.in", "ParentRahul2026!", "Ramesh Kumar (Parent)", "PARENT"),
+        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "Dr. S. K. Narayana (Chairman)", "CHAIRMAN_DIRECTOR"),
+        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "Venkatesh Iyer (Senior Accountant)", "ACCOUNTANT"),
+        ("exams@ourschool.edu.in", "ExamController2026!", "Prof. Ananth Murthy (Exam Controller)", "EXAM_CONTROLLER"),
+        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "Lakshmi Prasad (Physics Faculty)", "TEACHER"),
+        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "Smt. Geetha R. (Head Librarian)", "LIBRARIAN"),
+        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "Rahul Kumar (Class I PUC Science)", "STUDENT"),
+        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "Ramesh Kumar (Parent)", "PARENT"),
     ]
     for u_email, u_pass, u_name, r_code in pilot_users:
         stmt_usr = select(User).where(User.email == u_email)
@@ -463,16 +466,16 @@ async def seed_initial_data(db: AsyncSession) -> None:
             res_rl = await db.execute(stmt_rl)
             ro = res_rl.scalars().first()
             if ro:
-                db.add(UserRole(user_id=nu.id, role_id=ro.id, tenant_id=pilot_tenant.id))
+                db.add(UserRole(user_id=nu.id, role_id=ro.id, tenant_id=demo_tenant.id))
 
         # Seed Standard Examination Categories
         from app.modules.examinations.models import Examination
         from datetime import date
-        stmt_ex = select(Examination).where(Examination.tenant_id == pilot_tenant.id)
+        stmt_ex = select(Examination).where(Examination.tenant_id == demo_tenant.id)
         res_ex = await db.execute(stmt_ex)
         if not res_ex.scalars().first():
             ex1 = Examination(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 name="Mid-Term Examinations 2026",
                 code="EXAM-2026-MID",
                 category="midterm",
@@ -495,7 +498,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 status="CONTROLLER_VERIFIED"
             )
             ex2 = Examination(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 name="Unit Test 2 (Formative Assessment)",
                 code="EXAM-2026-UT2",
                 category="unit_test",
@@ -518,7 +521,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 status="PUBLISHED"
             )
             ex3 = Examination(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 name="NEET / JEE Foundation Diagnostic Test",
                 code="EXAM-2026-NEET-FND",
                 category="competitive_foundation",
@@ -545,11 +548,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
         # Seed School-Defined Fee Structures, Invoices & Receipts
         from app.modules.finance.models import FeeStructure, FeeInvoice, FeePayment, FeeReceipt, ReceiptAuditLog
         from datetime import datetime, timezone
-        stmt_fs = select(FeeStructure).where(FeeStructure.tenant_id == pilot_tenant.id)
+        stmt_fs = select(FeeStructure).where(FeeStructure.tenant_id == demo_tenant.id)
         res_fs = await db.execute(stmt_fs)
         if not res_fs.scalars().first():
             fs1 = FeeStructure(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 academic_year="2026-2027",
                 institution_type="School",
                 class_or_stream="Class 10",
@@ -570,7 +573,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 version=1,
             )
             fs2 = FeeStructure(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 academic_year="2026-2027",
                 institution_type="PU College",
                 class_or_stream="I PUC (PCMB)",
@@ -592,9 +595,9 @@ async def seed_initial_data(db: AsyncSession) -> None:
             db.add_all([fs1, fs2])
             await db.flush()
 
-            # Seed pilot invoices
+            # Seed demo invoices
             inv1 = FeeInvoice(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 invoice_number="INV-2026-0091",
                 student_id=uuid.uuid4(),
                 student_name="Aarav Sharma",
@@ -619,7 +622,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 ]
             )
             inv2 = FeeInvoice(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 invoice_number="INV-2026-0092",
                 student_id=uuid.uuid4(),
                 student_name="Ananya Hegde",
@@ -643,7 +646,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 ]
             )
             inv3 = FeeInvoice(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 invoice_number="INV-2026-0093",
                 student_id=uuid.uuid4(),
                 student_name="Rohan Verma",
@@ -672,9 +675,9 @@ async def seed_initial_data(db: AsyncSession) -> None:
             db.add_all([inv1, inv2, inv3])
             await db.flush()
 
-            # Seed pilot payment and permanent receipt for inv1
+            # Seed demo payment and permanent receipt for inv1
             p1 = FeePayment(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 invoice_id=inv1.id,
                 student_id=inv1.student_id,
                 amount_paid=35000.0,
@@ -693,8 +696,8 @@ async def seed_initial_data(db: AsyncSession) -> None:
             await db.flush()
 
             rcp1 = FeeReceipt(
-                tenant_id=pilot_tenant.id,
-                receipt_number="RCP-AKSH-2026-1001",
+                tenant_id=demo_tenant.id,
+                receipt_number="RCP-OURSCHOOL-2026-1001",
                 payment_id=p1.id,
                 invoice_id=inv1.id,
                 student_id=inv1.student_id,
@@ -712,14 +715,14 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 payment_date=p1.payment_date,
                 fee_allocations=p1.fee_allocations,
                 institution_branding={
-                    "institution_name": "Akshara Global Educational Institutions",
+                    "institution_name": "OUR SCHOOL",
                     "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-                    "address": "Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085",
-                    "phone": "+91 80 2345 6789",
-                    "email": "accounts@akshara.erp.in",
+                    "address": "Demo Campus, 100 Feet Ring Road, JP Nagar, Bengaluru, Karnataka - 560078",
+                    "phone": "+91 98765 43210",
+                    "email": "demo@ourschool.edu.in",
                     "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal"
                 },
-                qr_verification_code="VERIFY:RECEIPT:RCP-AKSH-2026-1001:SEED-IDEMP-001",
+                qr_verification_code="VERIFY:RECEIPT:RCP-OURSCHOOL-2026-1001:SEED-IDEMP-001",
                 reprint_count=0,
                 is_duplicate=False,
                 status="CONFIRMED"
@@ -728,7 +731,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             await db.flush()
 
             audit1 = ReceiptAuditLog(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 receipt_id=rcp1.id,
                 receipt_number=rcp1.receipt_number,
                 action="GENERATED",
@@ -738,18 +741,18 @@ async def seed_initial_data(db: AsyncSession) -> None:
             )
             db.add(audit1)
 
-    # 6B. Seed Canonical Students & Admissions for Pilot Tenant (Live Demo)
-    if pilot_tenant:
+    # 6B. Seed canonical students and admissions for OUR SCHOOL demo
+    if demo_tenant:
         s1_res = await db.execute(
             select(Student).where(
-                Student.tenant_id == pilot_tenant.id,
+                Student.tenant_id == demo_tenant.id,
                 Student.admission_number == "ADM-2026-001"
             )
         )
         s1 = s1_res.scalars().first()
         if not s1:
             s1 = Student(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 admission_number="ADM-2026-001",
                 first_name="Aarav",
                 last_name="Sharma",
@@ -761,7 +764,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 guardian_name="Ramesh Sharma",
                 father_mobile="+91 98765 43210",
                 guardian_phone="+91 98765 43210",
-                parent_email="parent@akshara.erp.in",
+                parent_email="parent@ourschool.edu.in",
                 emergency_contact="+91 98765 43210",
                 door_street="#42, 5th Cross, Malleshwaram",
                 city_town="Bengaluru",
@@ -782,14 +785,14 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
         s2_res = await db.execute(
             select(Student).where(
-                Student.tenant_id == pilot_tenant.id,
+                Student.tenant_id == demo_tenant.id,
                 Student.admission_number == "ADM-2026-002"
             )
         )
         s2 = s2_res.scalars().first()
         if not s2:
             s2 = Student(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 admission_number="ADM-2026-002",
                 first_name="Ananya",
                 last_name="Hegde",
@@ -801,7 +804,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 guardian_name="Dr. Anand Hegde",
                 father_mobile="+91 98450 11223",
                 guardian_phone="+91 98450 11223",
-                parent_email="student@akshara.erp.in",
+                parent_email="student@ourschool.edu.in",
                 emergency_contact="+91 98450 11223",
                 door_street="#18, 11th Main, Jayanagar",
                 city_town="Bengaluru",
@@ -822,14 +825,14 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
         s3_res = await db.execute(
             select(Student).where(
-                Student.tenant_id == pilot_tenant.id,
+                Student.tenant_id == demo_tenant.id,
                 Student.admission_number == "ADM-2026-003"
             )
         )
         s3 = s3_res.scalars().first()
         if not s3:
             s3 = Student(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 admission_number="ADM-2026-003",
                 first_name="Rohan",
                 last_name="Verma",
@@ -841,7 +844,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 guardian_name="Sanjay Verma",
                 father_mobile="+91 99001 22334",
                 guardian_phone="+91 99001 22334",
-                parent_email="rohan.verma@akshara.erp.in",
+                parent_email="rohan.verma@ourschool.edu.in",
                 emergency_contact="+91 99001 22334",
                 door_street="#7, 2nd Stage, Indiranagar",
                 city_town="Bengaluru",
@@ -862,13 +865,13 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
         app_sample_res = await db.execute(
             select(AdmissionApplication).where(
-                AdmissionApplication.tenant_id == pilot_tenant.id,
+                AdmissionApplication.tenant_id == demo_tenant.id,
                 AdmissionApplication.application_number == "APP-2026-0001"
             )
         )
         if not app_sample_res.scalars().first():
             app_sample = AdmissionApplication(
-                tenant_id=pilot_tenant.id,
+                tenant_id=demo_tenant.id,
                 application_number="APP-2026-0001",
                 applicant_name="Dev Patel",
                 level="School",
@@ -911,7 +914,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             if inv3:
                 inv3.student_id = s3.id
 
-    # 7. Seed Independent Trial Tenant: Akshara Global School and PU College
+    # 7. Seed Independent Trial Tenant: OUR SCHOOL Demo School and PU College
     trial_code = "akshara-trial"
     stmt_trial = select(Tenant).where(Tenant.code == trial_code)
     res_trial = await db.execute(stmt_trial)
@@ -920,7 +923,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
         from datetime import datetime, timedelta, timezone
         now = datetime.now(timezone.utc)
         trial_tenant = Tenant(
-            name="AKSHARA GLOBAL SCHOOL AND PU COLLEGE",
+            name="AKSHARA GLOBAL SCHOOL & COLLEGE",
             code=trial_code,
             institution_type="composite_group",
             status="trial_active",
@@ -938,17 +941,15 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 "academic_units": [
                     {
                         "code": "SCHOOL",
-                        "name": "Akshara Global Public School",
+                        "name": "OUR SCHOOL Demo Public School",
                         "level": "School",
                         "type": "k12",
-                        "principal_email": "school.principal@akshara-trial.edu.in"
                     },
                     {
                         "code": "PU_COLLEGE",
                         "name": "Akshara Pre-University College",
                         "level": "PU College",
                         "type": "composite_pu",
-                        "principal_email": "pu.principal@akshara-trial.edu.in"
                     }
                 ],
                 "trial_policy": {
@@ -965,11 +966,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
         # Add Main Campus
         trial_campus = Campus(
             tenant_id=trial_tenant.id,
-            name="Akshara Global Main Campus",
+            name="OUR SCHOOL Demo Main Campus",
             code="MAIN",
             is_main=True,
             address="Campus Ground, 80 Feet Road, Bengaluru",
-            contact_email="principal@akshara-trial.edu.in",
+            contact_email="chairman@akshara-trial.edu.in",
             contact_phone="+91 80 2345 6789"
         )
         db.add(trial_campus)
@@ -990,28 +991,14 @@ async def seed_initial_data(db: AsyncSession) -> None:
             )
             db.add(trial_sub)
 
-    # Configure Separate Accounts for Trial Tenant:
-    # 1. Chairman / Director
-    # 2. School Principal
-    # 3. PU Principal
+    # Configure only the Chairman account for the Akshara pilot. The institution's
+    # actual school/PU principals and staff will be onboarded by its Chairman.
     trial_accounts = [
         (
             "chairman@akshara-trial.edu.in",
             "ChairmanTrialSecure2026!",
-            "Dr. Anand Hegde (Chairman)",
+            "Akshara Global School & College Chairman",
             "CHAIRMAN_DIRECTOR"
-        ),
-        (
-            "school.principal@akshara-trial.edu.in",
-            "SchoolPrincipalTrial2026!",
-            "Mrs. Sunita Deshmukh (School Principal)",
-            "PRINCIPAL"
-        ),
-        (
-            "pu.principal@akshara-trial.edu.in",
-            "PUPrincipalTrial2026!",
-            "Prof. M. B. Patil (PU Principal)",
-            "PRINCIPAL"
         ),
     ]
     for t_email, t_pass, t_name, t_role in trial_accounts:

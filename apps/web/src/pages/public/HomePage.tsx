@@ -291,7 +291,7 @@ export const HomePage: React.FC = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
-                to="/register"
+                to="/register?plan=TRIAL"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/35 transition-all flex items-center justify-center gap-2 group"
               >
                 Start 30-Day Free Trial
@@ -942,7 +942,7 @@ export const HomePage: React.FC = () => {
               </ul>
             </div>
             <Link
-              to="/register"
+              to={`/register?plan=STARTER&billing=${billingCycle}`}
               className="mt-8 block text-center py-3 rounded-xl text-sm font-bold bg-gray-100 hover:bg-gray-200 text-gray-800 transition-colors"
             >
               Choose Starter
@@ -976,7 +976,7 @@ export const HomePage: React.FC = () => {
               </ul>
             </div>
             <Link
-              to="/register"
+              to="/register?plan=TRIAL"
               className="mt-8 block text-center py-3 rounded-xl text-sm font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-colors"
             >
               Start 30-Day Free Trial
@@ -991,7 +991,7 @@ export const HomePage: React.FC = () => {
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-900 text-purple-200">Tier 5</span>
               </div>
               <h3 className="text-2xl font-black text-white">Enterprise Suite</h3>
-              <p className="text-xs text-gray-400 mt-1">Unlimited students • Multi-Campus</p>
+              <p className="text-xs text-gray-400 mt-1">Up to 10,000 students • Up to 20 campuses</p>
               <div className="my-6">
                 <span className="text-4xl font-black text-white">
                   {billingCycle === 'annual' ? '₹99,999' : '₹9,999'}

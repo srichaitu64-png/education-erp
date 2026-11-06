@@ -5,7 +5,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.tenants.models import Tenant, Campus
-from app.modules.identity.models import User, PlatformSupportAccessSession
+from app.modules.identity.models import User, Role, UserRole, PlatformSupportAccessSession
 from app.core.security import create_access_token, hash_password
 
 
@@ -37,6 +37,12 @@ async def test_institution_users_cannot_invoke_platform_administration_apis(clie
         is_superadmin=False
     )
     db_session.add(inst_admin)
+    await db_session.flush()
+    admin_role = (await db_session.execute(
+        select(Role).where(Role.code == "INSTITUTION_ADMIN", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert admin_role is not None
+    db_session.add(UserRole(user_id=inst_admin.id, role_id=admin_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_inst = create_access_token(
@@ -82,6 +88,15 @@ async def test_tenant_isolation_bidirectional_and_tamper_resistant(client, db_se
     user_a = User(email=f"user_a_{uuid.uuid4().hex[:6]}@alpha.com", hashed_password=hash_password("Pass#1234"), full_name="User A", is_active=True, is_superadmin=False)
     user_b = User(email=f"user_b_{uuid.uuid4().hex[:6]}@beta.com", hashed_password=hash_password("Pass#1234"), full_name="User B", is_active=True, is_superadmin=False)
     db_session.add_all([user_a, user_b])
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add_all([
+        UserRole(user_id=user_a.id, role_id=principal_role.id, tenant_id=tenant_a.id),
+        UserRole(user_id=user_b.id, role_id=principal_role.id, tenant_id=tenant_b.id),
+    ])
     await db_session.commit()
 
     token_a = create_access_token(subject=str(user_a.id), tenant_id=str(tenant_a.id), is_superadmin=False)
@@ -128,6 +143,12 @@ async def test_tenant_metrics_never_exposes_platform_revenue(client, db_session:
 
     user = User(email=f"principal_{uuid.uuid4().hex[:6]}@gv.edu", hashed_password=hash_password("Pass#1234"), full_name="Principal GV", is_active=True, is_superadmin=False)
     db_session.add(user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
@@ -155,11 +176,20 @@ async def test_platform_support_access_lifecycle_and_expiry(client, db_session: 
     await db_session.flush()
 
     superadmin = User(email=f"root_{uuid.uuid4().hex[:6]}@educationos.io", hashed_password=hash_password("Pass#1234"), full_name="Platform Superadmin", is_active=True, is_superadmin=True)
-    db_session.add(superadmin)
+    chairman = User(email=f"chairman_{uuid.uuid4().hex[:6]}@support.edu", hashed_password=hash_password("ChairmanPass#1234"), full_name="Institution Chairman", is_active=True, is_superadmin=False)
+    db_session.add_all([superadmin, chairman])
+    await db_session.flush()
+    chairman_role = (await db_session.execute(
+        select(Role).where(Role.code == "CHAIRMAN_DIRECTOR", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert chairman_role is not None
+    db_session.add(UserRole(user_id=chairman.id, role_id=chairman_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_root = create_access_token(subject=str(superadmin.id), is_superadmin=True)
     headers = {"Authorization": f"Bearer {token_root}"}
+    token_chairman = create_access_token(subject=str(chairman.id), tenant_id=str(tenant.id), is_superadmin=False)
+    chairman_headers = {"Authorization": f"Bearer {token_chairman}"}
 
     # 1. Request support access
     req_payload = {
@@ -179,19 +209,19 @@ async def test_platform_support_access_lifecycle_and_expiry(client, db_session: 
     ticket_number = session_data["ticket_number"]
 
     # 2. Approve support access
-    resp_app = await client.post(f"/api/v1/platform/support-sessions/{session_id}/approve", headers=headers)
+    resp_app = await client.post(f"/api/v1/platform/support-sessions/{session_id}/approve", headers=chairman_headers)
     assert resp_app.status_code == 200
     assert "APPROVED" in resp_app.json()["message"]
     assert resp_app.json()["expires_at"] is not None
 
     # 3. List support sessions
-    resp_list = await client.get("/api/v1/platform/support-sessions", headers=headers)
+    resp_list = await client.get(f"/api/v1/platform/support-sessions?tenant_id={tenant.id}", headers=headers)
     assert resp_list.status_code == 200
     tickets = [s["ticket_number"] for s in resp_list.json()]
     assert ticket_number in tickets
 
     # 4. Revoke support access
-    resp_rev = await client.post(f"/api/v1/platform/support-sessions/{session_id}/revoke", headers=headers)
+    resp_rev = await client.post(f"/api/v1/platform/support-sessions/{session_id}/revoke?tenant_id={tenant.id}", headers=headers)
     assert resp_rev.status_code == 200
     assert "REVOKED" in resp_rev.json()["message"]
 

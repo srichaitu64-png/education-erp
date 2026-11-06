@@ -17,12 +17,12 @@ async def get_migration_auth_headers(db_session: AsyncSession, tenant_code: str 
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert tenant is not None, f"Tenant {tenant_code} must exist"
 
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == "chairman@ourschool.edu.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
     assert super_admin is not None
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
+        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     return {"Authorization": f"Bearer {token}"}, tenant
 

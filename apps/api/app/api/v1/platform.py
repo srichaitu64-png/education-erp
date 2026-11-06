@@ -3,12 +3,12 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import hash_password, generate_temporary_password
-from app.database.session import get_db
+from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import (
     User,
     Role,
@@ -49,7 +49,7 @@ from app.modules.tenants.schemas import (
     TenantPlanChangeRequest,
     TenantFullDetailsOut
 )
-from app.security.deps import get_current_superadmin
+from app.security.deps import get_current_superadmin, get_current_user
 
 router = APIRouter(prefix="/platform", tags=["Platform Super Admin"])
 
@@ -92,6 +92,9 @@ async def create_tenant(
     )
     db.add(tenant)
     await db.flush()
+    # The platform owner has provisioned this tenant. Scope subsequent tenant
+    # records (campus, subscription and initial membership) to this new tenant.
+    await db.set_rls_context(tenant.id, is_superadmin=False)
 
     # Create default Main Campus
     main_campus = Campus(
@@ -214,6 +217,8 @@ async def onboard_institution(
     )
     db.add(tenant)
     await db.flush()
+    # Scope all tenant-owned provisioning records to the newly created tenant.
+    await db.set_rls_context(tenant.id, is_superadmin=False)
 
     # Configure campuses
     created_campuses = []
@@ -301,11 +306,19 @@ async def onboard_institution(
     res_user = await db.execute(stmt_user)
     existing_user = res_user.scalars().first()
 
-    temp_password = req.initial_admin.temporary_password or generate_temporary_password()
+    # Never accept a caller-chosen initial password. A fresh, high-entropy
+    # temporary credential is generated server-side and shown once to the
+    # authorized platform owner. It is stored only as a password hash.
+    temp_password = None
 
     if existing_user:
+        if existing_user.is_superadmin:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A platform administrator account cannot be used as an institution Head.")
+        if not existing_user.is_active:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The existing account is inactive. Complete account recovery before assigning it to this institution.")
         init_user = existing_user
     else:
+        temp_password = generate_temporary_password()
         init_user = User(
             email=admin_email,
             hashed_password=hash_password(temp_password),
@@ -313,7 +326,7 @@ async def onboard_institution(
             phone=req.initial_admin.phone,
             is_active=True,
             is_superadmin=False,
-            must_change_password=req.initial_admin.must_change_password
+            must_change_password=True
         )
         db.add(init_user)
         await db.flush()
@@ -403,8 +416,11 @@ async def onboard_institution(
             "login_url": "/login"
         },
         activation_summary=(
-            f"Account created for {init_user.full_name} ({init_user.email}). "
-            f"Initial credentials generated. User can sign in at /login and set permanent password."
+            f"Account provisioned for {init_user.full_name} ({init_user.email}). "
+            + ("A one-time temporary credential is returned to the platform owner for secure handoff. "
+               "The user must set a permanent password at first sign-in."
+               if temp_password else
+               "The existing account was linked to this institution without changing its credentials.")
         )
     )
 
@@ -426,6 +442,7 @@ async def update_tenant_status(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     valid_statuses = ("active", "suspended", "trial", "expired")
     target_status = req.status.lower().strip()
     if target_status not in valid_statuses:
@@ -480,6 +497,7 @@ async def renew_tenant_subscription(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     stmt_sub = select(Subscription).where(Subscription.tenant_id == tenant.id).order_by(Subscription.created_at.desc()).limit(1)
     res_sub = await db.execute(stmt_sub)
     sub = res_sub.scalars().first()
@@ -534,6 +552,7 @@ async def change_tenant_plan(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     stmt_plan = select(SubscriptionPlan).where(SubscriptionPlan.code == req.new_plan_code.upper())
     res_plan = await db.execute(stmt_plan)
     new_plan = res_plan.scalars().first()
@@ -582,15 +601,16 @@ async def get_tenant_full_details(
     Platform Super Admin: Retrieve comprehensive institutional metadata, campuses,
     academic units, current subscription, entitled modules, and administrative users.
     """
-    stmt = (
-        select(Tenant)
-        .options(selectinload(Tenant.campuses))
-        .where(Tenant.id == tenant_id)
-    )
+    stmt = select(Tenant).where(Tenant.id == tenant_id)
     res = await db.execute(stmt)
     tenant = res.scalars().first()
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
+
+    await db.set_rls_context(tenant.id, is_superadmin=False)
+    campuses = (
+        await db.execute(select(Campus).where(Campus.tenant_id == tenant.id))
+    ).scalars().all()
 
     # Subscription
     stmt_sub = (
@@ -663,7 +683,7 @@ async def get_tenant_full_details(
         secondary_color=tenant.secondary_color,
         subdomain=tenant.subdomain,
         custom_domain=tenant.custom_domain,
-        campuses=[CampusOut.model_validate(c) for c in tenant.campuses]
+        campuses=[CampusOut.model_validate(c) for c in campuses]
     )
 
     return TenantFullDetailsOut(
@@ -682,12 +702,16 @@ async def list_tenants(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: List all registered institutions."""
-    stmt = select(Tenant).options(selectinload(Tenant.campuses)).order_by(Tenant.created_at.desc())
+    stmt = select(Tenant).order_by(Tenant.created_at.desc())
     res = await db.execute(stmt)
     tenants = res.scalars().all()
 
     out = []
     for t in tenants:
+        await db.set_rls_context(t.id, is_superadmin=False)
+        tenant_campuses = (
+            await db.execute(select(Campus).where(Campus.tenant_id == t.id))
+        ).scalars().all()
         out.append(
             TenantOut(
                 id=t.id,
@@ -706,9 +730,10 @@ async def list_tenants(
                 secondary_color=t.secondary_color,
                 subdomain=t.subdomain,
                 custom_domain=t.custom_domain,
-                campuses=[CampusOut.model_validate(c) for c in t.campuses]
+                campuses=[CampusOut.model_validate(c) for c in tenant_campuses]
             )
         )
+    await db.set_rls_context(None, is_superadmin=False)
     return out
 
 
@@ -767,6 +792,10 @@ async def apply_feature_override(
     Super Admin: Unlock or Lock a specific feature for a single institution
     without altering the global plan. Supports ALLOW and DENY overrides.
     """
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == req.tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+    await db.set_rls_context(req.tenant_id, is_superadmin=False)
     entitlement_svc = EntitlementService(db)
     override = await entitlement_svc.apply_feature_override(
         tenant_id=req.tenant_id,
@@ -791,6 +820,10 @@ async def revoke_feature_override(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: Revoke an institution feature override."""
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == req.tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+    await db.set_rls_context(req.tenant_id, is_superadmin=False)
     entitlement_svc = EntitlementService(db)
     success = await entitlement_svc.revoke_feature_override(
         tenant_id=req.tenant_id,
@@ -934,6 +967,12 @@ async def assign_user_role(
             detail="Lockout Guard: Super Admin cannot revoke their own platform administrator access."
         )
 
+    if tenant_id is not None:
+        tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == tenant_id))
+        if tenant_exists.scalar_one_or_none() is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+        await db.set_rls_context(tenant_id, is_superadmin=False)
+
     stmt_role = select(Role).where(Role.code == role_code)
     res_role = await db.execute(stmt_role)
     role = res_role.scalars().first()
@@ -1012,6 +1051,8 @@ async def get_dashboard_layouts(
     admin: User = Depends(get_current_superadmin)
 ):
     """Super Admin: Retrieve all dashboard layout configurations."""
+    if tenant_id:
+        await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt = select(DashboardLayoutConfig)
     if tenant_id:
         stmt = stmt.where(DashboardLayoutConfig.tenant_id == tenant_id)
@@ -1039,6 +1080,8 @@ async def save_dashboard_layout(
     - VISIBLE_LOCKED (with explanation)
     - COMPLETELY_HIDDEN
     """
+    if tenant_id:
+        await db.set_rls_context(tenant_id, is_superadmin=False)
     stmt_v = select(DashboardLayoutConfig.version).where(
         DashboardLayoutConfig.tenant_id == tenant_id,
         DashboardLayoutConfig.role_code == role_code
@@ -1120,18 +1163,26 @@ async def get_platform_metrics(
     paid_count = sum(1 for t in tenants if t.status == "active" and t.code not in ("our-school-demo", "akshara-trial"))
     active_count = len(tenants)
 
-    # Exclude non-paying demo and trial tenants from commercial MRR
-    non_paying_ids = [t.id for t in tenants if t.code in ("our-school-demo", "akshara-trial") or t.status in ("active_demo", "trial", "trial_active")]
-    stmt_sub = (
-        select(Subscription)
-        .options(selectinload(Subscription.plan))
-        .where(
-            Subscription.status == "active",
-            Subscription.tenant_id.notin_(non_paying_ids) if non_paying_ids else True
-        )
-    )
-    res_sub = await db.execute(stmt_sub)
-    paid_subs = res_sub.scalars().all()
+    # Subscription rows are tenant-scoped by RLS. Read each tenant's
+    # subscription under that tenant's scope instead of using a global bypass.
+    non_paying_ids = {
+        t.id for t in tenants
+        if t.code in ("our-school-demo", "akshara-trial")
+        or t.status in ("active_demo", "trial", "trial_active")
+    }
+    paid_subs = []
+    for tenant in tenants:
+        await db.set_rls_context(tenant.id, is_superadmin=False)
+        tenant_subs = (
+            await db.execute(
+                select(Subscription)
+                .options(selectinload(Subscription.plan))
+                .where(Subscription.tenant_id == tenant.id, Subscription.status == "active")
+            )
+        ).scalars().all()
+        if tenant.id not in non_paying_ids:
+            paid_subs.extend(tenant_subs)
+    await db.set_rls_context(None, is_superadmin=False)
     calculated_mrr = float(sum(s.plan.price_monthly_inr for s in paid_subs if s.plan)) if paid_subs else 0.0
 
     return {
@@ -1178,6 +1229,15 @@ async def request_support_access(
     Platform Super Admin: Request time-limited, consent-gated support access to a tenant.
     Does NOT grant silent access. Must be approved by Institution Admin or verified ticket.
     """
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found.")
+
+    # Support-session metadata is tenant-scoped. The platform owner may create
+    # a request for one explicitly selected tenant, but this does not grant
+    # access to that tenant's student, staff, or financial records.
+    await db.set_rls_context(tenant_id, is_superadmin=False)
+
     ticket_num = f"SUP-{datetime.now(timezone.utc).year}-{uuid.uuid4().hex[:6].upper()}"
     session = PlatformSupportAccessSession(
         ticket_number=ticket_num,
@@ -1214,31 +1274,47 @@ async def approve_support_access(
     session_id: uuid.UUID,
     duration_minutes: int = 120,
     db: AsyncSession = Depends(get_db),
-    admin: User = Depends(get_current_superadmin)
+    approver: User = Depends(get_current_user)
 ):
     """
-    Approve a support access session and establish an unexpired, time-limited window.
+    Institution leadership approves a support request for its own tenant only.
+    The platform owner who requested access cannot silently approve their own request.
     """
-    stmt = select(PlatformSupportAccessSession).where(PlatformSupportAccessSession.id == session_id)
+    tenant_id = get_current_tenant_id()
+    if not tenant_id or approver.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution leadership approval is required.")
+
+    allowed_approver_roles = {"CHAIRMAN_DIRECTOR", "DIRECTOR", "INSTITUTION_ADMIN"}
+    tenant_roles = {
+        user_role.role.code
+        for user_role in approver.roles
+        if user_role.tenant_id == tenant_id
+    }
+    if not tenant_roles.intersection(allowed_approver_roles):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the institution's Chairman or Institutional Head can approve support access.")
+
+    stmt = select(PlatformSupportAccessSession).where(
+        PlatformSupportAccessSession.id == session_id,
+        PlatformSupportAccessSession.tenant_id == tenant_id,
+        PlatformSupportAccessSession.status == "REQUESTED",
+    )
     res = await db.execute(stmt)
     session = res.scalars().first()
-
     if not session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Support session not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pending support request not found for this institution.")
 
     now = datetime.now(timezone.utc)
     session.status = "APPROVED"
-    session.approved_by_institution_admin_id = admin.id
-    session.expires_at = now + timedelta(minutes=duration_minutes)
+    session.approved_by_institution_admin_id = approver.id
+    session.expires_at = now + timedelta(minutes=max(5, min(duration_minutes, 480)))
 
     audit = PlatformAuditAction(
-        admin_id=admin.id,
+        admin_id=approver.id,
         action_type="SUPPORT_SESSION_APPROVED",
-        target_tenant_id=session.tenant_id,
+        target_tenant_id=tenant_id,
         details={"ticket_number": session.ticket_number, "duration_minutes": duration_minutes}
     )
     db.add(audit)
-
     await db.commit()
     await db.refresh(session)
 
@@ -1252,11 +1328,17 @@ async def approve_support_access(
 
 @router.get("/support-sessions")
 async def list_support_sessions(
+    tenant_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_superadmin)
 ):
-    """List all consent-based tenant support access sessions."""
-    stmt = select(PlatformSupportAccessSession).order_by(PlatformSupportAccessSession.created_at.desc())
+    """List support-session metadata for one explicitly selected institution."""
+    await db.set_rls_context(tenant_id, is_superadmin=False)
+    stmt = (
+        select(PlatformSupportAccessSession)
+        .where(PlatformSupportAccessSession.tenant_id == tenant_id)
+        .order_by(PlatformSupportAccessSession.created_at.desc())
+    )
     res = await db.execute(stmt)
     sessions = res.scalars().all()
 
@@ -1281,11 +1363,16 @@ async def list_support_sessions(
 @router.post("/support-sessions/{session_id}/revoke")
 async def revoke_support_access(
     session_id: uuid.UUID,
+    tenant_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_superadmin)
 ):
-    """Immediately revoke and terminate an active tenant support access session."""
-    stmt = select(PlatformSupportAccessSession).where(PlatformSupportAccessSession.id == session_id)
+    """Immediately revoke support access for one explicitly selected institution."""
+    await db.set_rls_context(tenant_id, is_superadmin=False)
+    stmt = select(PlatformSupportAccessSession).where(
+        PlatformSupportAccessSession.id == session_id,
+        PlatformSupportAccessSession.tenant_id == tenant_id,
+    )
     res = await db.execute(stmt)
     session = res.scalars().first()
 

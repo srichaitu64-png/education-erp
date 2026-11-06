@@ -259,6 +259,7 @@ async def convert_lead_to_tenant(
     )
     db.add(new_tenant)
     await db.flush()
+    await db.set_rls_context(new_tenant.id, is_superadmin=False)
 
     # Create Main Campus
     campus = Campus(
@@ -294,40 +295,62 @@ async def convert_lead_to_tenant(
         db.add(sub)
         await db.flush()
 
-    # Provision default administrator
-    temp_pass = generate_temporary_password()
-    admin_user = User(
-        email=lead.email,
-        hashed_password=hash_password(temp_pass),
-        full_name=lead.contact_name,
-        phone=lead.phone,
-        is_active=True,
-        is_superadmin=False,
-        must_change_password=True
-    )
-    db.add(admin_user)
-    await db.flush()
-
-    # Assign PRINCIPAL or INSTITUTION_ADMIN role
-    stmt_role = select(Role).where(
-        Role.tenant_id == new_tenant.id,
-        Role.code.in_(["PRINCIPAL", "INSTITUTION_ADMIN"])
-    )
-    res_role = await db.execute(stmt_role)
-    inst_role = res_role.scalars().first()
-    if not inst_role:
-        # Create default institutional admin role
-        inst_role = Role(
-            tenant_id=new_tenant.id,
-            name="Principal / Administrator",
-            code="PRINCIPAL",
-            description="Chief Academic and Administrative Authority"
+    # Provision the initial Institutional Head. Existing accounts may join another
+    # tenant without having their existing credentials overwritten.
+    temp_pass = None
+    admin_user = (
+        await db.execute(select(User).where(User.email == lead.email.lower().strip()))
+    ).scalars().first()
+    if admin_user and admin_user.is_superadmin:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A platform administrator account cannot be reused as an institutional Head.")
+    if not admin_user:
+        temp_pass = generate_temporary_password()
+        admin_user = User(
+            email=lead.email.lower().strip(),
+            hashed_password=hash_password(temp_pass),
+            full_name=lead.contact_name,
+            phone=lead.phone,
+            is_active=True,
+            is_superadmin=False,
+            must_change_password=True
         )
-        db.add(inst_role)
+        db.add(admin_user)
         await db.flush()
+    elif not admin_user.is_active:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The supplied email belongs to an inactive account. Reactivate it through the account recovery process before onboarding.")
 
-    ur = UserRole(user_id=admin_user.id, role_id=inst_role.id, tenant_id=new_tenant.id)
-    db.add(ur)
+    # Assign the global Chairman/Director permission template to this tenant.
+    inst_role = (
+        await db.execute(
+            select(Role).where(
+                Role.tenant_id.is_(None),
+                Role.code == "CHAIRMAN_DIRECTOR",
+            )
+        )
+    ).scalars().first()
+    if not inst_role:
+        inst_role = (
+            await db.execute(
+                select(Role).where(
+                    Role.tenant_id.is_(None),
+                    Role.code == "INSTITUTION_ADMIN",
+                )
+            )
+        ).scalars().first()
+    if not inst_role:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Institutional Head role template is not configured.")
+
+    existing_assignment = (
+        await db.execute(
+            select(UserRole).where(
+                UserRole.user_id == admin_user.id,
+                UserRole.role_id == inst_role.id,
+                UserRole.tenant_id == new_tenant.id,
+            )
+        )
+    ).scalars().first()
+    if not existing_assignment:
+        db.add(UserRole(user_id=admin_user.id, role_id=inst_role.id, tenant_id=new_tenant.id))
 
     # Update lead status
     lead.status = "CONVERTED"
