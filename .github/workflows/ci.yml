@@ -33,6 +33,13 @@ jobs:
   backend-tests:
     name: Backend Pytest Suite & Tenant Isolation
     runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: testing
+      DATABASE_URL: postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5432/education_erp_test
+      TEST_DATABASE_URL: postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5432/education_erp_test
+      TEST_ADMIN_DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/education_erp_test
+      SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
+      INITIAL_SUPERADMIN_PASSWORD: AdminSecurePassword2026!
     services:
       postgres:
         image: postgres:16
@@ -43,7 +50,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d education_erp_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -68,16 +75,9 @@ jobs:
         working-directory: ./apps/api
         env:
           ENVIRONMENT: testing
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/education_erp_test
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/education_erp_test
           SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
         run: python -m alembic upgrade head
 
       - name: Run Full Regression Test Suite
-        env:
-          ENVIRONMENT: testing
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/education_erp_test
-          TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/education_erp_test
-          SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
-        run: |
-          pytest tests/ -v
-
+        run: pytest tests/ -v
