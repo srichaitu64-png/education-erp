@@ -122,6 +122,12 @@ async def get_current_user(
         {"user_id": str(user.id)}
     )
 
+    if not user.is_superadmin and not tenant_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Institution context is required for institutional accounts."
+        )
+
     if tenant_uuid and not user.is_superadmin:
         if not any(role.tenant_id == tenant_uuid for role in user.roles):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not assigned to the selected institution.")
