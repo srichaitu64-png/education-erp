@@ -43,14 +43,15 @@ export const CreateMasterSubjectModal: React.FC<CreateMasterSubjectModalProps> =
     };
 
     try {
-      await api.post('/academic/subjects', payload);
-    } catch (err) {
-      // Gracefully continue in local demo mode if unauthenticated or offline
-      console.warn('Backend API subject sync notice:', err);
+      const response = await api.post('/academic/subjects', payload);
+      if (!response.data?.id) throw new Error('Server did not return the saved subject ID.');
+      addMasterSubject({ ...payload, id: String(response.data.id) });
+      onCreated?.({ ...response.data, is_active: response.data.is_active ?? true });
+      onClose();
+    } catch (err: any) {
+      console.error('Subject creation failed:', err);
+      window.alert(err?.response?.data?.detail || err?.message || 'Unable to save this subject. No local-only subject was created.');
     }
-
-    addMasterSubject(payload);
-    onClose();
   };
 
   return (
