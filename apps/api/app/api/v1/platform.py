@@ -306,11 +306,19 @@ async def onboard_institution(
     res_user = await db.execute(stmt_user)
     existing_user = res_user.scalars().first()
 
-    temp_password = req.initial_admin.temporary_password or generate_temporary_password()
+    # Never accept a caller-chosen initial password. A fresh, high-entropy
+    # temporary credential is generated server-side and shown once to the
+    # authorized platform owner. It is stored only as a password hash.
+    temp_password = None
 
     if existing_user:
+        if existing_user.is_superadmin:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A platform administrator account cannot be used as an institution Head.")
+        if not existing_user.is_active:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The existing account is inactive. Complete account recovery before assigning it to this institution.")
         init_user = existing_user
     else:
+        temp_password = generate_temporary_password()
         init_user = User(
             email=admin_email,
             hashed_password=hash_password(temp_password),
@@ -318,7 +326,7 @@ async def onboard_institution(
             phone=req.initial_admin.phone,
             is_active=True,
             is_superadmin=False,
-            must_change_password=req.initial_admin.must_change_password
+            must_change_password=True
         )
         db.add(init_user)
         await db.flush()
@@ -408,8 +416,11 @@ async def onboard_institution(
             "login_url": "/login"
         },
         activation_summary=(
-            f"Account created for {init_user.full_name} ({init_user.email}). "
-            f"Initial credentials generated. User can sign in at /login and set permanent password."
+            f"Account provisioned for {init_user.full_name} ({init_user.email}). "
+            + ("A one-time temporary credential is returned to the platform owner for secure handoff. "
+               "The user must set a permanent password at first sign-in."
+               if temp_password else
+               "The existing account was linked to this institution without changing its credentials.")
         )
     )
 
