@@ -115,9 +115,6 @@ export const LoginPage: React.FC = () => {
         pendingAuthSession.refreshToken,
         { ...pendingAuthSession.user, must_change_password: false }
       );
-      if (pendingAuthSession.primaryRole) {
-        switchRole(pendingAuthSession.primaryRole as UserRoleType);
-      }
       navigate(pendingAuthSession.destination);
     }
   };
