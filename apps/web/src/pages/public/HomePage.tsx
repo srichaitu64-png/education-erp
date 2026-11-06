@@ -291,7 +291,7 @@ export const HomePage: React.FC = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
-                to="/register"
+                to="/register?plan=TRIAL"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-extrabold bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/25 hover:shadow-blue-500/35 transition-all flex items-center justify-center gap-2 group"
               >
                 Start 30-Day Free Trial
