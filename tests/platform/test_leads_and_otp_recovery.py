@@ -1,6 +1,9 @@
 import pytest
 import uuid
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.security import hash_password
+from app.modules.identity.models import User
 from sqlalchemy import select
 from app.modules.leads.models import WebsiteLead
 
@@ -8,7 +11,7 @@ from app.modules.leads.models import WebsiteLead
 async def platform_token(client: httpx.AsyncClient) -> str:
     """Obtain valid Platform Super Admin JWT access token using requested platform bootstrap credentials."""
     res = await client.post("/api/v1/auth/login", json={
-        "username": "admin@platform.erp.in",
+        "username": recovery_email,
         "password": "AdminSecurePassword2026!"
     })
     assert res.status_code == 200, f"Superadmin login failed: {res.text}"
@@ -16,7 +19,7 @@ async def platform_token(client: httpx.AsyncClient) -> str:
 
 
 @pytest.mark.asyncio
-async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
+async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient, db_session: AsyncSession):
     """
     Test Self-Service OTP Password Recovery:
     1. Request OTP using platform email
@@ -24,9 +27,21 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
     3. Verify valid 6-digit OTP resets password
     4. Verify login succeeds with newly set password
     """
-    # Step 1: Request OTP using superadmin platform email
+    # Use a dedicated account so this recovery test cannot mutate the shared CI bootstrap owner.
+    recovery_email = f"recovery-owner-{uuid.uuid4().hex[:8]}@platform.test"
+    recovery_user = User(
+        email=recovery_email,
+        hashed_password=hash_password("AdminSecurePassword2026!"),
+        full_name="Password Recovery Test Owner",
+        is_active=True,
+        is_superadmin=True,
+    )
+    db_session.add(recovery_user)
+    await db_session.commit()
+
+    # Step 1: Request OTP using the dedicated platform account
     req_resp = await client.post("/api/v1/auth/password/otp-request", json={
-        "identifier": "admin@platform.erp.in"
+        "identifier": recovery_email
     })
     assert req_resp.status_code == 200, req_resp.text
     data = req_resp.json()
@@ -36,7 +51,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 2: Verify wrong OTP fails
     fail_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "admin@platform.erp.in",
+        "identifier": recovery_email,
         "otp_code": "000000",
         "new_password": "Myerp2026@Updated!",
         "confirm_password": "Myerp2026@Updated!"
@@ -45,7 +60,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 3: Verify correct OTP resets password
     reset_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "admin@platform.erp.in",
+        "identifier": recovery_email,
         "otp_code": test_otp,
         "new_password": "Myerp2026@",
         "confirm_password": "Myerp2026@"
@@ -55,7 +70,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 4: Login succeeds with reset password
     login_resp = await client.post("/api/v1/auth/login", json={
-        "username": "admin@platform.erp.in",
+        "username": recovery_email,
         "password": "Myerp2026@"
     })
     assert login_resp.status_code == 200
