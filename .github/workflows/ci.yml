@@ -90,4 +90,9 @@ jobs:
         run: docker compose config --quiet
 
       - name: Build Production Containers
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          ERP_APP_PASSWORD: ci-application-password
+          SECRET_KEY: ci-only-secret-key-for-compose-validation-32-chars
+          BOOTSTRAP_SUPERADMIN_PASSWORD: CI-only-Bootstrap-Password-2026!
         run: docker compose build --pull
