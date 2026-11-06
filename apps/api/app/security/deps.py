@@ -89,14 +89,18 @@ async def get_current_user(
             tenant_uuid = uuid.UUID(str(token_tenant))
         except (TypeError, ValueError):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant claim")
-        if user.is_superadmin:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant scope for platform account")
         set_current_tenant_id(tenant_uuid)
         await db.execute(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(tenant_uuid)}
         )
-        await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
+        # Platform accounts may carry an explicitly scoped tenant context for
+        # approved support workflows. Elevation is based on the persisted user
+        # record, never on a browser-supplied header or role selector.
+        await db.execute(
+            text("SELECT set_config('app.is_superadmin', :is_superadmin, true)"),
+            {"is_superadmin": "true" if user.is_superadmin else "false"}
+        )
     else:
         set_current_tenant_id(None)
         await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
