@@ -363,7 +363,11 @@ async def verify_tenant_access_or_support(
             )
             return True
 
-    if current_user.is_superadmin:
+    is_platform_developer = any(
+        role.tenant_id is None and role.role and role.role.code == "DEVELOPER"
+        for role in current_user.roles
+    )
+    if current_user.is_superadmin or is_platform_developer:
         now = datetime.now(timezone.utc)
         stmt = (
             select(PlatformSupportAccessSession)
@@ -379,8 +383,9 @@ async def verify_tenant_access_or_support(
         active_session = res.scalars().first()
         if active_session:
             set_current_tenant_id(tenant_id)
+            db.info["rls_tenant_id"] = tenant_id
             await db.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
                 {"tenant_id": str(tenant_id)}
             )
             return True
