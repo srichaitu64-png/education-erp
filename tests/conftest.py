@@ -15,7 +15,7 @@ from app.database.base import Base
 from app.database.session import get_db, set_current_tenant_id
 from app.database.rls import enable_row_level_security
 from app.database.seed import seed_initial_data
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.modules.identity.models import User, Role, UserRole
 from app.main import app
 
@@ -97,6 +97,8 @@ def pytest_sessionstart(session):
                 if not assignment_result.scalars().first():
                     s.add(UserRole(user_id=test_admin.id, role_id=super_role.id, tenant_id=None))
             await s.commit()
+            assert test_admin.is_superadmin is True
+            assert verify_password("AdminSecurePassword2026!", test_admin.hashed_password)
 
     asyncio.run(_setup())
 
