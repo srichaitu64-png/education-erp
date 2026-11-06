@@ -61,14 +61,9 @@ async def get_current_user(
             tenant_uuid = uuid.UUID(token_tenant)
         except (ValueError, TypeError):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant scope in access token")
-        set_current_tenant_id(tenant_uuid)
-        await db.execute(
-            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-            {"tenant_id": str(tenant_uuid)}
-        )
+        await db.set_rls_context(tenant_uuid, is_superadmin=False)
     else:
-        set_current_tenant_id(None)
-        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+        await db.set_rls_context(None, is_superadmin=False)
 
     # Verify session revocation if session ID (sid) is present in token
     sid = payload.get("sid")
