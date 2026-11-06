@@ -21,52 +21,62 @@ import { CreateMasterSubjectModal } from '../../../components/academic/CreateMas
 import { api } from '../../../services/api';
 
 export const MasterCurriculumManagementView: React.FC = () => {
-  const {
-    masterSubjectCatalogue,
-    curriculumMappings,
-    addMasterSubject,
-    archiveMasterSubject,
-    loadStandardMasterCatalogueTemplate,
-    mapSubjectToClass,
-    removeSubjectFromClass,
-    updateCurriculumAssessment,
-    staffMembers,
-    tenantScope,
-  } = useDemoStore();
+  const { staffMembers } = useDemoStore();
+  const [masterSubjectCatalogue, setMasterSubjectCatalogue] = useState<MasterSubjectItem[]>([]);
+  const [curriculumMappings, setCurriculumMappings] = useState<CurriculumMappingItem[]>([]);
+  const [backendLoading, setBackendLoading] = useState(true);
+  const [backendError, setBackendError] = useState<string | null>(null);
+
+  const refreshAcademicData = async () => {
+    setBackendLoading(true);
+    try {
+      const [subjectsResponse, mappingsResponse] = await Promise.all([
+        api.get('/academic/subjects'),
+        api.get('/academic/curriculum', { params: { academic_year: '2026-2027' } }),
+      ]);
+      const subjects = Array.isArray(subjectsResponse.data) ? subjectsResponse.data : [];
+      const mappings = Array.isArray(mappingsResponse.data) ? mappingsResponse.data : [];
+      setMasterSubjectCatalogue(subjects.map((subject: any) => ({
+        id: String(subject.id),
+        code: subject.code,
+        name: subject.name,
+        category: subject.category,
+        has_practical: subject.has_practical,
+        default_theory_max: subject.default_theory_max,
+        default_practical_max: subject.default_practical_max,
+        credits: subject.credits,
+        description: subject.description || '',
+        is_active: subject.is_active,
+      })));
+      setCurriculumMappings(mappings.map((mapping: any) => ({
+        id: String(mapping.id),
+        institution_level: mapping.institution_level,
+        class_name: mapping.class_name,
+        stream: mapping.stream,
+        academic_year: mapping.academic_year,
+        subject_code: mapping.subject_code,
+        subject_name: mapping.subject_name,
+        category: mapping.category,
+        is_compulsory: mapping.is_compulsory,
+        theory_max: mapping.theory_max_marks,
+        practical_max: mapping.practical_max_marks,
+        passing_marks: mapping.total_pass_marks,
+        assigned_teacher: mapping.assigned_teacher_name || 'Unassigned',
+      })));
+      setBackendError(null);
+    } catch (err: any) {
+      setBackendError(err?.response?.data?.detail || 'Academic data could not be loaded from the server.');
+    } finally {
+      setBackendLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    void refreshAcademicData();
+  }, []);
 
   const [activeSubTab, setActiveSubTab] = useState<'catalogue' | 'mapping' | 'assessment'>('catalogue');
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
-
-  // Synchronize with backend REST API if available
-  React.useEffect(() => {
-    let isMounted = true;
-    const syncBackendData = async () => {
-      try {
-        const resSubjects = await api.get('/academic/subjects');
-        if (isMounted && Array.isArray(resSubjects.data) && resSubjects.data.length > 0) {
-          resSubjects.data.forEach((s: any) => {
-            const exists = masterSubjectCatalogue.some((ms) => ms.code === s.code);
-            if (!exists) {
-              addMasterSubject({
-                code: s.code,
-                name: s.name,
-                category: s.category,
-                has_practical: s.has_practical,
-                default_theory_max: s.default_theory_max,
-                default_practical_max: s.default_practical_max,
-                credits: s.credits,
-                description: s.description,
-              });
-            }
-          });
-        }
-      } catch (err) {
-        // Fallback to demoStore when offline or in standalone demo mode
-      }
-    };
-    syncBackendData();
-    return () => { isMounted = false; };
-  }, []);
 
   // Catalogue Filters
   const [catalogueSearch, setCatalogueSearch] = useState('');
@@ -145,7 +155,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
       const saved = response.data;
       if (!saved?.id) throw new Error('Server did not return the persisted mapping ID.');
 
-      mapSubjectToClass({
+      setCurriculumMappings((current) => [...current, {
         id: String(saved.id),
         institution_level: saved.institution_level,
         class_name: saved.class_name,
@@ -159,7 +169,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
         practical_max: saved.practical_max_marks,
         passing_marks: saved.total_pass_marks,
         assigned_teacher: saved.assigned_teacher_name || 'Unassigned',
-      });
+      }]);
       setShowMapModal(false);
     } catch (err: any) {
       console.error('Curriculum mapping was not saved:', err);
@@ -186,12 +196,13 @@ export const MasterCurriculumManagementView: React.FC = () => {
         total_pass_marks: Number(editPass),
         assigned_teacher_name: editTeacher,
       });
-      updateCurriculumAssessment(mappingId, {
+      setCurriculumMappings((current) => current.map((mapping) => mapping.id === mappingId ? {
+        ...mapping,
         theory_max: response.data.theory_max_marks,
         practical_max: response.data.practical_max_marks,
         passing_marks: response.data.total_pass_marks,
         assigned_teacher: response.data.assigned_teacher_name || 'Unassigned',
-      });
+      } : mapping));
       setEditingAssessmentId(null);
     } catch (err: any) {
       console.error('Curriculum assessment update failed:', err);
@@ -202,7 +213,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
   const handleArchiveSubjectAction = async (subjectId: string) => {
     try {
       await api.delete(`/academic/subjects/${subjectId}`);
-      archiveMasterSubject(subjectId);
+      setMasterSubjectCatalogue((current) => current.filter((subject) => subject.id !== subjectId));
     } catch (err: any) {
       console.error('Subject archive failed:', err);
       window.alert(err?.response?.data?.detail || 'Unable to archive this subject.');
@@ -212,7 +223,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
   const handleRemoveSubjectFromClassAction = async (mappingId: string) => {
     try {
       await api.delete(`/academic/curriculum/mappings/${mappingId}`);
-      removeSubjectFromClass(mappingId);
+      setCurriculumMappings((current) => current.filter((mapping) => mapping.id !== mappingId));
     } catch (err: any) {
       console.error('Curriculum unmap failed:', err);
       window.alert(err?.response?.data?.detail || 'Unable to remove this curriculum mapping.');
@@ -222,23 +233,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
   const handleLoadStandardTemplateAction = async () => {
     try {
       const response = await api.post('/academic/subjects/templates/load-standard');
-      const subjects = await api.get('/academic/subjects');
-      if (Array.isArray(subjects.data)) {
-        subjects.data.forEach((subject: any) => {
-          if (!masterSubjectCatalogue.some((item) => item.code === subject.code)) {
-            addMasterSubject({
-              code: subject.code,
-              name: subject.name,
-              category: subject.category,
-              has_practical: subject.has_practical,
-              default_theory_max: subject.default_theory_max,
-              default_practical_max: subject.default_practical_max,
-              credits: subject.credits,
-              description: subject.description,
-            });
-          }
-        });
-      }
+      await refreshAcademicData();
       window.alert(response.data?.message || 'Standard subjects loaded successfully.');
     } catch (err: any) {
       console.error('Standard subject template load failed:', err);
@@ -248,6 +243,15 @@ export const MasterCurriculumManagementView: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      {backendError && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {backendError} This screen will not substitute demo records for missing server data.
+          <button type="button" onClick={() => void refreshAcademicData()} className="ml-3 underline font-bold">Retry</button>
+        </div>
+      )}
+      {backendLoading && (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500">Loading saved academic data…</div>
+      )}
       {/* Top Header Card */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -859,6 +863,7 @@ export const MasterCurriculumManagementView: React.FC = () => {
       <CreateMasterSubjectModal
         isOpen={showAddSubjectModal}
         onClose={() => setShowAddSubjectModal(false)}
+        onCreated={(subject) => setMasterSubjectCatalogue((current) => [...current, subject])}
       />
     </div>
   );
