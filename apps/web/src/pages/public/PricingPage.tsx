@@ -182,7 +182,7 @@ export const PricingPage: React.FC = () => {
 
             <div className="pt-8">
               <Link
-                to="/register"
+                to={`/register?plan=${p.code}&billing=${billingCycle}`}
                 className={`w-full block text-center py-2.5 rounded-xl text-xs font-bold transition-colors ${
                   p.isPopular
                     ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'
