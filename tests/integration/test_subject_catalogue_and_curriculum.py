@@ -22,12 +22,12 @@ async def get_test_auth_headers(db_session: AsyncSession, tenant_code: str = "ou
     tenant = (await db_session.execute(stmt_tenant)).scalars().first()
     assert tenant is not None, f"Tenant {tenant_code} not found"
 
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
-    super_admin = (await db_session.execute(stmt_user)).scalars().first()
-    assert super_admin is not None
+    stmt_user = select(User).where(User.email == "principal@akshara.edu.in")
+    tenant_admin = (await db_session.execute(stmt_user)).scalars().first()
+    assert tenant_admin is not None
 
     token = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
+        subject=str(tenant_admin.id), tenant_id=str(tenant.id), is_superadmin=False
     )
     return {"Authorization": f"Bearer {token}"}, tenant.id
 
@@ -322,11 +322,24 @@ async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncC
     db_session.add(tenant_b)
     await db_session.commit()
 
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
-    super_admin = (await db_session.execute(stmt_user)).scalars().first()
+    tenant_b_user = User(
+        email="principal@stmarys.test.edu",
+        hashed_password=hash_password("TenantBPassword123!"),
+        full_name="Tenant B Principal",
+        is_active=True,
+        is_superadmin=False
+    )
+    db_session.add(tenant_b_user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id == None)
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=tenant_b_user.id, role_id=principal_role.id, tenant_id=tenant_b.id))
+    await db_session.commit()
 
     token_b = create_access_token(
-        subject=str(super_admin.id), tenant_id=str(tenant_b.id), is_superadmin=True
+        subject=str(tenant_b_user.id), tenant_id=str(tenant_b.id), is_superadmin=False
     )
     headers_b = {"Authorization": f"Bearer {token_b}"}
 
@@ -361,6 +374,12 @@ async def test_subject_curriculum_rbac_forbidden(client: AsyncClient, db_session
         is_superadmin=False
     )
     db_session.add(user_student)
+    await db_session.flush()
+    student_role = (await db_session.execute(
+        select(Role).where(Role.code == "STUDENT", Role.tenant_id == None)
+    )).scalars().first()
+    assert student_role is not None
+    db_session.add(UserRole(user_id=user_student.id, role_id=student_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_student = create_access_token(
