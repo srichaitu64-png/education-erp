@@ -354,8 +354,12 @@ async def seed_initial_data(db: AsyncSession) -> None:
         if s_role:
             db.add(UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None))
     else:
-        # Never reset passwords or clear lockouts during application startup.
-        # Re-seeding must not become an authentication bypass.
+        if settings.ENVIRONMENT == "production" and not super_admin.is_superadmin:
+            raise RuntimeError(
+                "BOOTSTRAP_SUPERADMIN_EMAIL is already assigned to a non-platform account; refusing production bootstrap."
+            )
+        # Never reset passwords, clear lockouts, or silently elevate an existing
+        # account during application startup. Re-seeding must not alter identity.
         await db.flush()
 
     # Production starts with platform catalogue and a one-time owner only.
