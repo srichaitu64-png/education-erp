@@ -113,6 +113,24 @@ async def login(
     }
     resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
 
+    # Resolve an explicitly selected institution before loading tenant-scoped role rows.
+    # Global platform roles remain visible when no institution is selected.
+    if req.tenant_code:
+        requested_code = req.tenant_code.strip().lower()
+        target_code = "our-school-demo" if requested_code == "akshara" else requested_code
+        tenant_result = await db.execute(
+            select(Tenant).where(or_(Tenant.code == target_code, Tenant.code == requested_code))
+        )
+        login_tenant = tenant_result.scalars().first()
+        if not login_tenant:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(login_tenant.id)}
+        )
+    else:
+        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+
     stmt = (
         select(User)
         .options(
@@ -182,6 +200,12 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is deactivated"
+        )
+
+    if not user.is_superadmin and not req.tenant_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Institution code is required for institutional accounts."
         )
 
     # Reset failure counters on successful authentication
