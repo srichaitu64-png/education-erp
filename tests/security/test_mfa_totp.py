@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -10,7 +11,7 @@ from app.core.totp import (
     generate_otpauth_uri,
 )
 from app.modules.identity.models import User
-from app.core.security import verify_password
+from app.core.security import verify_password, hash_password
 
 
 def test_totp_core_cryptography():
@@ -47,10 +48,23 @@ async def test_mfa_setup_verify_and_challenge_flow(
     5. Complete challenge with TOTP token (POST /api/v1/auth/mfa/challenge)
     6. Disable MFA with password verification (POST /api/v1/auth/mfa/disable)
     """
-    # 1. Login as Platform Super Admin
+    # Use a dedicated test platform owner so lockout tests in other modules
+    # cannot affect this independent MFA lifecycle.
+    test_admin_email = f"mfa-owner-{uuid.uuid4().hex[:8]}@platform.test"
+    test_admin = User(
+        email=test_admin_email,
+        hashed_password=hash_password("AdminSecurePassword2026!"),
+        full_name="MFA Test Platform Owner",
+        is_active=True,
+        is_superadmin=True,
+    )
+    db_session.add(test_admin)
+    await db_session.commit()
+
+    # 1. Login as the dedicated Platform Super Admin
     login_res = await client.post(
         "/api/v1/auth/login",
-        json={"username": "admin@platform.erp.in", "password": "AdminSecurePassword2026!"}
+        json={"username": test_admin_email, "password": "AdminSecurePassword2026!"}
     )
     assert login_res.status_code == 200, login_res.text
     auth_data = login_res.json()
@@ -85,7 +99,7 @@ async def test_mfa_setup_verify_and_challenge_flow(
     assert good_verify_res.json()["status"] == "SUCCESS"
 
     # Verify in database
-    stmt_user = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_user = select(User).where(User.email == test_admin_email)
     user = (await db_session.execute(stmt_user)).scalars().first()
     assert user.mfa_enabled is True
     assert user.mfa_secret == secret
@@ -93,7 +107,7 @@ async def test_mfa_setup_verify_and_challenge_flow(
     # 4. Attempt login with MFA enabled -> must return MFA challenge gate
     mfa_login_res = await client.post(
         "/api/v1/auth/login",
-        json={"username": "admin@platform.erp.in", "password": "AdminSecurePassword2026!"}
+        json={"username": test_admin_email, "password": "AdminSecurePassword2026!"}
     )
     assert mfa_login_res.status_code == 200
     mfa_login_data = mfa_login_res.json()
@@ -146,7 +160,7 @@ async def test_mfa_setup_verify_and_challenge_flow(
     # 7. Verify subsequent login no longer prompts for MFA
     clean_login_res = await client.post(
         "/api/v1/auth/login",
-        json={"username": "admin@platform.erp.in", "password": "AdminSecurePassword2026!"}
+        json={"username": test_admin_email, "password": "AdminSecurePassword2026!"}
     )
     assert clean_login_res.status_code == 200
     assert clean_login_res.json()["mfa_required"] is False
