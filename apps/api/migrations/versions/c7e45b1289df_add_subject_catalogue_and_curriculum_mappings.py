@@ -131,62 +131,37 @@ def upgrade() -> None:
         op.create_index(op.f('ix_class_subject_mappings_institution_subject_id'), 'class_subject_mappings', ['institution_subject_id'], unique=False)
         op.create_index(op.f('ix_class_subject_mappings_assigned_teacher_id'), 'class_subject_mappings', ['assigned_teacher_id'], unique=False)
 
-    # 4. Enforce Row-Level Security
-    # subject_catalog (Hybrid RLS: allows global tenant_id IS NULL or tenant_id = app.current_tenant_id)
+    # 4. Enforce Row-Level Security without caller-settable superadmin bypass.
     op.execute("ALTER TABLE subject_catalog ENABLE ROW LEVEL SECURITY;")
     op.execute("ALTER TABLE subject_catalog FORCE ROW LEVEL SECURITY;")
     op.execute("DROP POLICY IF EXISTS hybrid_isolation_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_global_read_policy ON subject_catalog;")
+    op.execute("DROP POLICY IF EXISTS hybrid_tenant_write_policy ON subject_catalog;")
     op.execute("""
-        CREATE POLICY hybrid_isolation_policy ON subject_catalog
-        FOR ALL
+        CREATE POLICY hybrid_global_read_policy ON subject_catalog
+        FOR SELECT
         USING (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id IS NULL
+            tenant_id IS NULL
             OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        )
-        WITH CHECK (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id IS NULL
-            OR (
-                tenant_id IS NOT NULL
-                AND tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-            )
         );
+    """)
+    op.execute("""
+        CREATE POLICY hybrid_tenant_write_policy ON subject_catalog
+        FOR ALL
+        USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+        WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
     """)
 
-    # institution_subjects (Strict Tenant RLS)
-    op.execute("ALTER TABLE institution_subjects ENABLE ROW LEVEL SECURITY;")
-    op.execute("ALTER TABLE institution_subjects FORCE ROW LEVEL SECURITY;")
-    op.execute("DROP POLICY IF EXISTS tenant_isolation_policy ON institution_subjects;")
-    op.execute("""
-        CREATE POLICY tenant_isolation_policy ON institution_subjects
-        FOR ALL
-        USING (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        )
-        WITH CHECK (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        );
-    """)
-
-    # class_subject_mappings (Strict Tenant RLS)
-    op.execute("ALTER TABLE class_subject_mappings ENABLE ROW LEVEL SECURITY;")
-    op.execute("ALTER TABLE class_subject_mappings FORCE ROW LEVEL SECURITY;")
-    op.execute("DROP POLICY IF EXISTS tenant_isolation_policy ON class_subject_mappings;")
-    op.execute("""
-        CREATE POLICY tenant_isolation_policy ON class_subject_mappings
-        FOR ALL
-        USING (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        )
-        WITH CHECK (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        );
-    """)
+    for table in ("institution_subjects", "class_subject_mappings"):
+        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;")
+        op.execute(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;")
+        op.execute(f"DROP POLICY IF EXISTS tenant_isolation_policy ON {table};")
+        op.execute(f"""
+            CREATE POLICY tenant_isolation_policy ON {table}
+            FOR ALL
+            USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+            WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
+        """)
 
 
 def downgrade() -> None:
