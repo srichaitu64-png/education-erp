@@ -315,7 +315,7 @@ async def sync_offline_operations(
             continue
 
         if op.entity_type == "exam_marks":
-            stmt_mark = select(ExamAttendanceAndMarks).where(ExamAttendanceAndMarks.id == op.entity_id)
+            stmt_mark = select(ExamAttendanceAndMarks).options(selectinload(ExamAttendanceAndMarks.examination)).where(ExamAttendanceAndMarks.id == op.entity_id)
             res_mark = await db.execute(stmt_mark)
             mark_rec = res_mark.scalars().first()
 
