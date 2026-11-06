@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password, verify_password
 from app.modules.identity.models import User, Role, Permission, UserRole
+from app.modules.tenants.models import Tenant
 
 
 @pytest.mark.asyncio
@@ -34,14 +35,24 @@ async def test_authentication_login_flow(client, db_session: AsyncSession):
         is_superadmin=False
     )
     db_session.add(user)
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    assert tenant is not None, "OUR SCHOOL demo tenant must be seeded for authentication tests"
+    principal_role = (
+        await db_session.execute(
+            select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+        )
+    ).scalars().first()
+    assert principal_role is not None, "Global PRINCIPAL role template must be seeded"
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
+    tenant_code = tenant.code
     await db_session.commit()
 
     # 1. Test invalid password
-    resp_bad = await client.post("/api/v1/auth/login", json={"email": email, "password": "WrongPassword"})
+    resp_bad = await client.post("/api/v1/auth/login", json={"email": email, "password": "WrongPassword", "tenant_code": tenant_code})
     assert resp_bad.status_code == 401
 
     # 2. Test valid login
-    resp_ok = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    resp_ok = await client.post("/api/v1/auth/login", json={"email": email, "password": password, "tenant_code": tenant_code})
     assert resp_ok.status_code == 200
     data = resp_ok.json()
     assert "access_token" in data
@@ -76,6 +87,26 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
         is_superadmin=True
     )
     db_session.add_all([regular_user, superadmin_user])
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    assert tenant is not None
+    regular_role = (
+        await db_session.execute(
+            select(Role).where(Role.code == "INSTITUTION_ADMIN", Role.tenant_id.is_(None))
+        )
+    ).scalars().first()
+    super_role = (
+        await db_session.execute(
+            select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id.is_(None))
+        )
+    ).scalars().first()
+    assert regular_role is not None and super_role is not None
+    db_session.add_all([
+        UserRole(user_id=regular_user.id, role_id=regular_role.id, tenant_id=tenant.id),
+        UserRole(user_id=superadmin_user.id, role_id=super_role.id, tenant_id=None),
+    ])
+    regular_email = regular_user.email
+    superadmin_email = superadmin_user.email
+    tenant_code = tenant.code
     await db_session.commit()
 
     # Login regular user
