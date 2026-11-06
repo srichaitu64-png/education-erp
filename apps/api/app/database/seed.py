@@ -697,7 +697,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
             rcp1 = FeeReceipt(
                 tenant_id=demo_tenant.id,
-                receipt_number="RCP-AKSH-2026-1001",
+                receipt_number="RCP-OURSCHOOL-2026-1001",
                 payment_id=p1.id,
                 invoice_id=inv1.id,
                 student_id=inv1.student_id,
@@ -715,14 +715,14 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 payment_date=p1.payment_date,
                 fee_allocations=p1.fee_allocations,
                 institution_branding={
-                    "institution_name": "OUR SCHOOL Demo Institution",
+                    "institution_name": "OUR SCHOOL",
                     "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-                    "address": "Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085",
-                    "phone": "+91 80 2345 6789",
-                    "email": "accounts@ourschool.edu.in",
+                    "address": "Demo Campus, 100 Feet Ring Road, JP Nagar, Bengaluru, Karnataka - 560078",
+                    "phone": "+91 98765 43210",
+                    "email": "demo@ourschool.edu.in",
                     "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal"
                 },
-                qr_verification_code="VERIFY:RECEIPT:RCP-AKSH-2026-1001:SEED-IDEMP-001",
+                qr_verification_code="VERIFY:RECEIPT:RCP-OURSCHOOL-2026-1001:SEED-IDEMP-001",
                 reprint_count=0,
                 is_duplicate=False,
                 status="CONFIRMED"
