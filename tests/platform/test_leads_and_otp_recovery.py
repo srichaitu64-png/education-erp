@@ -26,7 +26,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
     """
     # Step 1: Request OTP using superadmin platform email
     req_resp = await client.post("/api/v1/auth/password/otp-request", json={
-        "identifier": "siva"
+        "identifier": "admin@platform.erp.in"
     })
     assert req_resp.status_code == 200, req_resp.text
     data = req_resp.json()
@@ -36,7 +36,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 2: Verify wrong OTP fails
     fail_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "siva",
+        "identifier": "admin@platform.erp.in",
         "otp_code": "000000",
         "new_password": "Myerp2026@Updated!",
         "confirm_password": "Myerp2026@Updated!"
@@ -45,7 +45,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 3: Verify correct OTP resets password
     reset_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "siva",
+        "identifier": "admin@platform.erp.in",
         "otp_code": test_otp,
         "new_password": "Myerp2026@",
         "confirm_password": "Myerp2026@"
@@ -55,7 +55,7 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 4: Login succeeds with reset password
     login_resp = await client.post("/api/v1/auth/login", json={
-        "username": "siva",
+        "username": "admin@platform.erp.in",
         "password": "Myerp2026@"
     })
     assert login_resp.status_code == 200
