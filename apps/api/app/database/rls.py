@@ -30,7 +30,6 @@ TENANT_SCOPED_TABLES = [
     "students",
     "admission_applications",
     "migration_batch_logs",
-    "platform_support_access_sessions",
     "institution_subjects",
     "class_subject_mappings",
 ]
@@ -101,6 +100,24 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
                 tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             );
         """))
+        await conn.execute(text(f"""
+            CREATE POLICY hybrid_platform_admin_write_policy ON {table}
+            FOR ALL
+            USING (
+                EXISTS (
+                    SELECT 1 FROM users u
+                    WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                      AND u.is_superadmin = TRUE
+                )
+            )
+            WITH CHECK (
+                EXISTS (
+                    SELECT 1 FROM users u
+                    WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                      AND u.is_superadmin = TRUE
+                )
+            );
+        """))
 
     # Security audit rows may be tenant-scoped, or user-scoped during password
     # recovery before an institution context is known. They are append-only.
@@ -124,6 +141,33 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
             OR (
                 tenant_id IS NULL
                 AND user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+            )
+        );
+    """))
+
+    # Platform administrators may manage support-session metadata across tenants;
+    # this does not grant access to the tenant's underlying student or finance tables.
+    await conn.execute(text("ALTER TABLE IF EXISTS platform_support_access_sessions ENABLE ROW LEVEL SECURITY;"))
+    await conn.execute(text("ALTER TABLE IF EXISTS platform_support_access_sessions FORCE ROW LEVEL SECURITY;"))
+    await conn.execute(text("DROP POLICY IF EXISTS tenant_isolation_policy ON platform_support_access_sessions;"))
+    await conn.execute(text("DROP POLICY IF EXISTS platform_support_session_access_policy ON platform_support_access_sessions;"))
+    await conn.execute(text("""
+        CREATE POLICY platform_support_session_access_policy ON platform_support_access_sessions
+        FOR ALL
+        USING (
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            OR EXISTS (
+                SELECT 1 FROM users u
+                WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                  AND u.is_superadmin = TRUE
+            )
+        )
+        WITH CHECK (
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            OR EXISTS (
+                SELECT 1 FROM users u
+                WHERE u.id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+                  AND u.is_superadmin = TRUE
             )
         );
     """))
