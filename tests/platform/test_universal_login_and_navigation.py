@@ -16,7 +16,7 @@ async def test_01_platform_owner_universal_login(client: httpx.AsyncClient):
     """
     # 1. Login with username
     res1 = await client.post("/api/v1/auth/login", json={
-        "username": "superadmin",
+        "username": "admin@platform.erp.in",
         "password": "AdminSecurePassword2026!"
     })
     assert res1.status_code == 200, f"Login failed: {res1.text}"
