@@ -48,8 +48,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     and sanitizes pooled connection state on every acquisition.
     """
     async with AsyncSessionLocal() as session:
-        # Sanitize pooled connection state to prevent cross-request leakage
-        await session.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
         tenant_id = get_current_tenant_id()
         if tenant_id:
             # Set PostgreSQL session variable for Row-Level Security safely using set_config
