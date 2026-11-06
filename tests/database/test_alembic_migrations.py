@@ -57,25 +57,38 @@ def test_settings_cors_origins_parsing():
 
 
 def test_alembic_check_clean_dev_database():
-    """Verify that alembic check detects zero discrepancies between SQLAlchemy models and DB schema."""
+    """Verify model/schema alignment on a freshly migrated disposable database."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
-    # Ensure target database is at head before verifying model synchronization
-    subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        cwd=api_dir,
-        capture_output=True,
-        text=True,
-        env=dict(os.environ)
-    )
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "check"],
-        cwd=api_dir,
-        capture_output=True,
-        text=True,
-        env=dict(os.environ)
-    )
-    assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
-    assert "No new upgrade operations detected" in (result.stdout + result.stderr)
+    check_db = "education_erp_alembic_check_test"
+    admin_source = settings.TEST_ADMIN_DATABASE_URL or settings.DATABASE_URL
+    raw_admin_url = admin_source.replace("+asyncpg", "")
+    parsed = urlparse(raw_admin_url)
+    admin_url = urlunparse(parsed._replace(path="/postgres"))
+    check_db_url = urlunparse(parsed._replace(scheme="postgresql+asyncpg", path=f"/{check_db}"))
+
+    async def _manage_db(command: str):
+        conn = await asyncpg.connect(admin_url)
+        try:
+            await conn.execute(command)
+        finally:
+            await conn.close()
+
+    asyncio.run(_manage_db(f"DROP DATABASE IF EXISTS {check_db};"))
+    asyncio.run(_manage_db(f"CREATE DATABASE {check_db};"))
+    try:
+        upgrade = subprocess.run(
+            [sys.executable, "-m", "alembic", "-x", f"db_url={check_db_url}", "upgrade", "head"],
+            cwd=api_dir, capture_output=True, text=True, env=dict(os.environ)
+        )
+        assert upgrade.returncode == 0, f"Fresh migration failed: {upgrade.stderr or upgrade.stdout}"
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "-x", f"db_url={check_db_url}", "check"],
+            cwd=api_dir, capture_output=True, text=True, env=dict(os.environ)
+        )
+        assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
+        assert "No new upgrade operations detected" in (result.stdout + result.stderr)
+    finally:
+        asyncio.run(_manage_db(f"DROP DATABASE IF EXISTS {check_db};"))
 
 
 def test_alembic_upgrade_downgrade_cycle():
@@ -84,7 +97,8 @@ def test_alembic_upgrade_downgrade_cycle():
     cycle_db = "education_erp_mig_cycle_test"
 
     # Derive admin connection URL from configured settings.DATABASE_URL
-    raw_url = settings.DATABASE_URL.replace("+asyncpg", "")
+    admin_source = settings.TEST_ADMIN_DATABASE_URL or settings.DATABASE_URL
+    raw_url = admin_source.replace("+asyncpg", "")
     parsed = urlparse(raw_url)
     admin_url = urlunparse(parsed._replace(path="/postgres"))
     cycle_db_url = urlunparse(parsed._replace(scheme="postgresql+asyncpg", path=f"/{cycle_db}"))
