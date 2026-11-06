@@ -47,6 +47,12 @@ async def test_01_two_administrative_layers_strictly_separated(client, db_sessio
         is_superadmin=True
     )
     db_session.add_all([inst_admin, platform_owner])
+    await db_session.flush()
+    inst_role = (await db_session.execute(
+        select(Role).where(Role.code == "INSTITUTION_ADMIN", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert inst_role is not None
+    db_session.add(UserRole(user_id=inst_admin.id, role_id=inst_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_inst = create_access_token(subject=str(inst_admin.id), tenant_id=str(tenant.id), is_superadmin=False)
@@ -94,11 +100,26 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
         is_active=True,
         is_superadmin=True
     )
-    db_session.add_all([platform_dev, platform_owner])
+    chairman = User(
+        email=f"chairman_{uuid.uuid4().hex[:6]}@dps.edu",
+        hashed_password=hash_password("Chairman#1234"),
+        full_name="Institution Chairman",
+        is_active=True,
+        is_superadmin=False,
+    )
+    db_session.add_all([platform_dev, platform_owner, chairman])
+    await db_session.flush()
+    chairman_role = (await db_session.execute(
+        select(Role).where(Role.code == "CHAIRMAN_DIRECTOR", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert chairman_role is not None
+    db_session.add(UserRole(user_id=chairman.id, role_id=chairman_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_dev = create_access_token(subject=str(platform_dev.id), is_superadmin=False)
     token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
+    token_chairman = create_access_token(subject=str(chairman.id), tenant_id=str(tenant.id), is_superadmin=False)
+    chairman_headers = {"Authorization": f"Bearer {token_chairman}"}
 
     # 1. Platform Developer trying to access platform-wide tenant management: MUST BE 403
     resp_dev_platform = await client.get("/api/v1/platform/tenants", headers={"Authorization": f"Bearer {token_dev}"})
@@ -119,14 +140,14 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
     # 3. Approve support session with 60-minute expiry
     resp_app = await client.post(
         f"/api/v1/platform/support-sessions/{session_id}/approve",
-        headers={"Authorization": f"Bearer {token_owner}"}
+        headers=chairman_headers
     )
     assert resp_app.status_code == 200
     assert "APPROVED" in resp_app.json()["message"]
 
     # 4. Revoke support session
     resp_rev = await client.post(
-        f"/api/v1/platform/support-sessions/{session_id}/revoke",
+        f"/api/v1/platform/support-sessions/{session_id}/revoke?tenant_id={tenant.id}",
         headers={"Authorization": f"Bearer {token_owner}"}
     )
     assert resp_rev.status_code == 200
@@ -153,6 +174,12 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
         is_superadmin=False
     )
     db_session.add(inst_user)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=inst_user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_inst = create_access_token(subject=str(inst_user.id), tenant_id=str(tenant.id), is_superadmin=False)
@@ -186,6 +213,15 @@ async def test_04_tenant_data_isolation_multi_tenant(client, db_session: AsyncSe
     user_1 = User(email=f"admin_{uuid.uuid4().hex[:6]}@nps.edu", hashed_password=hash_password("Pass#1234"), full_name="NPS Admin", is_active=True, is_superadmin=False)
     user_2 = User(email=f"admin_{uuid.uuid4().hex[:6]}@cottons.edu", hashed_password=hash_password("Pass#1234"), full_name="Cottons Admin", is_active=True, is_superadmin=False)
     db_session.add_all([user_1, user_2])
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add_all([
+        UserRole(user_id=user_1.id, role_id=principal_role.id, tenant_id=tenant_1.id),
+        UserRole(user_id=user_2.id, role_id=principal_role.id, tenant_id=tenant_2.id),
+    ])
     await db_session.commit()
 
     token_1 = create_access_token(subject=str(user_1.id), tenant_id=str(tenant_1.id), is_superadmin=False)
@@ -228,6 +264,12 @@ async def test_05_platform_metrics_revenue_not_leaked_to_institutions(client, db
     user = User(email=f"principal_{uuid.uuid4().hex[:6]}@oxford.edu", hashed_password=hash_password("Pass#1234"), full_name="Principal Oxford", is_active=True, is_superadmin=False)
     owner = User(email=f"owner_{uuid.uuid4().hex[:6]}@educationos.io", hashed_password=hash_password("Owner#1234"), full_name="Platform Owner", is_active=True, is_superadmin=True)
     db_session.add_all([user, owner])
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id.is_(None))
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=principal_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_user = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
