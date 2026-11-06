@@ -82,7 +82,7 @@ async def test_superadmin_lockout_protection(client, db_session: AsyncSession):
     token = create_access_token(
         subject=str(admin.id),
         tenant_id=None,
-        is_superadmin=False
+        is_superadmin=True
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -110,7 +110,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     """
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
-    stmt_t = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    stmt_t = select(Tenant).where(Tenant.code == "our-school-demo")
     res_t = await db_session.execute(stmt_t)
     tenant = res_t.scalars().first()
 
@@ -165,7 +165,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     token = create_access_token(
         subject=str(admin_user.id),
         tenant_id=str(tenant.id),
-        is_superadmin=True
+        is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
