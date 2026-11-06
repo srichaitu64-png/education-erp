@@ -1271,7 +1271,12 @@ async def autocomplete_users_by_role(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
 
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    # Apply the resolved tenant scope instead of elevating this public lookup to platform-superadmin.
+    # The UserRole/Role RLS policies then restrict the lookup to this institution.
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant.id)},
+    )
 
     stmt = (
         select(User)
