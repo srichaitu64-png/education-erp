@@ -1178,6 +1178,18 @@ async def request_support_access(
     Platform Super Admin: Request time-limited, consent-gated support access to a tenant.
     Does NOT grant silent access. Must be approved by Institution Admin or verified ticket.
     """
+    tenant_exists = await db.execute(select(Tenant.id).where(Tenant.id == tenant_id))
+    if tenant_exists.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found.")
+
+    # Support-session metadata is tenant-scoped. The platform owner may create
+    # a request for one explicitly selected tenant, but this does not grant
+    # access to that tenant's student, staff, or financial records.
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": str(tenant_id)},
+    )
+
     ticket_num = f"SUP-{datetime.now(timezone.utc).year}-{uuid.uuid4().hex[:6].upper()}"
     session = PlatformSupportAccessSession(
         ticket_number=ticket_num,
