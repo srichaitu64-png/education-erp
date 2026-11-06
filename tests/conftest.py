@@ -87,6 +87,35 @@ def pytest_sessionstart(session):
             )
             super_role = role_result.scalars().first()
             if super_role:
+                otp_admin_email = "otp-admin@platform.erp.in"
+                otp_result = await s.execute(select(User).where(User.email == otp_admin_email))
+                otp_admin = otp_result.scalars().first()
+                if not otp_admin:
+                    otp_admin = User(
+                        email=otp_admin_email,
+                        hashed_password=hash_password("OTPAdminSecurePassword2026!"),
+                        full_name="Test OTP Recovery Administrator",
+                        is_active=True,
+                        is_superadmin=True,
+                        must_change_password=False,
+                    )
+                    s.add(otp_admin)
+                    await s.flush()
+                else:
+                    otp_admin.hashed_password = hash_password("OTPAdminSecurePassword2026!")
+                    otp_admin.is_active = True
+                    otp_admin.is_superadmin = True
+                    otp_admin.must_change_password = False
+                otp_assignment = await s.execute(
+                    select(UserRole).where(
+                        UserRole.user_id == otp_admin.id,
+                        UserRole.role_id == super_role.id,
+                        UserRole.tenant_id.is_(None),
+                    )
+                )
+                if not otp_assignment.scalars().first():
+                    s.add(UserRole(user_id=otp_admin.id, role_id=super_role.id, tenant_id=None))
+
                 assignment_result = await s.execute(
                     select(UserRole).where(
                         UserRole.user_id == test_admin.id,
