@@ -66,12 +66,10 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
         CREATE POLICY tenant_isolation_policy ON {table}
         FOR ALL
         USING (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
         )
         WITH CHECK (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
         );
         """
         await conn.execute(text(policy_sql))
@@ -81,23 +79,27 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
         await conn.execute(text(f"ALTER TABLE IF EXISTS {table} ENABLE ROW LEVEL SECURITY;"))
         await conn.execute(text(f"ALTER TABLE IF EXISTS {table} FORCE ROW LEVEL SECURITY;"))
         await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_isolation_policy ON {table};"))
+        await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_global_read_policy ON {table};"))
+        await conn.execute(text(f"DROP POLICY IF EXISTS hybrid_tenant_write_policy ON {table};"))
 
-        hybrid_sql = f"""
-        CREATE POLICY hybrid_isolation_policy ON {table}
-        FOR ALL
-        USING (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id IS NULL
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-        )
-        WITH CHECK (
-            current_setting('app.is_superadmin', true) = 'true'
-            OR tenant_id IS NULL
-            OR (
-                tenant_id IS NOT NULL 
-                AND tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+        # Global rows are visible to every tenant but remain immutable to tenant users.
+        # Tenant-owned rows are readable and writable only inside their tenant.
+        await conn.execute(text(f"""
+            CREATE POLICY hybrid_global_read_policy ON {table}
+            FOR SELECT
+            USING (
+                tenant_id IS NULL
+                OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            );
+        """))
+        await conn.execute(text(f"""
+            CREATE POLICY hybrid_tenant_write_policy ON {table}
+            FOR ALL
+            USING (
+                tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             )
-        );
-        """
-        await conn.execute(text(hybrid_sql))
+            WITH CHECK (
+                tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            );
+        """))
 
