@@ -42,7 +42,6 @@ HYBRID_SCOPED_TABLES = [
     "user_permission_overrides",
     "dashboard_layout_configs",
     "subscription_audit_logs",
-    "account_security_events",
     "subject_catalog",
 ]
 
@@ -102,4 +101,30 @@ async def enable_row_level_security(conn: AsyncConnection) -> None:
                 tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             );
         """))
+
+    # Security audit rows may be tenant-scoped, or user-scoped during password
+    # recovery before an institution context is known. They are append-only.
+    await conn.execute(text("ALTER TABLE IF EXISTS account_security_events ENABLE ROW LEVEL SECURITY;"))
+    await conn.execute(text("ALTER TABLE IF EXISTS account_security_events FORCE ROW LEVEL SECURITY;"))
+    await conn.execute(text("DROP POLICY IF EXISTS account_security_event_select_policy ON account_security_events;"))
+    await conn.execute(text("DROP POLICY IF EXISTS account_security_event_insert_policy ON account_security_events;"))
+    await conn.execute(text("""
+        CREATE POLICY account_security_event_select_policy ON account_security_events
+        FOR SELECT
+        USING (
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            OR user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+        );
+    """))
+    await conn.execute(text("""
+        CREATE POLICY account_security_event_insert_policy ON account_security_events
+        FOR INSERT
+        WITH CHECK (
+            tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+            OR (
+                tenant_id IS NULL
+                AND user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+            )
+        );
+    """))
 
