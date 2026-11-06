@@ -679,17 +679,57 @@ async def handle_payment_gateway_webhook(
     webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None) or settings.SECRET_KEY
     raw_body = await request.body()
 
-    # Verify HMAC signature if header provided
-    if x_webhook_signature:
-        expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, x_webhook_signature):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    # Webhooks must be signed. An absent signature is not a trusted event.
+    if not x_webhook_signature:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing payment webhook signature")
+    expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected_sig, x_webhook_signature):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    if payload.amount <= 0 or payload.event != "payment.captured":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported payment event or invalid amount")
 
-    # Locate tenant subscription
+    tenant_result = await db.execute(select(Tenant.id).where(Tenant.id == payload.tenant_id))
+    if tenant_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+
+    # A gateway event is tenant-scoped only after its signature and tenant identity
+    # have been verified. This preserves RLS without a platform-wide bypass.
+    await db.set_rls_context(payload.tenant_id, is_superadmin=False)
+
+    # Idempotency: a gateway retry for an already-applied transaction must not
+    # extend the subscription a second time.
+    duplicate_result = await db.execute(
+        select(SubscriptionAuditLog).where(
+            SubscriptionAuditLog.tenant_id == payload.tenant_id,
+            SubscriptionAuditLog.action == "PAYMENT_RECEIVED_RENEWED",
+            SubscriptionAuditLog.details["transaction_id"].as_string() == payload.transaction_id,
+        )
+    )
+    duplicate_event = duplicate_result.scalars().first()
+    if duplicate_event:
+        existing_sub = (
+            await db.execute(
+                select(Subscription)
+                .where(Subscription.tenant_id == payload.tenant_id)
+                .order_by(Subscription.created_at.desc())
+            )
+        ).scalars().first()
+        return {
+            "status": "SUCCESS",
+            "event": payload.event,
+            "tenant_id": str(payload.tenant_id),
+            "subscription_status": existing_sub.status if existing_sub else "active",
+            "valid_until": existing_sub.ends_at.isoformat() if existing_sub and existing_sub.ends_at else None,
+            "transaction_id": payload.transaction_id,
+            "duplicate": True,
+        }
+
+    # Locate the most recent subscription within the verified tenant scope.
     stmt = (
         select(Subscription)
         .where(Subscription.tenant_id == payload.tenant_id)
         .order_by(Subscription.created_at.desc())
+        .with_for_update()
     )
     res = await db.execute(stmt)
     sub = res.scalars().first()
@@ -727,7 +767,8 @@ async def handle_payment_gateway_webhook(
         "tenant_id": str(payload.tenant_id),
         "subscription_status": sub.status,
         "valid_until": sub.ends_at.isoformat(),
-        "transaction_id": payload.transaction_id
+        "transaction_id": payload.transaction_id,
+        "duplicate": False,
     }
 
 
