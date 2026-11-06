@@ -78,12 +78,15 @@ class EntitlementService:
             )
 
         # Determine required plan description from min_plan_tier
+        # Public checkout exposes Trial, Starter, Standard and Enterprise.
+        # Internal legacy tiers 3 and 4 remain supported for existing subscriptions,
+        # but upgrade messaging points institutions to the published Enterprise offer.
         tier_names = {
             0: "Free Trial",
             1: "Starter",
             2: "Standard",
-            3: "Professional",
-            4: "Premium",
+            3: "Enterprise",
+            4: "Enterprise",
             5: "Enterprise",
             6: "Custom"
         }
