@@ -43,25 +43,30 @@ AsyncSessionLocal = async_sessionmaker(
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    FastAPI dependency yielding a tenant-aware async database session.
-    Configures PostgreSQL RLS session setting when tenant context is active,
-    and sanitizes pooled connection state on every acquisition.
+    Yield a tenant-aware session. RLS context is session-scoped so it survives
+    endpoint commits and refreshes, then explicitly cleared before the pooled
+    connection is returned.
     """
     async with AsyncSessionLocal() as session:
         tenant_id = get_current_tenant_id()
-        if tenant_id:
-            # Set PostgreSQL session variable for Row-Level Security safely using set_config
-            await session.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-                {"tenant_id": str(tenant_id)}
-            )
-        else:
-            await session.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
         try:
+            await session.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                {"tenant_id": str(tenant_id) if tenant_id else ""}
+            )
+            await session.execute(text("SELECT set_config('app.current_user_id', '', false)"))
+            # Persist the request scope before route code starts committing.
+            await session.commit()
             yield session
             await session.commit()
         except Exception:
             await session.rollback()
             raise
         finally:
+            try:
+                await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
+                await session.execute(text("SELECT set_config('app.current_user_id', '', false)"))
+                await session.commit()
+            except Exception:
+                await session.rollback()
             await session.close()
