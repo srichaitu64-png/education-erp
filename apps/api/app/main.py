@@ -82,11 +82,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize database tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await enable_row_level_security(conn)
 
-    # Seed initial platform features, subscription plans, roles and superadmin
+    # Seed initial platform features, global catalogue, roles and bootstrap owner
+    # before FORCE RLS is enabled on a fresh database. No HTTP requests are served
+    # until this lifespan handler completes.
     async with AsyncSessionLocal() as session:
         await seed_initial_data(session)
+
+    async with engine.begin() as conn:
+        await enable_row_level_security(conn)
 
     yield
 
