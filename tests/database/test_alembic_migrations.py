@@ -81,16 +81,8 @@ def test_settings_cors_origins_parsing():
     ]
 
 
-def test_alembic_check_clean_dev_database():
-    """Verify Alembic detects no model/schema drift in the test database."""
-    api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
-    result = _alembic(api_dir, "check")
-    assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
-    assert "No new upgrade operations detected" in (result.stdout + result.stderr)
-
-
 def test_alembic_upgrade_downgrade_cycle():
-    """Verify migration upgrade, downgrade and re-upgrade on a disposable database."""
+    """Verify migrations upgrade cleanly, match ORM metadata, downgrade and re-upgrade."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
     cycle_db = "education_erp_mig_cycle_test"
     admin_url = _migration_admin_url()
@@ -108,6 +100,15 @@ def test_alembic_upgrade_downgrade_cycle():
     try:
         up1 = _alembic(api_dir, "-x", f"db_url={cycle_url}", "upgrade", "head")
         assert up1.returncode == 0, f"Upgrade failed: {up1.stderr or up1.stdout}"
+
+        schema_check = _alembic(api_dir, "-x", f"db_url={cycle_url}", "check")
+        assert schema_check.returncode == 0, (
+            "Alembic model/schema drift detected after upgrading a fresh database: "
+            f"{schema_check.stderr or schema_check.stdout}"
+        )
+        assert "No new upgrade operations detected" in (
+            schema_check.stdout + schema_check.stderr
+        )
 
         down = _alembic(api_dir, "-x", f"db_url={cycle_url}", "downgrade", "base")
         assert down.returncode == 0, f"Downgrade failed: {down.stderr or down.stdout}"
