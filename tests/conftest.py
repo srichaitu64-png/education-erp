@@ -8,9 +8,10 @@ from sqlalchemy import text
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-# Set test environment
+# Set test environment before importing application settings.
 os.environ["ENVIRONMENT"] = "testing"
 os.environ["INITIAL_SUPERADMIN_PASSWORD"] = "AdminSecurePassword2026!"
+
 from app.core.config import settings
 from app.database.base import Base
 from app.database.session import get_db, set_current_tenant_id
@@ -18,13 +19,12 @@ from app.database.rls import enable_row_level_security
 from app.database.seed import seed_initial_data
 from app.main import app
 
-# Dedicated test database engine using NullPool so each test event loop gets fresh connections
+# HTTP requests use the restricted NOBYPASSRLS application role.
 test_engine = create_async_engine(
     settings.TEST_DATABASE_URL,
     echo=False,
     poolclass=NullPool
 )
-
 TestAsyncSessionLocal = async_sessionmaker(
     bind=test_engine,
     class_=AsyncSession,
@@ -33,11 +33,22 @@ TestAsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False
 )
 
+# Schema management and deterministic test data use a separate administrative connection.
+admin_url = settings.TEST_ADMIN_DATABASE_URL or settings.DATABASE_URL
+admin_engine = create_async_engine(admin_url, echo=False, poolclass=NullPool)
+AdminAsyncSessionLocal = async_sessionmaker(
+    bind=admin_engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False
+)
+
 
 def pytest_sessionstart(session):
-    """Synchronous session start hook to build schema and seed test database."""
+    """Create schema and seed test data before enforcing RLS policies."""
     async def _setup():
-        async with test_engine.begin() as conn:
+        async with admin_engine.begin() as conn:
             await conn.execute(text("""
                 DO $$
                 BEGIN
@@ -55,39 +66,51 @@ def pytest_sessionstart(session):
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
-        async with TestAsyncSessionLocal() as s:
-            await seed_initial_data(s)
+        async with AdminAsyncSessionLocal() as session:
+            await seed_initial_data(session)
 
-        async with test_engine.begin() as conn:
+        async with admin_engine.begin() as conn:
             await enable_row_level_security(conn)
 
     asyncio.run(_setup())
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Teardown test database."""
+    """Teardown the isolated test database."""
     async def _teardown():
-        async with test_engine.begin() as conn:
+        async with admin_engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
         await test_engine.dispose()
+        await admin_engine.dispose()
 
     asyncio.run(_teardown())
 
 
 @pytest_asyncio.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide a clean database session for each test."""
-    async with TestAsyncSessionLocal() as session:
-        app.dependency_overrides[get_db] = lambda: session
+    """Administrative session for test data setup and assertions."""
+    async with AdminAsyncSessionLocal() as session:
         yield session
         await session.rollback()
-        app.dependency_overrides.pop(get_db, None)
-        set_current_tenant_id(None)
 
 
 @pytest_asyncio.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[httpx.AsyncClient, None]:
-    """Asynchronous HTTP test client."""
+async def client() -> AsyncGenerator[httpx.AsyncClient, None]:
+    """HTTP client whose requests execute with the restricted application DB role."""
+    async def override_get_db():
+        async with TestAsyncSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_db] = override_get_db
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as ac:
-        yield ac
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as ac:
+            yield ac
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        set_current_tenant_id(None)
