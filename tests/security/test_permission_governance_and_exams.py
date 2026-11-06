@@ -32,6 +32,10 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
         is_superadmin=False
     )
     db_session.add(inst_user)
+    tenant_role = Role(name="Tenant Principal", code="PRINCIPAL", tenant_id=tenant.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=inst_user.id, role_id=tenant_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
@@ -270,6 +274,10 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
         is_superadmin=False
     )
     db_session.add(user)
+    operator_role = Role(name="Exam Operator", code="EXAM_CONTROLLER", tenant_id=tenant.id, is_system=False)
+    db_session.add(operator_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=user.id, role_id=operator_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
