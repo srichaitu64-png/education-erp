@@ -101,7 +101,7 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
     await db_session.commit()
 
     token_dev = create_access_token(subject=str(platform_dev_id), is_superadmin=False)
-    token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
+    token_owner = create_access_token(subject=str(platform_owner_id), is_superadmin=True)
 
     # 1. Platform Developer trying to access platform-wide tenant management: MUST BE 403
     resp_dev_platform = await client.get("/api/v1/platform/tenants", headers={"Authorization": f"Bearer {token_dev}"})
