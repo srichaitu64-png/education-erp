@@ -810,6 +810,7 @@ async def confirm_password_reset(
 
     user = token_obj.user
     if user:
+        db.info["rls_user_id"] = user.id
         await db.execute(
             text("SELECT set_config('app.current_user_id', :user_id, true)"),
             {"user_id": str(user.id)}
