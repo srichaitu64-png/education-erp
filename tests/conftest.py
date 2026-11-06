@@ -14,7 +14,7 @@ os.environ["INITIAL_SUPERADMIN_PASSWORD"] = "AdminSecurePassword2026!"
 
 from app.core.config import settings
 from app.database.base import Base
-from app.database.session import get_db, set_current_tenant_id
+from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id
 from app.database.rls import enable_row_level_security
 from app.database.seed import seed_initial_data
 from app.main import app
@@ -107,7 +107,7 @@ async def client() -> AsyncGenerator[httpx.AsyncClient, None]:
     """HTTP client whose requests execute with the restricted application DB role."""
     async def override_get_db():
         async with TestAsyncSessionLocal() as session:
-            session.info["rls_tenant_id"] = set_current_tenant_id.__globals__["get_current_tenant_id"]()
+            session.info["rls_tenant_id"] = get_current_tenant_id()
             session.info["rls_user_id"] = None
             try:
                 yield session
