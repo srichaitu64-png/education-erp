@@ -331,7 +331,7 @@ async def test_hall_tickets_batch_generation_and_verification(client: AsyncClien
 
     # 4. Verify QR code
     verify_res = await client.get(
-        f"/api/v1/academic/hall-tickets/verify/{ticket_no}?tenant_id={tenant_id}&verification_code={qr_code}"
+        f"/api/v1/academic/hall-tickets/verify/{ticket_no}?tenant_id={tenant.id}&verification_code={qr_code}"
     )
     assert verify_res.status_code == 200
     v_data = verify_res.json()
