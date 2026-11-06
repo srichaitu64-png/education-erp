@@ -328,6 +328,11 @@ async def verify_tenant_access_or_support(
     """
     for ur in current_user.roles:
         if ur.tenant_id == tenant_id:
+            set_current_tenant_id(tenant_id)
+            await db.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                {"tenant_id": str(tenant_id)}
+            )
             return True
 
     if current_user.is_superadmin:
@@ -345,6 +350,11 @@ async def verify_tenant_access_or_support(
         res = await db.execute(stmt)
         active_session = res.scalars().first()
         if active_session:
+            set_current_tenant_id(tenant_id)
+            await db.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                {"tenant_id": str(tenant_id)}
+            )
             return True
 
         raise HTTPException(
