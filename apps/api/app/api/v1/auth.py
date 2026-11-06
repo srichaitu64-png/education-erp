@@ -243,6 +243,7 @@ async def login(
         )
         scoped_user_stmt = (
             select(User)
+            .execution_options(populate_existing=True)
             .options(
                 selectinload(User.roles)
                 .selectinload(UserRole.role)
