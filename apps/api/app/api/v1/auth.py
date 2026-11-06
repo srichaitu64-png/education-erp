@@ -160,6 +160,14 @@ async def login(
     user.failed_login_attempts = 0
     user.locked_until = None
 
+    # Institutional identities must choose their tenant before an MFA challenge
+    # is issued; the tenant code is then bound into the signed short-lived challenge.
+    if not user.is_superadmin and not (req.tenant_code and req.tenant_code.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Institution code is required for institutional sign-in."
+        )
+
     # Multi-Factor Authentication Challenge Gate
     if getattr(user, "mfa_enabled", False):
         challenge_token = create_access_token(
@@ -259,7 +267,7 @@ async def login(
             if tenant.status not in ("active", "trial", "trialing"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Your institution workspace is not active. Please contact the institution owner or platform administration."
+                    detail=f"Institution workspace status is '{tenant.status}'. An active institution or approved trial is required."
                 )
 
             if tenant.status == "suspended":
