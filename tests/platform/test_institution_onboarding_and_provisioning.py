@@ -354,14 +354,15 @@ async def test_06_tenant_full_details_inspection(client: httpx.AsyncClient, plat
 @pytest.mark.asyncio
 async def test_07_independent_trial_tenant_isolation(client: httpx.AsyncClient, db_session: AsyncSession):
     """
-    Requirement B: AKSHARA GLOBAL SCHOOL AND PU COLLEGE — NEW TRIAL.
+    Requirement B: AKSHARA GLOBAL SCHOOL & COLLEGE — NEW TRIAL.
     Must be completely independent from OUR SCHOOL (akshara demo).
-    Configured with School and PU Principal accounts, Chairman account, and clean slate.
+    Configured with only the Chairman account; the institution will onboard its own principals and staff.
     """
     # 1. Sign in as Trial Chairman
     login_chair = await client.post("/api/v1/auth/login", json={
         "username": "chairman@akshara-trial.edu.in",
-        "password": "ChairmanTrialSecure2026!"
+        "password": "ChairmanTrialSecure2026!",
+        "tenant_code": "akshara-trial"
     })
     assert login_chair.status_code == 200, f"Trial Chairman login failed: {login_chair.text}"
     chair_data = login_chair.json()
@@ -369,26 +370,6 @@ async def test_07_independent_trial_tenant_isolation(client: httpx.AsyncClient, 
     assert chair_data["primary_role"] == "CHAIRMAN_DIRECTOR"
     assert chair_data["tenant_info"]["code"] == "akshara-trial"
     assert chair_data["tenant_info"]["status"] in ("trial", "trial_active")
-
-    # 2. Sign in as Trial School Principal
-    login_sch = await client.post("/api/v1/auth/login", json={
-        "username": "school.principal@akshara-trial.edu.in",
-        "password": "SchoolPrincipalTrial2026!"
-    })
-    assert login_sch.status_code == 200
-    sch_data = login_sch.json()
-    assert sch_data["primary_role"] == "PRINCIPAL"
-    assert sch_data["tenant_info"]["code"] == "akshara-trial"
-
-    # 3. Sign in as Trial PU Principal
-    login_pu = await client.post("/api/v1/auth/login", json={
-        "username": "pu.principal@akshara-trial.edu.in",
-        "password": "PUPrincipalTrial2026!"
-    })
-    assert login_pu.status_code == 200
-    pu_data = login_pu.json()
-    assert pu_data["primary_role"] == "PRINCIPAL"
-    assert pu_data["tenant_info"]["code"] == "akshara-trial"
 
     # 4. Verify clean slate: 0 students enrolled in trial tenant
     await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
@@ -424,7 +405,7 @@ async def test_08_verify_our_school_demo_and_akshara_trial_dashboard_arrangement
     tenants = res_tenants.json()
     assert len(tenants) >= 2
 
-    demo_tenant = next((t for t in tenants if t["code"] in ("our-school-demo", "akshara")), None)
+    demo_tenant = next((t for t in tenants if t["code"] == "our-school-demo"), None)
     assert demo_tenant is not None, "OUR SCHOOL demo tenant must be registered"
     assert demo_tenant["name"] == "OUR SCHOOL"
     assert demo_tenant["code"] == "our-school-demo"
