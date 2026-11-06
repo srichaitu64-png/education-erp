@@ -1447,7 +1447,7 @@ interface DemoState {
   reorderSubjects: (fromIndex: number, toIndex: number) => void;
 
   // Master Subject Catalogue & Curriculum Mapping Actions
-  addMasterSubject: (item: Omit<MasterSubjectItem, 'id' | 'is_active'>) => void;
+  addMasterSubject: (item: Omit<MasterSubjectItem, 'id' | 'is_active'> & { id?: string }) => void;
   updateMasterSubject: (id: string, updates: Partial<MasterSubjectItem>) => void;
   archiveMasterSubject: (id: string) => void;
   loadStandardMasterCatalogueTemplate: () => void;
@@ -4592,7 +4592,7 @@ export const useDemoStore = create<DemoState>()(
   // Master Subject Catalogue Actions
   addMasterSubject: (item) => {
     const newMaster: MasterSubjectItem = {
-      id: `ms-${Date.now()}`,
+      id: item.id || `ms-${Date.now()}`,
       is_active: true,
       ...item,
     };
