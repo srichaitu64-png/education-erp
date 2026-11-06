@@ -21,7 +21,7 @@ import { CreateMasterSubjectModal } from '../../../components/academic/CreateMas
 import { api } from '../../../services/api';
 
 export const MasterCurriculumManagementView: React.FC = () => {
-  const { staffMembers } = useDemoStore();
+  const { staffMembers, tenantScope } = useDemoStore();
   const [masterSubjectCatalogue, setMasterSubjectCatalogue] = useState<MasterSubjectItem[]>([]);
   const [curriculumMappings, setCurriculumMappings] = useState<CurriculumMappingItem[]>([]);
   const [backendLoading, setBackendLoading] = useState(true);
