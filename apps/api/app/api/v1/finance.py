@@ -680,8 +680,9 @@ async def handle_payment_gateway_webhook(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found.")
     set_current_tenant_id(tenant.id)
+    db.info["rls_tenant_id"] = tenant.id
     await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
         {"tenant_id": str(tenant.id)}
     )
 
