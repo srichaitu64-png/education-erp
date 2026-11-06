@@ -113,6 +113,8 @@ async def client() -> AsyncGenerator[httpx.AsyncClient, None]:
             except Exception:
                 await session.rollback()
                 raise
+            finally:
+                set_current_tenant_id(None)
 
     app.dependency_overrides[get_db] = override_get_db
     transport = httpx.ASGITransport(app=app)
