@@ -4,12 +4,12 @@ import hashlib
 from datetime import datetime, date, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Header, Request, status
-from sqlalchemy import select, and_, func, or_
+from sqlalchemy import select, and_, func, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
-from app.database.session import get_db, get_current_tenant_id
+from app.database.session import get_db, get_current_tenant_id, set_current_tenant_id
 from app.modules.identity.models import User
 from app.modules.tenants.models import Tenant
 from app.modules.subscriptions.models import Subscription, SubscriptionAuditLog
@@ -668,11 +668,22 @@ async def handle_payment_gateway_webhook(
     webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None) or settings.SECRET_KEY
     raw_body = await request.body()
 
-    # Verify HMAC signature if header provided
-    if x_webhook_signature:
-        expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, x_webhook_signature):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    # A payment webhook is never accepted without a verifiable signature.
+    if not x_webhook_signature:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing payment webhook signature.")
+    expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected_sig, x_webhook_signature):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+
+    # Resolve the tenant only after signature verification, then scope RLS to it.
+    tenant = await db.get(Tenant, payload.tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found.")
+    set_current_tenant_id(tenant.id)
+    await db.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        {"tenant_id": str(tenant.id)}
+    )
 
     # Locate tenant subscription
     stmt = (
