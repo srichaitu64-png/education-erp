@@ -40,32 +40,46 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False
 )
 
+@event.listens_for(Session, "after_begin")
+def _apply_transaction_rls_context(session, transaction, connection):
+    """Reapply request RLS context for every transaction, including post-commit refreshes."""
+    tenant_id = session.info.get("rls_tenant_id")
+    user_id = session.info.get("rls_user_id")
+    connection.execute(
+        text("""
+            SELECT
+                set_config('app.current_tenant_id', :tenant_id, true),
+                set_config('app.current_user_id', :user_id, true)
+        """),
+        {
+            "tenant_id": str(tenant_id) if tenant_id else "",
+            "user_id": str(user_id) if user_id else "",
+        },
+    )
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Yield a tenant-aware session. RLS context is session-scoped so it survives
-    endpoint commits and refreshes, then explicitly cleared before the pooled
-    connection is returned.
+    Yield a tenant-aware session. RLS settings are reapplied transaction-locally
+    by the Session after_begin hook, so they survive commits and refreshes without
+    leaking across pooled connections.
     """
     async with AsyncSessionLocal() as session:
-        tenant_id = get_current_tenant_id()
+        session.info["rls_tenant_id"] = get_current_tenant_id()
+        session.info["rls_user_id"] = None
         try:
-            await session.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
-                {"tenant_id": str(tenant_id) if tenant_id else ""}
-            )
-            await session.execute(text("SELECT set_config('app.current_user_id', '', false)"))
-            # Persist the request scope before route code starts committing.
-            await session.commit()
             yield session
             await session.commit()
         except Exception:
             await session.rollback()
             raise
         finally:
+            session.info.pop("rls_tenant_id", None)
+            session.info.pop("rls_user_id", None)
             try:
-                await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
-                await session.execute(text("SELECT set_config('app.current_user_id', '', false)"))
+                await session.execute(
+                    text("SELECT set_config('app.current_tenant_id', '', true), set_config('app.current_user_id', '', true)")
+                )
                 await session.commit()
             except Exception:
                 await session.rollback()
