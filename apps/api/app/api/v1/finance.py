@@ -653,14 +653,32 @@ async def handle_payment_gateway_webhook(
     Verifies cryptographic HMAC-SHA256 signature, updates subscription lifecycle,
     and logs immutable financial audit records.
     """
-    webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None) or settings.SECRET_KEY
-    raw_body = await request.body()
+    webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None)
+    if not webhook_secret:
+        if settings.ENVIRONMENT == "production":
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Payment webhook verification is not configured.",
+            )
+        webhook_secret = settings.SECRET_KEY
 
-    # Verify HMAC signature if header provided
-    if x_webhook_signature:
-        expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, x_webhook_signature):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    raw_body = await request.body()
+    if not x_webhook_signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing cryptographic webhook signature.",
+        )
+
+    expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected_sig, x_webhook_signature):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid cryptographic webhook signature",
+        )
+
+    # The signed payload is the trusted tenant source for this public endpoint.
+    # Scope the database transaction before querying tenant-protected subscription rows.
+    await db.set_rls_context(payload.tenant_id, is_superadmin=False)
 
     # Locate tenant subscription
     stmt = (

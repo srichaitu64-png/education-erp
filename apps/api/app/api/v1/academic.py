@@ -1,4 +1,5 @@
 import uuid
+import secrets
 from datetime import datetime, date, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -793,7 +794,7 @@ async def generate_hall_tickets(
         exam_name = getattr(exam, "name", None) or getattr(exam, "title", "Examination")
         ticket_no = f"HT-{exam.id.hex[:6].upper()}-{s.admission_number}"
         seat_no = f"S-{(idx + 1):03d}"
-        qr_code = f"TICKET:{ticket_no}:{s.admission_number}:{exam_name}"
+        qr_code = f"{tenant_id.hex}.{ticket_no}.{secrets.token_urlsafe(32)}"
 
         ht = HallTicket(
             tenant_id=tenant_id,
@@ -848,34 +849,56 @@ async def list_hall_tickets(
     return res.scalars().all()
 
 
-@router.get("/hall-tickets/verify/{qr_or_ticket}")
+@router.get("/hall-tickets/verify/{qr_token}")
 async def verify_hall_ticket(
-    qr_or_ticket: str,
+    qr_token: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """Verify hall ticket legitimacy and eligibility status via QR or ticket number."""
-    stmt = select(HallTicket).where(
-        or_(
-            HallTicket.ticket_number == qr_or_ticket,
-            HallTicket.qr_verification_code == qr_or_ticket
+    """Verify a hall ticket using its high-entropy, tenant-bound QR token only."""
+    parts = qr_token.split(".", 2)
+    if len(parts) != 3 or len(parts[2]) < 40:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or unrecognized hall ticket.",
         )
+
+    try:
+        tenant_id = uuid.UUID(hex=parts[0])
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or unrecognized hall ticket.",
+        )
+
+    ticket_number = parts[1]
+    await db.set_rls_context(tenant_id, is_superadmin=False)
+    stmt = select(HallTicket).where(
+        HallTicket.tenant_id == tenant_id,
+        HallTicket.ticket_number == ticket_number,
     )
     res = await db.execute(stmt)
-    ht = res.scalars().first()
+    candidates = res.scalars().all()
+    ht = next(
+        (candidate for candidate in candidates
+         if secrets.compare_digest(candidate.qr_verification_code or "", qr_token)),
+        None,
+    )
     if not ht:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or unrecognized hall ticket.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invalid or unrecognized hall ticket.",
+        )
 
     return {
         "valid": not ht.is_revoked and ht.eligibility_status == "ELIGIBLE",
         "ticket_number": ht.ticket_number,
         "student_name": ht.student_name,
-        "admission_number": ht.admission_number,
         "class_name": ht.class_name,
         "section_code": ht.section_code,
         "seat_number": ht.seat_number,
         "room_number": ht.room_number,
         "eligibility_status": ht.eligibility_status,
-        "is_revoked": ht.is_revoked
+        "is_revoked": ht.is_revoked,
     }
 
 

@@ -75,11 +75,13 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
         is_active=True,
         is_superadmin=True
     )
+    regular_user_email = regular_user.email
+    superadmin_user_email = superadmin_user.email
     db_session.add_all([regular_user, superadmin_user])
     await db_session.commit()
 
     # Login regular user
-    r_reg = await client.post("/api/v1/auth/login", json={"email": regular_user.email, "password": "Pass123!"})
+    r_reg = await client.post("/api/v1/auth/login", json={"email": regular_user_email, "password": "Pass123!"})
     reg_token = r_reg.json()["access_token"]
 
     # Attempt to list tenants as regular user -> MUST BE 403 FORBIDDEN
@@ -91,7 +93,7 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
     assert "Super Admin privileges" in resp_forbidden.json()["detail"]
 
     # Login superadmin
-    r_adm = await client.post("/api/v1/auth/login", json={"email": superadmin_user.email, "password": "AdminPass123!"})
+    r_adm = await client.post("/api/v1/auth/login", json={"email": superadmin_user_email, "password": "AdminPass123!"})
     adm_token = r_adm.json()["access_token"]
 
     # Call as superadmin -> MUST SUCCEED (200)

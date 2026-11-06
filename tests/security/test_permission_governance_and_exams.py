@@ -31,12 +31,18 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
         is_active=True,
         is_superadmin=False
     )
+    tenant_id = tenant.id
+    inst_user_id = inst_user.id
     db_session.add(inst_user)
+    tenant_role = Role(name="Tenant Principal", code="PRINCIPAL", tenant_id=tenant.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=inst_user.id, role_id=tenant_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(
-        subject=str(inst_user.id),
-        tenant_id=str(tenant.id),
+        subject=str(inst_user_id),
+        tenant_id=str(tenant_id),
         is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
@@ -50,7 +56,7 @@ async def test_institution_admin_cannot_access_permission_management(client, db_
     resp_assign = await client.post(
         "/api/v1/platform/permissions/users/assign",
         params={
-            "target_user_id": str(inst_user.id),
+            "target_user_id": str(inst_user_id),
             "role_code": "PRINCIPAL",
             "action": "ASSIGN",
             "reason": "Unauthorized self assignment"
@@ -270,6 +276,10 @@ async def test_result_publication_requires_prior_principal_approval(client, db_s
         is_superadmin=False
     )
     db_session.add(user)
+    operator_role = Role(name="Exam Operator", code="EXAM_CONTROLLER", tenant_id=tenant.id, is_system=False)
+    db_session.add(operator_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=user.id, role_id=operator_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token = create_access_token(

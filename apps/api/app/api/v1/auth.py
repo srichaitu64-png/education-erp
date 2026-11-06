@@ -87,39 +87,35 @@ async def login(
         )
 
     # Institutional alias / code resolution for student & staff IDs
-    clean_pass = req.password.strip() if req.password else ""
-    if login_id in ("admin", "our-school-demo", "demo", "ourschool", "our-school") and clean_pass in ("demo123", "demo"):
-        resolved_email = "admin@ourschool.edu.in"
-    else:
-        CODE_TO_EMAIL = {
-            "emp-chair-01": "chairman@akshara.edu.in",
-            "emp-prin-01": "principal@akshara.edu.in",
-            "emp-acc-01": "accountant@akshara.edu.in",
-            "emp-exam-01": "exams@akshara.edu.in",
-            "emp-tch-01": "teacher.physics@akshara.edu.in",
-            "adm-2026-001": "student.rahul@akshara.edu.in",
-            "par-2026-001": "parent.rahul@akshara.edu.in",
-            "emp-lib-01": "librarian@akshara.edu.in",
-            "superadmin": "admin@platform.erp.in",
-            "admin": "admin@platform.erp.in",
-            "siva": "admin@platform.erp.in",
-            "owner": "admin@platform.erp.in",
-            "our-school-demo": "principal@akshara.edu.in",
-            "akshara": "chairman@akshara-trial.edu.in",
-            "akshara-trial": "chairman@akshara-trial.edu.in",
-            "trial": "chairman@akshara-trial.edu.in",
-            "trial-chair": "chairman@akshara-trial.edu.in",
-            "trial-school-prin": "school.principal@akshara-trial.edu.in",
-            "trial-pu-prin": "pu.principal@akshara-trial.edu.in",
-            "principal": "principal@akshara.edu.in",
-            "accountant": "accountant@akshara.edu.in",
-            "exams": "exams@akshara.edu.in",
-            "teacher": "teacher.physics@akshara.edu.in",
-            "librarian": "librarian@akshara.edu.in",
-            "student": "student.rahul@akshara.edu.in",
-            "parent": "parent.rahul@akshara.edu.in",
-        }
-        resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
+    CODE_TO_EMAIL = {
+        "emp-chair-01": "chairman@akshara.edu.in",
+        "emp-prin-01": "principal@akshara.edu.in",
+        "emp-acc-01": "accountant@akshara.edu.in",
+        "emp-exam-01": "exams@akshara.edu.in",
+        "emp-tch-01": "teacher.physics@akshara.edu.in",
+        "adm-2026-001": "student.rahul@akshara.edu.in",
+        "par-2026-001": "parent.rahul@akshara.edu.in",
+        "emp-lib-01": "librarian@akshara.edu.in",
+        "superadmin": "admin@platform.erp.in",
+        "admin": "admin@platform.erp.in",
+        "siva": "admin@platform.erp.in",
+        "owner": "admin@platform.erp.in",
+        "our-school-demo": "principal@akshara.edu.in",
+        "akshara": "chairman@akshara-trial.edu.in",
+        "akshara-trial": "chairman@akshara-trial.edu.in",
+        "trial": "chairman@akshara-trial.edu.in",
+        "trial-chair": "chairman@akshara-trial.edu.in",
+        "trial-school-prin": "school.principal@akshara-trial.edu.in",
+        "trial-pu-prin": "pu.principal@akshara-trial.edu.in",
+        "principal": "principal@akshara.edu.in",
+        "accountant": "accountant@akshara.edu.in",
+        "exams": "exams@akshara.edu.in",
+        "teacher": "teacher.physics@akshara.edu.in",
+        "librarian": "librarian@akshara.edu.in",
+        "student": "student.rahul@akshara.edu.in",
+        "parent": "parent.rahul@akshara.edu.in",
+    }
+    resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
 
     await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
 
@@ -155,30 +151,6 @@ async def login(
     valid_password = False
     if user and verify_password(req.password, user.hashed_password):
         valid_password = True
-    elif user and user.is_superadmin and req.password in (
-        "AdminSecurePassword2026!",
-        "Adm1nSecurePassword2026!",
-        "SuperAdmin@2026!",
-        "SuperAdm1n@2026!",
-        "Myerp2026@",
-        "admin123",
-        "siva",
-        "admin",
-        "superadmin",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
-        user.must_change_password = False
-    elif user and req.password in (
-        "ChairmanTrialSecure2026!",
-        "PrincipalSecurePassword2026!",
-        "admin123@",
-        "admin123",
-        "demo123",
-        "demo",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
 
     if not user or not valid_password:
         if user:
@@ -615,12 +587,13 @@ async def first_login_password_setup(
     Mandatory password change for accounts flagged with must_change_password.
     Prevents standard system access until completed.
     """
-    # Validate account is flagged for first login setup (or allow idempotent success)
+    # First-login setup is only valid for accounts explicitly flagged by the server.
+    # Do not turn this endpoint into a general password-change or verification bypass.
     if not current_user.must_change_password:
-        return {
-            "message": "Password setup verified. Account is ready.",
-            "password_changed_at": current_user.password_changed_at
-        }
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not flagged for first-login password setup."
+        )
 
     if not verify_password(req.current_password, current_user.hashed_password):
         raise HTTPException(

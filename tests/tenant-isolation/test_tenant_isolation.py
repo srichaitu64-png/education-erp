@@ -4,8 +4,24 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.tenants.models import Tenant, Campus
-from app.modules.identity.models import User
+from app.modules.identity.models import User, Role, UserRole
 from app.core.security import create_access_token, hash_password
+
+
+@pytest.mark.asyncio
+async def test_api_test_database_role_cannot_bypass_rls(db_session: AsyncSession):
+    """The API/test connection must not be a PostgreSQL superuser or BYPASSRLS role."""
+    row = (
+        await db_session.execute(
+            text("""
+                SELECT r.rolsuper, r.rolbypassrls
+                FROM pg_catalog.pg_roles r
+                WHERE r.rolname = current_user
+            """)
+        )
+    ).one()
+    assert row.rolsuper is False
+    assert row.rolbypassrls is False
 
 
 @pytest.mark.asyncio
@@ -126,6 +142,10 @@ async def test_api_tenant_boundary_enforcement(client, db_session: AsyncSession)
         is_superadmin=False
     )
     db_session.add(user_a)
+    tenant_role = Role(name="Alpha Principal", code="PRINCIPAL", tenant_id=tenant_a.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=user_a.id, role_id=tenant_role.id, tenant_id=tenant_a.id))
     await db_session.commit()
 
     tenant_a_id = tenant_a.id

@@ -50,7 +50,7 @@ async def test_01_two_administrative_layers_strictly_separated(client, db_sessio
     await db_session.commit()
 
     token_inst = create_access_token(subject=str(inst_admin.id), tenant_id=str(tenant.id), is_superadmin=False)
-    token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
+    token_owner = create_access_token(subject=str(platform_owner_id), is_superadmin=True)
 
     # Institution user attempting to access platform tenant onboarding: MUST BE 403
     resp_inst_tenants = await client.get("/api/v1/platform/tenants", headers={"Authorization": f"Bearer {token_inst}"})
@@ -94,11 +94,14 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
         is_active=True,
         is_superadmin=True
     )
+    tenant_id = tenant.id
+    platform_dev_id = platform_dev.id
+    platform_owner_id = platform_owner.id
     db_session.add_all([platform_dev, platform_owner])
     await db_session.commit()
 
-    token_dev = create_access_token(subject=str(platform_dev.id), is_superadmin=False)
-    token_owner = create_access_token(subject=str(platform_owner.id), is_superadmin=True)
+    token_dev = create_access_token(subject=str(platform_dev_id), is_superadmin=False)
+    token_owner = create_access_token(subject=str(platform_owner_id), is_superadmin=True)
 
     # 1. Platform Developer trying to access platform-wide tenant management: MUST BE 403
     resp_dev_platform = await client.get("/api/v1/platform/tenants", headers={"Authorization": f"Bearer {token_dev}"})
@@ -110,7 +113,7 @@ async def test_02_platform_developer_least_privilege_and_support_consent(client,
 
     # 3. Superadmin requests support access for Developer
     resp_req = await client.post(
-        f"/api/v1/platform/support-sessions/request?tenant_id={tenant.id}&reason=Investigate+grade+discrepancy",
+        f"/api/v1/platform/support-sessions/request?tenant_id={tenant_id}&reason=Investigate+grade+discrepancy",
         headers={"Authorization": f"Bearer {token_owner}"}
     )
     assert resp_req.status_code == 200
@@ -152,10 +155,12 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
         is_active=True,
         is_superadmin=False
     )
+    tenant_id = tenant.id
+    inst_user_id = inst_user.id
     db_session.add(inst_user)
     await db_session.commit()
 
-    token_inst = create_access_token(subject=str(inst_user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    token_inst = create_access_token(subject=str(inst_user_id), tenant_id=str(tenant_id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token_inst}"}
 
     # Attempt to assign Super Admin permission or invoke permission matrix API
@@ -163,8 +168,8 @@ async def test_03_institution_admin_cannot_promote_to_platform_owner(client, db_
     assert resp_matrix.status_code == 403, "Institution user accessed platform permissions matrix!"
 
     resp_assign = await client.post("/api/v1/platform/permissions/users/assign", headers=headers, json={
-        "user_id": str(inst_user.id),
-        "target_tenant_id": str(tenant.id),
+        "user_id": str(inst_user_id),
+        "target_tenant_id": str(tenant_id),
         "role_codes": ["SUPER_ADMIN"]
     })
     assert resp_assign.status_code == 403, "Institution user promoted account to SUPER_ADMIN!"
@@ -186,6 +191,14 @@ async def test_04_tenant_data_isolation_multi_tenant(client, db_session: AsyncSe
     user_1 = User(email=f"admin_{uuid.uuid4().hex[:6]}@nps.edu", hashed_password=hash_password("Pass#1234"), full_name="NPS Admin", is_active=True, is_superadmin=False)
     user_2 = User(email=f"admin_{uuid.uuid4().hex[:6]}@cottons.edu", hashed_password=hash_password("Pass#1234"), full_name="Cottons Admin", is_active=True, is_superadmin=False)
     db_session.add_all([user_1, user_2])
+    role_1 = Role(name="Tenant A Administrator", code="INSTITUTION_ADMIN", tenant_id=tenant_1.id, is_system=False)
+    role_2 = Role(name="Tenant B Administrator", code="INSTITUTION_ADMIN", tenant_id=tenant_2.id, is_system=False)
+    db_session.add_all([role_1, role_2])
+    await db_session.flush()
+    db_session.add_all([
+        UserRole(user_id=user_1.id, role_id=role_1.id, tenant_id=tenant_1.id),
+        UserRole(user_id=user_2.id, role_id=role_2.id, tenant_id=tenant_2.id),
+    ])
     await db_session.commit()
 
     token_1 = create_access_token(subject=str(user_1.id), tenant_id=str(tenant_1.id), is_superadmin=False)
@@ -228,6 +241,10 @@ async def test_05_platform_metrics_revenue_not_leaked_to_institutions(client, db
     user = User(email=f"principal_{uuid.uuid4().hex[:6]}@oxford.edu", hashed_password=hash_password("Pass#1234"), full_name="Principal Oxford", is_active=True, is_superadmin=False)
     owner = User(email=f"owner_{uuid.uuid4().hex[:6]}@educationos.io", hashed_password=hash_password("Owner#1234"), full_name="Platform Owner", is_active=True, is_superadmin=True)
     db_session.add_all([user, owner])
+    tenant_role = Role(name="Institution Principal", code="PRINCIPAL", tenant_id=tenant.id, is_system=False)
+    db_session.add(tenant_role)
+    await db_session.flush()
+    db_session.add(UserRole(user_id=user.id, role_id=tenant_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     token_user = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)

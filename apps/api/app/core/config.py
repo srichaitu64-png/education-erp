@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Enterprise Education ERP SaaS"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "change-this-to-a-secure-random-256-bit-key-in-production"
+    INITIAL_SUPERADMIN_PASSWORD: Optional[str] = None
+    PAYMENT_WEBHOOK_SECRET: Optional[str] = None
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -16,6 +18,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     SYNC_DATABASE_URL: str = "postgresql+psycopg2://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
     TEST_DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_test"
+    TEST_ADMIN_DATABASE_URL: Optional[str] = None
 
     # Domain routing
     BASE_DOMAIN: str = "erp.local"
@@ -38,13 +41,23 @@ class Settings(BaseSettings):
         if env == "production":
             if (
                 len(v) < 32
-                or "change-this" in v.lower()
+                or any(marker in v.lower() for marker in ("change-this", "replace_with", "placeholder", "example"))
                 or v in ("secret", "password", "default")
             ):
                 raise ValueError(
                     "Insecure SECRET_KEY: In production, SECRET_KEY must be a cryptographically secure string of at least 32 characters and cannot use placeholder values."
                 )
         return v
+
+    @field_validator("INITIAL_SUPERADMIN_PASSWORD")
+    @classmethod
+    def validate_initial_superadmin_password(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            if len(v) < 14:
+                raise ValueError("INITIAL_SUPERADMIN_PASSWORD must be at least 14 characters.")
+            if v.strip() != v:
+                raise ValueError("INITIAL_SUPERADMIN_PASSWORD must not contain leading or trailing whitespace.")
+        return v or None
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
