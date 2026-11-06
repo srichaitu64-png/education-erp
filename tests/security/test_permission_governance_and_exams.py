@@ -75,7 +75,7 @@ async def test_superadmin_lockout_protection(client, db_session: AsyncSession):
     await db_session.execute(text("SET LOCAL app.is_superadmin = 'true'"))
 
     # Fetch super admin user
-    stmt = select(User).where(User.email == "chairman@ourschool.edu.in")
+    stmt = select(User).where(User.email == "admin@platform.erp.in")
     res = await db_session.execute(stmt)
     admin = res.scalars().first()
 
@@ -157,7 +157,7 @@ async def test_offline_examination_sync_prevents_silent_overwrite_of_approved_ma
     await db_session.commit()
 
     # Fetch admin user for valid token subject
-    stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_adm = select(User).where(User.email == "chairman@ourschool.edu.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
 
@@ -213,14 +213,14 @@ async def test_external_exam_provider_credentials_not_leaked(client, db_session:
     db_session.add(provider)
     await db_session.commit()
 
-    stmt_adm = select(User).where(User.email == "admin@platform.erp.in")
+    stmt_adm = select(User).where(User.email == "chairman@ourschool.edu.in")
     res_adm = await db_session.execute(stmt_adm)
     admin_user = res_adm.scalars().first()
 
     token = create_access_token(
         subject=str(admin_user.id),
         tenant_id=str(tenant.id),
-        is_superadmin=True
+        is_superadmin=False
     )
     headers = {"Authorization": f"Bearer {token}"}
 
