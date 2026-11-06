@@ -82,7 +82,7 @@ async def get_current_user(
         except ValueError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant ID in token")
         await db.execute(
-            text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(tenant_uuid)}
         )
     else:
