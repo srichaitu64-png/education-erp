@@ -26,9 +26,9 @@ def _alembic(*args: str, db_url: str | None = None) -> subprocess.CompletedProce
 
 
 def _admin_connection():
-    raw_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    raw_url = os.getenv("TEST_ADMIN_DATABASE_URL")
     if not raw_url:
-        raise RuntimeError("TEST_DATABASE_URL or DATABASE_URL must be set for migration tests")
+        raise RuntimeError("TEST_ADMIN_DATABASE_URL must be set for isolated migration lifecycle tests")
     url = make_url(raw_url)
     return psycopg2.connect(
         host=url.host or "127.0.0.1",
