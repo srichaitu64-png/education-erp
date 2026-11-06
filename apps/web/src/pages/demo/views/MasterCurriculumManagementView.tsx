@@ -177,50 +177,73 @@ export const MasterCurriculumManagementView: React.FC = () => {
 
   const handleSaveAssessment = async (mappingId: string) => {
     try {
-      await api.put(`/academic/curriculum/mappings/${mappingId}`, {
+      const response = await api.put(`/academic/curriculum/mappings/${mappingId}`, {
         theory_max_marks: Number(editTheory),
         practical_max_marks: Number(editPractical),
+        total_max_marks: Number(editTheory) + Number(editPractical),
         theory_pass_marks: Number(editPass),
+        practical_pass_marks: 0,
+        total_pass_marks: Number(editPass),
         assigned_teacher_name: editTeacher,
       });
-    } catch (err) {
-      console.warn('Backend assessment update sync notice:', err);
+      updateCurriculumAssessment(mappingId, {
+        theory_max: response.data.theory_max_marks,
+        practical_max: response.data.practical_max_marks,
+        passing_marks: response.data.total_pass_marks,
+        assigned_teacher: response.data.assigned_teacher_name || 'Unassigned',
+      });
+      setEditingAssessmentId(null);
+    } catch (err: any) {
+      console.error('Curriculum assessment update failed:', err);
+      window.alert(err?.response?.data?.detail || 'Unable to update assessment settings. No local changes were applied.');
     }
-
-    updateCurriculumAssessment(mappingId, {
-      theory_max: Number(editTheory),
-      practical_max: Number(editPractical),
-      passing_marks: Number(editPass),
-      assigned_teacher: editTeacher,
-    });
-    setEditingAssessmentId(null);
   };
 
   const handleArchiveSubjectAction = async (subjectId: string) => {
     try {
       await api.delete(`/academic/subjects/${subjectId}`);
-    } catch (err) {
-      console.warn('Backend archive subject sync notice:', err);
+      archiveMasterSubject(subjectId);
+    } catch (err: any) {
+      console.error('Subject archive failed:', err);
+      window.alert(err?.response?.data?.detail || 'Unable to archive this subject.');
     }
-    archiveMasterSubject(subjectId);
   };
 
   const handleRemoveSubjectFromClassAction = async (mappingId: string) => {
     try {
       await api.delete(`/academic/curriculum/mappings/${mappingId}`);
-    } catch (err) {
-      console.warn('Backend unmap sync notice:', err);
+      removeSubjectFromClass(mappingId);
+    } catch (err: any) {
+      console.error('Curriculum unmap failed:', err);
+      window.alert(err?.response?.data?.detail || 'Unable to remove this curriculum mapping.');
     }
-    removeSubjectFromClass(mappingId);
   };
 
   const handleLoadStandardTemplateAction = async () => {
     try {
-      await api.post('/academic/subjects/templates/load-standard');
-    } catch (err) {
-      console.warn('Backend template load sync notice:', err);
+      const response = await api.post('/academic/subjects/templates/load-standard');
+      const subjects = await api.get('/academic/subjects');
+      if (Array.isArray(subjects.data)) {
+        subjects.data.forEach((subject: any) => {
+          if (!masterSubjectCatalogue.some((item) => item.code === subject.code)) {
+            addMasterSubject({
+              code: subject.code,
+              name: subject.name,
+              category: subject.category,
+              has_practical: subject.has_practical,
+              default_theory_max: subject.default_theory_max,
+              default_practical_max: subject.default_practical_max,
+              credits: subject.credits,
+              description: subject.description,
+            });
+          }
+        });
+      }
+      window.alert(response.data?.message || 'Standard subjects loaded successfully.');
+    } catch (err: any) {
+      console.error('Standard subject template load failed:', err);
+      window.alert(err?.response?.data?.detail || 'Unable to load the standard subject template.');
     }
-    loadStandardMasterCatalogueTemplate();
   };
 
   return (
