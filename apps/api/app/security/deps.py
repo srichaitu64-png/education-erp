@@ -126,7 +126,7 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    if token_tenant and not any(ur.tenant_id == tenant_uuid for ur in user.roles):
+    if token_tenant and not user.is_superadmin and not any(ur.tenant_id == tenant_uuid for ur in user.roles):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The authenticated account is not assigned to this institution."
