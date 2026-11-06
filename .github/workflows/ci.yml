@@ -17,10 +17,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Frontend Dependencies
         working-directory: ./apps/web
@@ -73,3 +73,21 @@ jobs:
         run: |
           pytest tests/ -v
 
+
+  container-build:
+    name: Docker Compose Configuration & Image Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        env:
+          POSTGRES_PASSWORD: ci-postgres-password
+          ERP_APP_PASSWORD: ci-application-password
+          SECRET_KEY: ci-only-secret-key-for-compose-validation-32-chars
+          BOOTSTRAP_SUPERADMIN_PASSWORD: CI-only-Bootstrap-Password-2026!
+        run: docker compose config --quiet
+
+      - name: Build Production Containers
+        run: docker compose build --pull
