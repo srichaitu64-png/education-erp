@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   Users,
@@ -25,12 +25,39 @@ import {
   Download
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { api } from '../../services/api';
 import { FeatureGate } from '../../components/FeatureGate';
 import { useDemoStore, DemoFeeInvoice } from '../../store/demoStore';
 
 export const InstitutionDashboard: React.FC = () => {
   const { tenant, currentPlan, entitlements } = useAuthStore();
   const location = useLocation();
+  const [metrics, setMetrics] = useState<any | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const loadMetrics = async () => {
+      setMetricsLoading(true);
+      try {
+        const response = await api.get('/institution/metrics');
+        if (active) {
+          setMetrics(response.data);
+          setMetricsError(null);
+        }
+      } catch (error: any) {
+        if (active) {
+          setMetrics(null);
+          setMetricsError(error.response?.data?.detail || 'Unable to load live institution metrics.');
+        }
+      } finally {
+        if (active) setMetricsLoading(false);
+      }
+    };
+    loadMetrics();
+    return () => { active = false; };
+  }, []);
 
   const {
     students,
@@ -581,13 +608,13 @@ export const InstitutionDashboard: React.FC = () => {
           <div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-800/80 text-blue-200 border border-blue-700 mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
-              Verified Institution
+              {metrics?.data_source === 'tenant_database' ? 'Live Database Metrics' : 'Institution Workspace'}
             </span>
             <h2 className="text-2xl font-black">
               {tenant?.name || (tenant?.code === 'akshara-trial' || tenant?.code === 'pilot-clean' ? 'PILOT INSTITUTION CAMPUS' : 'OUR SCHOOL')}
             </h2>
             <p className="text-blue-200 text-sm mt-1">
-              Academic Year 2026–2027 • Main Campus Active • Multi-Tenant Isolated
+              Live institution workspace • Tenant-scoped operational data
             </p>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-right">
@@ -602,15 +629,19 @@ export const InstitutionDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* KPI Cards */}
+        {/* KPI Cards — sourced from the authenticated tenant database */}
+        {metricsError && (
+          <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Live metrics unavailable: {metricsError}. No sample figures are being displayed.
+          </div>
+        )}
+        <div className="text-xs text-gray-400">Operational snapshot • {metrics?.as_of ? new Date(metrics.as_of).toLocaleString() : 'Waiting for database'}</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link to="/app/students" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Active Students</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{students.length} / 750</p>
-              <div className="w-32 bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${(students.length / 750) * 100}%` }}></div>
-              </div>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{metricsLoading ? '…' : (metrics?.enrolled_students ?? '—')}</p>
+              <p className="text-xs text-gray-400 mt-1">{metrics?.configured_sections ?? 0} active sections</p>
             </div>
             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6" />
@@ -620,8 +651,8 @@ export const InstitutionDashboard: React.FC = () => {
           <Link to="/app/attendance" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-emerald-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Today's Attendance</p>
-              <p className="text-2xl font-bold text-emerald-600 mt-1">94.8%</p>
-              <p className="text-xs text-gray-400 mt-1">427 present • 23 absent</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">{metricsLoading ? '…' : (metrics?.today_attendance_pct == null ? 'No records' : `${metrics.today_attendance_pct}%`)}</p>
+              <p className="text-xs text-gray-400 mt-1">{metrics?.today_attendance_records ?? 0} records today</p>
             </div>
             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <CalendarCheck className="w-6 h-6" />
@@ -631,8 +662,8 @@ export const InstitutionDashboard: React.FC = () => {
           <Link to="/app/fees" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-amber-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Total Collections</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₹1,15,000</p>
-              <p className="text-xs text-gray-400 mt-1">Cash, UPI & Gateway</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{metricsLoading ? '…' : `₹${Number(metrics?.total_fee_collected || 0).toLocaleString('en-IN')}`}</p>
+              <p className="text-xs text-gray-400 mt-1">₹{Number(metrics?.outstanding_fees || 0).toLocaleString('en-IN')} outstanding</p>
             </div>
             <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
               <CreditCard className="w-6 h-6" />
@@ -642,8 +673,8 @@ export const InstitutionDashboard: React.FC = () => {
           <Link to="/app/examinations" className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
             <div>
               <p className="text-xs text-gray-500 font-medium uppercase">Examinations</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">Active</p>
-              <p className="text-xs text-gray-400 mt-1">Mid-Term Grade Registry</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{metricsLoading ? '…' : (metrics?.upcoming_examinations ?? 0)}</p>
+              <p className="text-xs text-gray-400 mt-1">Upcoming examinations</p>
             </div>
             <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
               <Award className="w-6 h-6" />
