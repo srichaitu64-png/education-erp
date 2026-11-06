@@ -1451,7 +1451,7 @@ interface DemoState {
   updateMasterSubject: (id: string, updates: Partial<MasterSubjectItem>) => void;
   archiveMasterSubject: (id: string) => void;
   loadStandardMasterCatalogueTemplate: () => void;
-  mapSubjectToClass: (mapping: Omit<CurriculumMappingItem, 'id'>) => void;
+  mapSubjectToClass: (mapping: Omit<CurriculumMappingItem, 'id'> & { id?: string }) => void;
   removeSubjectFromClass: (mappingId: string) => void;
   updateCurriculumAssessment: (mappingId: string, updates: Partial<CurriculumMappingItem>) => void;
   resetTrialData: () => void;
@@ -4622,7 +4622,7 @@ export const useDemoStore = create<DemoState>()(
   // Curriculum Mapping Actions
   mapSubjectToClass: (mapping) => {
     const newMap: CurriculumMappingItem = {
-      id: `cm-${Date.now()}`,
+      id: mapping.id || `cm-${Date.now()}`,
       ...mapping,
     };
     set((state) => ({ curriculumMappings: [...state.curriculumMappings, newMap] }));
