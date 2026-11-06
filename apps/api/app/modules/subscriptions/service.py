@@ -165,9 +165,17 @@ class EntitlementService:
 
         # Check if plan contains this feature
         plan = subscription.plan
-        included_feature_ids = {pf.feature_id for pf in plan.features if pf.is_included}
+        plan_feature_map = {pf.feature_id: pf.is_included for pf in plan.features}
+        # An explicit plan-feature row is authoritative, including an explicit
+        # exclusion. Tier-based fallback is retained for older plans/catalog rows
+        # that have not yet been materialized in the association table.
+        is_included = (
+            plan_feature_map[feature_id]
+            if feature_id in plan_feature_map
+            else plan.tier >= feature.min_plan_tier
+        )
 
-        if feature_id in included_feature_ids or plan.tier >= feature.min_plan_tier:
+        if is_included:
             return FeatureAccessResult(
                 is_enabled=True,
                 feature_id=feature_id,
