@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import User
+from app.modules.tenants.models import Tenant
 from app.modules.subscriptions.models import Subscription, SubscriptionAuditLog
 from app.modules.finance.models import (
     FeeStructure,
@@ -271,15 +272,26 @@ async def collect_fee_and_generate_receipt(
     # Count receipts to generate deterministic monotonic receipt number
     count_stmt = select(func.count(FeeReceipt.id)).where(FeeReceipt.tenant_id == tenant_id)
     receipt_count = (await db.execute(count_stmt)).scalar() or 0
-    receipt_num = f"RCP-CAMP-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
+
+    tenant_obj = None
+    if tenant_id:
+        tenant_obj = (await db.execute(select(Tenant).where(Tenant.id == tenant_id))).scalars().first()
+
+    code_prefix = "AKSH"
+    inst_name = "Akshara Global Educational Institutions"
+    if tenant_obj and tenant_obj.code not in ["akshara", "our-school-demo"]:
+        code_prefix = tenant_obj.code[:4].upper()
+        inst_name = tenant_obj.name
+
+    receipt_num = f"RCP-{code_prefix}-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
 
     # Institution branding metadata
     branding = {
-        "institution_name": "Pilot Educational Institutions",
+        "institution_name": inst_name,
         "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-        "address": "Campus Ground, Knowledge Corridor, Bengaluru, Karnataka - 560085",
-        "phone": "+91 80 2345 6789",
-        "email": "accounts@institution.erp.in",
+        "address": (tenant_obj.address if tenant_obj and tenant_obj.address else "Campus Ground, Knowledge Corridor, Bengaluru, Karnataka - 560085"),
+        "phone": (tenant_obj.phone if tenant_obj and tenant_obj.phone else "+91 80 2345 6789"),
+        "email": (tenant_obj.email if tenant_obj and tenant_obj.email else "accounts@institution.erp.in"),
         "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal",
     }
 

@@ -191,9 +191,8 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
 
       {/* Sidebar Container - Clean & Neat White Theme (eSkooly Style) */}
       <aside
-        className={`w-full md:w-64 bg-white text-slate-700 border-r border-slate-200/90 flex flex-col shrink-0 overflow-y-auto transition-all ${
-          isMobileOpen ? 'block' : 'hidden md:flex'
-        }`}
+        className={`w-full md:w-64 bg-white text-slate-700 border-r border-slate-200/90 flex flex-col shrink-0 overflow-y-auto transition-all ${isMobileOpen ? 'block' : 'hidden md:flex'
+          }`}
       >
         {/* Campus / Institution Brand Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -268,11 +267,10 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
                             onSelectTab(item.id);
                             setIsMobileOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            isActive
-                              ? 'bg-blue-600 text-white shadow-sm font-black'
-                              : 'text-slate-600 hover:bg-blue-50/70 hover:text-blue-700'
-                          }`}
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive
+                            ? 'bg-blue-600 text-white shadow-sm font-black'
+                            : 'text-slate-600 hover:bg-blue-50/70 hover:text-blue-700'
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 truncate">
                             <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />

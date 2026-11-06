@@ -615,12 +615,12 @@ async def first_login_password_setup(
     Mandatory password change for accounts flagged with must_change_password.
     Prevents standard system access until completed.
     """
-    # Validate account is flagged for first login setup (or allow idempotent success)
+    # Validate account is flagged for first login setup
     if not current_user.must_change_password:
-        return {
-            "message": "Password setup verified. Account is ready.",
-            "password_changed_at": current_user.password_changed_at
-        }
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is not flagged for mandatory first-login password change."
+        )
 
     if not verify_password(req.current_password, current_user.hashed_password):
         raise HTTPException(
