@@ -299,7 +299,7 @@ async def test_curriculum_mapping_and_marks_validation(client: AsyncClient, db_s
 
 
 @pytest.mark.asyncio
-async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncClient, db_session: AsyncSession):
+async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncClient, db_session: AsyncSession, app_db_session: AsyncSession):
     """
     Verify multi-tenant isolation: Tenant B cannot access or modify Tenant A's custom subjects or curriculum.
     """
@@ -370,12 +370,12 @@ async def test_tenant_isolation_on_custom_subjects_and_curriculum(client: AsyncC
     assert res_b_del.status_code == 404
 
     # Even setting the legacy custom GUC must not grant a cross-tenant RLS bypass.
-    await db_session.execute(
+    await app_db_session.execute(
         text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
         {"tenant_id": str(tenant_b.id)}
     )
-    await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
-    isolated_subject = await db_session.get(SubjectCatalog, uuid.UUID(subject_a_id))
+    await app_db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+    isolated_subject = await app_db_session.get(SubjectCatalog, uuid.UUID(subject_a_id))
     assert isolated_subject is None
 
 
