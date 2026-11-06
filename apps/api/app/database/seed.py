@@ -4,7 +4,11 @@ from sqlalchemy import select, or_, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
+from app.core.security import hash_password, generate_temporary_password, validate_password_strength
+from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 from app.modules.tenants.models import Tenant, Campus
 from app.modules.identity.models import User, Role, Permission, UserRole, role_permissions
 from app.modules.subscriptions.models import (
@@ -320,8 +324,8 @@ STANDARD_CATALOG_SUBJECTS: List[Dict[str, Any]] = [
 
 async def seed_initial_data(db: AsyncSession) -> None:
     """Idempotently seed feature catalog, subscription plans, permissions, and superadmin."""
-    # Temporarily establish administrative context for seed data insertion under NOBYPASSRLS
-    await db.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
+    # Seed runs before RLS policies are enabled on a fresh database. On later
+    # production boots, all global seed records already exist and are read-only.
     # 1. Feature Catalog
     for f_def in FEATURE_DEFINITIONS:
         stmt = select(FeatureCatalog).where(FeatureCatalog.id == f_def["id"])
@@ -493,30 +497,36 @@ async def seed_initial_data(db: AsyncSession) -> None:
     res = await db.execute(stmt)
     super_admin = res.scalars().first()
     if not super_admin:
+        initial_password = settings.INITIAL_SUPERADMIN_PASSWORD
+        if settings.ENVIRONMENT.lower() == "production" and not initial_password:
+            raise RuntimeError("INITIAL_SUPERADMIN_PASSWORD must be configured for first production bootstrap.")
+        if not initial_password:
+            initial_password = generate_temporary_password()
+            logger.warning("Generated one-time bootstrap password for %s: %s", admin_email, initial_password)
+        is_valid, password_error = validate_password_strength(initial_password)
+        if not is_valid:
+            raise RuntimeError(f"INITIAL_SUPERADMIN_PASSWORD does not meet password policy: {password_error}")
         super_admin = User(
             email=admin_email,
-            hashed_password=hash_password("Myerp2026@"),
+            hashed_password=hash_password(initial_password),
             full_name="Platform Super Administrator",
             is_active=True,
             is_superadmin=True,
-            phone="+91 98450 12345"
+            phone=None
         )
         db.add(super_admin)
         await db.flush()
 
-        # Assign SUPER_ADMIN role
         stmt_role = select(Role).where(Role.code == "SUPER_ADMIN", Role.tenant_id == None)
         res_role = await db.execute(stmt_role)
         s_role = res_role.scalars().first()
         if s_role:
-            ur = UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None)
-            db.add(ur)
-    else:
-        super_admin.hashed_password = hash_password("Myerp2026@")
-        super_admin.phone = "+91 98450 12345"
-        super_admin.failed_login_attempts = 0
-        super_admin.locked_until = None
-        await db.flush()
+            db.add(UserRole(user_id=super_admin.id, role_id=s_role.id, tenant_id=None))
+
+    # Never overwrite an existing platform owner's password during application startup.
+    if settings.ENVIRONMENT.lower() == "production":
+        await db.commit()
+        return
 
     # 6. Seed Default Demonstration Institution: OUR SCHOOL (Live Demo)
     stmt_tenant = select(Tenant).where(or_(Tenant.code == "our-school-demo", Tenant.code == "akshara"))
@@ -1216,7 +1226,6 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 db.add(UserRole(user_id=tu.id, role_id=ro.id, tenant_id=trial_tenant.id))
 
     await db.commit()
-    await db.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
 
 
 if __name__ == "__main__":
