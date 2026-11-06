@@ -18,7 +18,7 @@ from app.core.security import (
     hash_token,
     generate_temporary_password
 )
-from app.database.session import get_db
+from app.database.session import get_db, set_current_tenant_id
 from app.modules.subscriptions.service import EntitlementService
 from app.modules.identity.models import (
     User,
@@ -90,15 +90,10 @@ async def login(
     # Never map public aliases to privileged accounts or rely on demo credentials.
     resolved_email = login_id
 
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # Resolve the account without loading tenant-scoped role rows. Never elevate
+    # the database session to the platform-superadmin RLS bypass for login.
     stmt = (
         select(User)
-        .options(
-            selectinload(User.roles)
-            .selectinload(UserRole.role)
-            .selectinload(Role.permissions)
-        )
         .where(
             or_(
                 func.lower(User.email) == resolved_email,
@@ -130,7 +125,7 @@ async def login(
                 user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
                 sec_event = AccountSecurityEvent(
                     user_id=user.id,
-                    tenant_id=user.roles[0].tenant_id if user.roles else None,
+                    tenant_id=None,
                     event_type="ACCOUNT_LOCKED",
                     ip_address=ip_addr,
                     user_agent=user_agent,
@@ -170,7 +165,7 @@ async def login(
         challenge_token = create_access_token(
             subject=str(user.id),
             expires_delta=timedelta(minutes=5),
-            extra_claims={"type": "mfa_challenge"}
+            extra_claims={"type": "mfa_challenge", "tenant_code": req.tenant_code}
         )
         return TokenResponse(
             access_token=None,
@@ -195,7 +190,7 @@ async def login(
     effective_permissions: List[str] = []
     tenant_id = None
 
-    if user.is_superadmin or any(ur.role.code in ("SUPER_ADMIN", "PLATFORM_OWNER") for ur in user.roles):
+    if user.is_superadmin:
         authority_level = "PLATFORM"
         destination = "/platform"
         primary_role = "SUPER_ADMIN"
@@ -203,40 +198,49 @@ async def login(
         entitled_modules = ["platform", "tenants", "subscriptions", "governance", "audit"]
         effective_permissions = ["*"]
     else:
-        # Institutional user account resolution
-        tenant = None
-        target_tenant_id = None
+        # Institution code is required so tenant-scoped role rows can be loaded
+        # only after the database transaction has the corresponding RLS context.
+        if not req.tenant_code or not req.tenant_code.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Institution code is required for institutional sign-in."
+            )
+        req_code = req.tenant_code.lower().strip()
+        tenant_result = await db.execute(select(Tenant).where(Tenant.code == req_code))
+        tenant = tenant_result.scalars().first()
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found.")
 
-        if req.tenant_code:
-            req_code = req.tenant_code.lower().strip()
-            stmt_t = select(Tenant).where(Tenant.code == req_code)
-            res_t = await db.execute(stmt_t)
-            tenant = res_t.scalars().first()
-            if not tenant:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
-            
-            user_tenant_ids = {str(ur.tenant_id) for ur in user.roles if ur.tenant_id}
-            if str(tenant.id) not in user_tenant_ids:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Unauthorized tenant selection: User does not hold an active role assignment in this institution."
-                )
-            target_tenant_id = tenant.id
-        else:
-            user_tenant_ids = {ur.tenant_id for ur in user.roles if ur.tenant_id}
-            if len(user_tenant_ids) > 1:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institution code is required for accounts assigned to multiple institutions.")
-            if len(user_tenant_ids) == 1:
-                target_tenant_id = next(iter(user_tenant_ids))
-                stmt_t = select(Tenant).where(Tenant.id == target_tenant_id)
-                res_t = await db.execute(stmt_t)
-                tenant = res_t.scalars().first()
+        # Apply tenant scope before querying UserRole/Role/Permission (RLS protected).
+        set_current_tenant_id(tenant.id)
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(tenant.id)}
+        )
+        scoped_user_result = await db.execute(
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = scoped_user_result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account could not be resolved.")
+        scoped_roles = [ur for ur in user.roles if ur.tenant_id == tenant.id]
+        if not scoped_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has no active role assignment in the selected institution."
+            )
+        target_tenant_id = tenant.id
 
         if not tenant:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active institution workspace is assigned to this account.")
 
         if tenant:
-            scoped_roles = [ur for ur in user.roles if ur.tenant_id == tenant.id]
             if not scoped_roles:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active role assignment exists for this institution.")
             tenant_id = str(tenant.id)
