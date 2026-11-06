@@ -78,6 +78,7 @@ async def get_current_user(
         try:
             tenant_uuid = uuid.UUID(token_tenant)
             set_current_tenant_id(tenant_uuid)
+            db.info["rls_tenant_id"] = tenant_uuid
         except ValueError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant ID in token")
         await db.execute(
@@ -89,13 +90,14 @@ async def get_current_user(
         # Ordinary users are checked against their role membership immediately
         # after the user record and tenant-scoped roles are loaded.
         tenant_uuid = get_current_tenant_id()
+        db.info["rls_tenant_id"] = tenant_uuid
         if tenant_uuid:
             await db.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
                 {"tenant_id": str(tenant_uuid)}
             )
         else:
-            await db.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
+            await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
 
     stmt = (
         select(User)
@@ -114,8 +116,9 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
+    db.info["rls_user_id"] = user.id
     await db.execute(
-        text("SELECT set_config('app.current_user_id', :user_id, false)"),
+        text("SELECT set_config('app.current_user_id', :user_id, true)"),
         {"user_id": str(user.id)}
     )
 
@@ -329,8 +332,9 @@ async def verify_tenant_access_or_support(
     for ur in current_user.roles:
         if ur.tenant_id == tenant_id:
             set_current_tenant_id(tenant_id)
+            db.info["rls_tenant_id"] = tenant_id
             await db.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
                 {"tenant_id": str(tenant_id)}
             )
             return True
