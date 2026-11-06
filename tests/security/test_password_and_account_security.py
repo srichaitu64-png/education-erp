@@ -137,7 +137,7 @@ async def setup_security_fixture(db_session: AsyncSession):
 async def test_01_self_service_password_change_success(client, setup_security_fixture, db_session: AsyncSession):
     """1. Self-service password change with correct credentials succeeds."""
     teacher = setup_security_fixture["tenant_a_teacher"]
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     resp = await client.post(
@@ -163,7 +163,7 @@ async def test_01_self_service_password_change_success(client, setup_security_fi
 async def test_02_incorrect_current_password_rejected(client, setup_security_fixture):
     """2. Incorrect current password rejected with 400 Bad Request."""
     teacher = setup_security_fixture["tenant_a_teacher"]
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     resp = await client.post(
@@ -183,7 +183,7 @@ async def test_02_incorrect_current_password_rejected(client, setup_security_fix
 async def test_03_weak_password_rejected_by_policy(client, setup_security_fixture):
     """3. Weak password rejected according to enterprise policy."""
     teacher = setup_security_fixture["tenant_a_teacher"]
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     weak_passwords = [
@@ -212,7 +212,7 @@ async def test_03_weak_password_rejected_by_policy(client, setup_security_fixtur
 async def test_04_mismatched_confirmation_rejected(client, setup_security_fixture):
     """4. Mismatched confirmation password rejected with 400 Bad Request."""
     teacher = setup_security_fixture["tenant_a_teacher"]
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     resp = await client.post(
@@ -434,7 +434,7 @@ async def test_12_first_login_mandatory_password_setup(client, setup_security_fi
     teacher.must_change_password = True
     await db_session.commit()
 
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     # Verify profile reports must_change_password=True
@@ -463,7 +463,7 @@ async def test_12_first_login_mandatory_password_setup(client, setup_security_fi
 async def test_13_session_revocation_terminates_active_sessions(client, setup_security_fixture, db_session: AsyncSession):
     """13. Session revocation terminates active sessions and records security event."""
     teacher = setup_security_fixture["tenant_a_teacher"]
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     # Insert a dummy session
@@ -529,7 +529,7 @@ async def test_15_first_login_setup_rejected_when_not_flagged(client, setup_secu
     teacher.must_change_password = False
     await db_session.commit()
 
-    token = create_access_token(subject=str(teacher.id), is_superadmin=False)
+    token = create_access_token(subject=str(teacher.id), tenant_id=str(setup_security_fixture["tenant_a"].id), is_superadmin=False)
     headers = {"Authorization": f"Bearer {token}"}
 
     resp = await client.post(
@@ -566,6 +566,7 @@ async def test_16_revoked_session_jwt_rejected_at_endpoint(client, setup_securit
     # Issue access token bound to session_id
     token = create_access_token(
         subject=str(teacher.id),
+        tenant_id=str(setup_security_fixture["tenant_a"].id),
         session_id=str(session_id),
         is_superadmin=False
     )
