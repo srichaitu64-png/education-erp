@@ -7,6 +7,7 @@ Configure these values in the deployment environment or a private, untracked `.e
 - `SECRET_KEY`: a unique random secret of at least 32 characters.
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`: database credentials. Use a URL-safe password for the Compose-generated database URL (for example, generate a hex value with `openssl rand -hex 32`).
 - `INITIAL_SUPERADMIN_PASSWORD`: a one-time bootstrap password of at least 14 characters, only when creating a new database with no platform administrator.
+- `PAYMENT_WEBHOOK_SECRET`: a separate high-entropy HMAC secret configured in the payment provider and application; production webhooks are rejected when it is missing.
 
 The Compose file requires the database and application secrets; it intentionally has no insecure password defaults. PostgreSQL and Redis are internal to the Compose network and are not published on host ports.
 
