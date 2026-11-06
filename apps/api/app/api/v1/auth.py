@@ -722,11 +722,11 @@ async def confirm_password_reset(
         )
 
     token_hashed = hash_token(req.token.strip())
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # Password reset tokens and account records are globally addressable; do not
+    # elevate RLS merely to reset a password. Tenant role rows are not needed here.
     stmt = (
         select(PasswordResetToken)
-        .options(selectinload(PasswordResetToken.user).selectinload(User.roles))
+        .options(selectinload(PasswordResetToken.user))
         .where(PasswordResetToken.token_hash == token_hashed)
     )
     res = await db.execute(stmt)
@@ -1002,8 +1002,8 @@ async def admin_reset_user_password(
     - Enforces must_change_password on next sign-in.
     - Records immutable audit log with acting administrator identity and reason.
     """
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
-
+    # The caller's signed tenant scope remains active; RLS limits the target
+    # account's visible role assignments to that institution.
     stmt = (
         select(User)
         .options(selectinload(User.roles).selectinload(UserRole.role))
