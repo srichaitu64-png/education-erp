@@ -232,8 +232,13 @@ async def login(
                 res_t = await db.execute(stmt_t)
                 tenant = res_t.scalars().first()
 
+        if not tenant:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active institution workspace is assigned to this account.")
+
         if tenant:
             scoped_roles = [ur for ur in user.roles if ur.tenant_id == tenant.id]
+            if not scoped_roles:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active role assignment exists for this institution.")
             tenant_id = str(tenant.id)
             if tenant.status not in ("active", "trial", "trialing"):
                 raise HTTPException(
@@ -259,7 +264,13 @@ async def login(
             entitlement_svc = EntitlementService(db)
             ent_data = await entitlement_svc.get_tenant_entitlements(tenant.id)
             tenant_info["current_plan"] = ent_data.get("current_plan", "Standard")
-            tenant_info["subscription_status"] = ent_data.get("subscription_status", "active")
+            tenant_info["subscription_status"] = ent_data.get("subscription_status", "inactive")
+            subscription_status = tenant_info["subscription_status"]
+            if subscription_status not in ("active", "trial", "grace_period"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Institution subscription is {subscription_status}. Workspace access requires an active subscription or trial."
+                )
 
             # Extract distinct active modules under current plan
             entitled_modules = sorted(list({
@@ -269,8 +280,7 @@ async def login(
 
             # Intersect user assigned permissions with entitled modules
             user_perm_codes = set()
-            for ur in user.roles:
-                if ur.tenant_id == tenant.id or ur.tenant_id is None:
+            for ur in scoped_roles:
                     for perm in ur.role.permissions:
                         if perm.module in entitled_modules or perm.module in ("governance", "identity", "core", "settings"):
                             user_perm_codes.add(perm.code)
