@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password, verify_password
 from app.modules.identity.models import User, Role, Permission, UserRole
+from app.modules.tenants.models import Tenant
 
 
 @pytest.mark.asyncio
@@ -34,6 +35,11 @@ async def test_authentication_login_flow(client, db_session: AsyncSession):
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    teacher_role = (await db_session.execute(select(Role).where(Role.code == "TEACHER", Role.tenant_id == None))).scalars().first()
+    assert tenant is not None and teacher_role is not None
+    db_session.add(UserRole(user_id=user.id, role_id=teacher_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     # 1. Test invalid password
@@ -76,6 +82,11 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
         is_superadmin=True
     )
     db_session.add_all([regular_user, superadmin_user])
+    await db_session.flush()
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
+    staff_role = (await db_session.execute(select(Role).where(Role.code == "TEACHER", Role.tenant_id == None))).scalars().first()
+    assert tenant is not None and staff_role is not None
+    db_session.add(UserRole(user_id=regular_user.id, role_id=staff_role.id, tenant_id=tenant.id))
     await db_session.commit()
 
     # Login regular user
