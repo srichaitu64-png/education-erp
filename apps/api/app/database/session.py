@@ -23,6 +23,45 @@ def set_current_tenant_id(tenant_id: Optional[uuid.UUID]) -> None:
     current_tenant_context.set(tenant_id)
 
 
+class RLSAsyncSession(AsyncSession):
+    """Reapply transaction-local RLS context after commits and rollbacks.
+
+    Tenant and privilege GUCs must survive ORM code that commits more than once
+    during a request, but must never leak to the next pooled connection user.
+    """
+
+    async def set_rls_context(
+        self,
+        tenant_id: Optional[uuid.UUID],
+        is_superadmin: bool = False,
+    ) -> None:
+        self.info["_rls_context_enabled"] = True
+        self.info["_rls_tenant_id"] = str(tenant_id) if tenant_id else ""
+        self.info["_rls_is_superadmin"] = bool(is_superadmin)
+        set_current_tenant_id(tenant_id)
+        await self._apply_rls_context()
+
+    async def _apply_rls_context(self) -> None:
+        if not self.info.get("_rls_context_enabled"):
+            return
+        await super().execute(
+            text("SELECT set_config('app.is_superadmin', :flag, true)"),
+            {"flag": "true" if self.info.get("_rls_is_superadmin") else "false"},
+        )
+        await super().execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": self.info.get("_rls_tenant_id", "")},
+        )
+
+    async def commit(self) -> None:
+        await super().commit()
+        await self._apply_rls_context()
+
+    async def rollback(self) -> None:
+        await super().rollback()
+        await self._apply_rls_context()
+
+
 # Primary asynchronous SQLAlchemy engine
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -34,7 +73,7 @@ engine = create_async_engine(
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
-    class_=AsyncSession,
+    class_=RLSAsyncSession,
     autocommit=False,
     autoflush=False,
     expire_on_commit=False
@@ -48,17 +87,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     and sanitizes pooled connection state on every acquisition.
     """
     async with AsyncSessionLocal() as session:
-        # Sanitize pooled connection state to prevent cross-request leakage
-        await session.execute(text("SELECT set_config('app.is_superadmin', 'false', true)"))
         tenant_id = get_current_tenant_id()
-        if tenant_id:
-            # Set PostgreSQL session variable for Row-Level Security safely using set_config
-            await session.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-                {"tenant_id": str(tenant_id)}
-            )
-        else:
-            await session.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+        await session.set_rls_context(tenant_id, is_superadmin=False)
         try:
             yield session
             await session.commit()
@@ -66,4 +96,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.rollback()
             raise
         finally:
+            # Clear request-scoped RLS context before returning the connection to the pool.
+            await session.set_rls_context(None, is_superadmin=False)
+            await session.rollback()
+            set_current_tenant_id(None)
             await session.close()
