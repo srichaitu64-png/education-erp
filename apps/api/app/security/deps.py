@@ -83,10 +83,10 @@ async def get_current_user(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(tenant_uuid)}
         )
-    elif user.is_superadmin:
-        # A platform owner may enter a tenant scope only when middleware has
-        # resolved an explicit institution context; support-session validation
-        # below then gates access to that tenant's private records.
+    else:
+        # Middleware may resolve an institution for platform support requests.
+        # Ordinary users are checked against their role membership immediately
+        # after the user record and tenant-scoped roles are loaded.
         tenant_uuid = get_current_tenant_id()
         if tenant_uuid:
             await db.execute(
@@ -95,8 +95,6 @@ async def get_current_user(
             )
         else:
             await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
-    else:
-        await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
 
     stmt = (
         select(User)
