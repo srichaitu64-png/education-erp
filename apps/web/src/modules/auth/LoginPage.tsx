@@ -51,7 +51,7 @@ export const LoginPage: React.FC = () => {
 
     const inputVal = usernameOrId.trim();
     if (!inputVal || !password.trim()) {
-      setErrorMessage('Please enter both your identifier and password.');
+      setErrorMessage('Please enter your email or registered phone number and password.');
       return;
     }
 
@@ -158,7 +158,7 @@ export const LoginPage: React.FC = () => {
               htmlFor="usernameOrId"
               className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5"
             >
-              Username, Email, or Institutional ID
+              Email or registered phone number
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
@@ -167,7 +167,7 @@ export const LoginPage: React.FC = () => {
                 type="text"
                 required
                 autoComplete="username"
-                placeholder="e.g. username, email@domain.com, or EMP-001"
+                placeholder="email@institution.edu.in or registered phone number"
                 value={usernameOrId}
                 onChange={(e) => handleInputChange(setUsernameOrId, e.target.value)}
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans"
