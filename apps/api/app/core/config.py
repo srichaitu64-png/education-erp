@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    BOOTSTRAP_SUPERADMIN_EMAIL: str = "admin@platform.erp.in"
+    BOOTSTRAP_SUPERADMIN_PASSWORD: Optional[str] = None
 
     # Database URLs (Strictly non-superuser, NOBYPASSRLS application role)
     DATABASE_URL: str = "postgresql+asyncpg://erp_app:erp_app_pass@127.0.0.1:5433/education_erp_dev"
