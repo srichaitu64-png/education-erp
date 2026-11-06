@@ -532,6 +532,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
     stmt_tenant = select(Tenant).where(or_(Tenant.code == "our-school-demo", Tenant.code == "akshara"))
     res_tenant = await db.execute(stmt_tenant)
     pilot_tenant = res_tenant.scalars().first()
+    if pilot_tenant:
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(pilot_tenant.id)}
+        )
     if not pilot_tenant:
         pilot_tenant = Tenant(
             name="OUR SCHOOL",
@@ -1098,6 +1103,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
     stmt_trial = select(Tenant).where(Tenant.code == trial_code)
     res_trial = await db.execute(stmt_trial)
     trial_tenant = res_trial.scalars().first()
+    if trial_tenant:
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(trial_tenant.id)}
+        )
     if not trial_tenant:
         from datetime import datetime, timedelta, timezone
         now = datetime.now(timezone.utc)
