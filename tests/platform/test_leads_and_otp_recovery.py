@@ -1,4 +1,5 @@
 import pytest
+import os
 import uuid
 import httpx
 from sqlalchemy import select
@@ -6,10 +7,10 @@ from app.modules.leads.models import WebsiteLead
 
 @pytest.fixture
 async def platform_token(client: httpx.AsyncClient) -> str:
-    """Obtain valid Platform Super Admin JWT access token using requested siva / Myerp2026@."""
+    """Obtain a test-only Platform Super Admin JWT using the configured bootstrap secret."""
     res = await client.post("/api/v1/auth/login", json={
-        "username": "siva",
-        "password": "Myerp2026@"
+        "username": "admin@platform.erp.in",
+        "password": os.environ["INITIAL_SUPERADMIN_PASSWORD"]
     })
     assert res.status_code == 200, f"Superadmin login failed: {res.text}"
     return res.json()["access_token"]
@@ -19,14 +20,17 @@ async def platform_token(client: httpx.AsyncClient) -> str:
 async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
     """
     Test Self-Service OTP Password Recovery:
-    1. Request OTP using username 'siva'
+    1. Request OTP using the dedicated test OTP administrator email
     2. Confirm incorrect OTP fails with 400
     3. Verify valid 6-digit OTP resets password
     4. Verify login succeeds with newly set password
     """
-    # Step 1: Request OTP using superadmin username 'siva'
+    identifier = "otp-admin@platform.erp.in"
+    new_password = "OtpReset-" + uuid.uuid4().hex[:16] + "!A1"
+
+    # Step 1: Request OTP using the dedicated test administrator
     req_resp = await client.post("/api/v1/auth/password/otp-request", json={
-        "identifier": "siva"
+        "identifier": identifier
     })
     assert req_resp.status_code == 200, req_resp.text
     data = req_resp.json()
@@ -36,27 +40,27 @@ async def test_01_otp_password_recovery_flow(client: httpx.AsyncClient):
 
     # Step 2: Verify wrong OTP fails
     fail_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "siva",
+        "identifier": identifier,
         "otp_code": "000000",
-        "new_password": "Myerp2026@Updated!",
-        "confirm_password": "Myerp2026@Updated!"
+        "new_password": new_password,
+        "confirm_password": new_password
     })
     assert fail_resp.status_code == 400
 
     # Step 3: Verify correct OTP resets password
     reset_resp = await client.post("/api/v1/auth/password/otp-verify-and-reset", json={
-        "identifier": "siva",
+        "identifier": identifier,
         "otp_code": test_otp,
-        "new_password": "Myerp2026@",
-        "confirm_password": "Myerp2026@"
+        "new_password": new_password,
+        "confirm_password": new_password
     })
     assert reset_resp.status_code == 200
     assert reset_resp.json()["success"] is True
 
     # Step 4: Login succeeds with reset password
     login_resp = await client.post("/api/v1/auth/login", json={
-        "username": "siva",
-        "password": "Myerp2026@"
+        "username": identifier,
+        "password": new_password
     })
     assert login_resp.status_code == 200
     assert login_resp.json()["destination"] == "/platform"

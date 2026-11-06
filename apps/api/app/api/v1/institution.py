@@ -1,6 +1,7 @@
 import uuid
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -10,6 +11,10 @@ from app.modules.subscriptions.schemas import TenantEntitlementsOut, Entitlement
 from app.modules.subscriptions.service import EntitlementService
 from app.modules.tenants.models import Tenant, Campus
 from app.modules.tenants.schemas import TenantOut, CampusOut
+from app.modules.academic.models import Student, AdmissionApplication, AcademicSection
+from app.modules.finance.models import FeeInvoice
+from app.modules.attendance.models import DailyAttendanceRecord
+from app.modules.examinations.models import Examination
 from app.security.deps import get_current_user, require_feature
 
 router = APIRouter(prefix="/institution", tags=["Institution Portal"])
@@ -112,9 +117,9 @@ async def get_institution_metrics(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Institution Administrator endpoint:
-    Returns strictly isolated, campus-specific operational metrics.
-    NEVER leaks platform-wide revenue, other tenant names, or SaaS quotas.
+    Return live operational metrics from this tenant's database records.
+    Every query is explicitly scoped to the authenticated tenant; no demo values
+    or platform-wide totals are returned.
     """
     tenant_id = get_current_tenant_id()
     if not tenant_id:
@@ -123,22 +128,81 @@ async def get_institution_metrics(
             detail="Active tenant context is required."
         )
 
-    stmt_t = select(Tenant).where(Tenant.id == tenant_id)
-    res_t = await db.execute(stmt_t)
-    tenant = res_t.scalars().first()
-
+    tenant_result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
+    tenant = tenant_result.scalars().first()
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+
+    today = date.today()
+    enrolled_students = await db.scalar(
+        select(func.count(Student.id)).where(
+            Student.tenant_id == tenant_id,
+            Student.status == "ACTIVE",
+        )
+    ) or 0
+    configured_sections = await db.scalar(
+        select(func.count(AcademicSection.id)).where(
+            AcademicSection.tenant_id == tenant_id,
+            AcademicSection.status == "ACTIVE",
+        )
+    ) or 0
+    pending_admissions = await db.scalar(
+        select(func.count(AdmissionApplication.id)).where(
+            AdmissionApplication.tenant_id == tenant_id,
+            AdmissionApplication.status.in_(["PENDING", "SUBMITTED", "UNDER_REVIEW", "VERIFIED"]),
+        )
+    ) or 0
+
+    attendance_total = await db.scalar(
+        select(func.count(DailyAttendanceRecord.id)).where(
+            DailyAttendanceRecord.tenant_id == tenant_id,
+            DailyAttendanceRecord.attendance_date == today,
+        )
+    ) or 0
+    attendance_present = await db.scalar(
+        select(func.count(DailyAttendanceRecord.id)).where(
+            DailyAttendanceRecord.tenant_id == tenant_id,
+            DailyAttendanceRecord.attendance_date == today,
+            DailyAttendanceRecord.status.in_(["PRESENT", "LATE"]),
+        )
+    ) or 0
+    attendance_pct = round((attendance_present / attendance_total) * 100, 1) if attendance_total else None
+
+    fee_totals = await db.execute(
+        select(
+            func.coalesce(func.sum(FeeInvoice.net_payable), 0.0),
+            func.coalesce(func.sum(FeeInvoice.paid_amount), 0.0),
+            func.coalesce(func.sum(FeeInvoice.balance_amount), 0.0),
+        ).where(FeeInvoice.tenant_id == tenant_id)
+    )
+    total_payable, total_collected, outstanding_fees = fee_totals.one()
+    total_payable = float(total_payable or 0)
+    total_collected = float(total_collected or 0)
+    outstanding_fees = float(outstanding_fees or 0)
+    fee_collection_pct = round((total_collected / total_payable) * 100, 1) if total_payable else None
+
+    upcoming_exams = await db.scalar(
+        select(func.count(Examination.id)).where(
+            Examination.tenant_id == tenant_id,
+            Examination.exam_date >= today,
+            Examination.status != "ARCHIVED",
+        )
+    ) or 0
 
     return {
         "tenant_id": str(tenant.id),
         "institution_name": tenant.name,
         "institution_code": tenant.code,
-        "enrolled_students": 510,
-        "configured_sections": 12,
-        "today_attendance_pct": 96.4,
-        "fee_collection_pct": 83.5,
-        "cross_tenant_data_exposed": False
+        "data_source": "tenant_database",
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "enrolled_students": int(enrolled_students),
+        "configured_sections": int(configured_sections),
+        "pending_admissions": int(pending_admissions),
+        "today_attendance_records": int(attendance_total),
+        "today_attendance_pct": attendance_pct,
+        "total_fee_payable": total_payable,
+        "total_fee_collected": total_collected,
+        "outstanding_fees": outstanding_fees,
+        "fee_collection_pct": fee_collection_pct,
+        "upcoming_examinations": int(upcoming_exams),
     }
-
-

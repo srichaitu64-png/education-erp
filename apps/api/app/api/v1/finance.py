@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import User
+from app.modules.tenants.models import Tenant, Campus
 from app.modules.subscriptions.models import Subscription, SubscriptionAuditLog
 from app.modules.finance.models import (
     FeeStructure,
@@ -267,19 +268,41 @@ async def collect_fee_and_generate_receipt(
     db.add(payment)
     await db.flush()
 
-    # 6. Generate Unique Permanent Receipt Number
-    # Count receipts to generate deterministic monotonic receipt number
+    # 6. Generate a tenant-specific receipt number.
+    # Lock the tenant row so concurrent collections for this institution cannot
+    # allocate the same count-based sequence number.
+    tenant_result = await db.execute(
+        select(Tenant).where(Tenant.id == tenant_id).with_for_update()
+    )
+    tenant = tenant_result.scalars().first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Institution not found")
+
     count_stmt = select(func.count(FeeReceipt.id)).where(FeeReceipt.tenant_id == tenant_id)
     receipt_count = (await db.execute(count_stmt)).scalar() or 0
-    receipt_num = f"RCP-CAMP-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
+    tenant_code = "".join(ch for ch in tenant.code.upper() if ch.isalnum())[:8] or "INST"
+    receipt_num = f"RCP-{tenant_code}-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
 
-    # Institution branding metadata
+    # Use the institution's saved identity and contact information. Campus details
+    # override the address/contact fields when the invoice belongs to a campus.
+    campus = None
+    if invoice.campus_id:
+        campus_result = await db.execute(
+            select(Campus).where(
+                Campus.id == invoice.campus_id,
+                Campus.tenant_id == tenant_id,
+            )
+        )
+        campus = campus_result.scalars().first()
+
     branding = {
-        "institution_name": "Pilot Educational Institutions",
-        "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-        "address": "Campus Ground, Knowledge Corridor, Bengaluru, Karnataka - 560085",
-        "phone": "+91 80 2345 6789",
-        "email": "accounts@institution.erp.in",
+        "institution_name": tenant.name,
+        "campus_name": campus.name if campus else None,
+        "affiliation": (tenant.settings or {}).get("affiliation", ""),
+        "address": (campus.address if campus and campus.address else tenant.address) or "",
+        "phone": (campus.contact_phone if campus and campus.contact_phone else tenant.phone) or "",
+        "email": (campus.contact_email if campus and campus.contact_email else tenant.email) or "",
+        "logo_url": tenant.logo_url,
         "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal",
     }
 
@@ -656,17 +679,57 @@ async def handle_payment_gateway_webhook(
     webhook_secret = getattr(settings, "PAYMENT_WEBHOOK_SECRET", None) or settings.SECRET_KEY
     raw_body = await request.body()
 
-    # Verify HMAC signature if header provided
-    if x_webhook_signature:
-        expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, x_webhook_signature):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    # Webhooks must be signed. An absent signature is not a trusted event.
+    if not x_webhook_signature:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing payment webhook signature")
+    expected_sig = hmac.new(webhook_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected_sig, x_webhook_signature):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid cryptographic webhook signature")
+    if payload.amount <= 0 or payload.event != "payment.captured":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported payment event or invalid amount")
 
-    # Locate tenant subscription
+    tenant_result = await db.execute(select(Tenant.id).where(Tenant.id == payload.tenant_id))
+    if tenant_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution not found")
+
+    # A gateway event is tenant-scoped only after its signature and tenant identity
+    # have been verified. This preserves RLS without a platform-wide bypass.
+    await db.set_rls_context(payload.tenant_id, is_superadmin=False)
+
+    # Idempotency: a gateway retry for an already-applied transaction must not
+    # extend the subscription a second time.
+    duplicate_result = await db.execute(
+        select(SubscriptionAuditLog).where(
+            SubscriptionAuditLog.tenant_id == payload.tenant_id,
+            SubscriptionAuditLog.action == "PAYMENT_RECEIVED_RENEWED",
+            SubscriptionAuditLog.details["transaction_id"].as_string() == payload.transaction_id,
+        )
+    )
+    duplicate_event = duplicate_result.scalars().first()
+    if duplicate_event:
+        existing_sub = (
+            await db.execute(
+                select(Subscription)
+                .where(Subscription.tenant_id == payload.tenant_id)
+                .order_by(Subscription.created_at.desc())
+            )
+        ).scalars().first()
+        return {
+            "status": "SUCCESS",
+            "event": payload.event,
+            "tenant_id": str(payload.tenant_id),
+            "subscription_status": existing_sub.status if existing_sub else "active",
+            "valid_until": existing_sub.ends_at.isoformat() if existing_sub and existing_sub.ends_at else None,
+            "transaction_id": payload.transaction_id,
+            "duplicate": True,
+        }
+
+    # Locate the most recent subscription within the verified tenant scope.
     stmt = (
         select(Subscription)
         .where(Subscription.tenant_id == payload.tenant_id)
         .order_by(Subscription.created_at.desc())
+        .with_for_update()
     )
     res = await db.execute(stmt)
     sub = res.scalars().first()
@@ -704,7 +767,8 @@ async def handle_payment_gateway_webhook(
         "tenant_id": str(payload.tenant_id),
         "subscription_status": sub.status,
         "valid_until": sub.ends_at.isoformat(),
-        "transaction_id": payload.transaction_id
+        "transaction_id": payload.transaction_id,
+        "duplicate": False,
     }
 
 

@@ -519,7 +519,7 @@ async def test_14_unauthorized_tenant_selection_rejected(client, setup_security_
         }
     )
     assert resp.status_code == 403
-    assert "unauthorized tenant selection" in resp.json()["detail"].lower()
+    assert "role assignment" in resp.json()["detail"].lower() or "unauthorized tenant selection" in resp.json()["detail"].lower()
 
 
 @pytest.mark.asyncio

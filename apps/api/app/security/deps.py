@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator, Callable, List, Optional
 from fastapi import Depends, HTTPException, Security, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -52,6 +52,18 @@ async def get_current_user(
         user_uuid = uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID format")
+
+    # Establish the signed tenant scope before loading any RLS-protected
+    # user-role, role, or permission rows.
+    token_tenant = payload.get("tenant_id")
+    if token_tenant:
+        try:
+            tenant_uuid = uuid.UUID(token_tenant)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant scope in access token")
+        await db.set_rls_context(tenant_uuid, is_superadmin=False)
+    else:
+        await db.set_rls_context(None, is_superadmin=False)
 
     # Verify session revocation if session ID (sid) is present in token
     sid = payload.get("sid")
@@ -104,14 +116,11 @@ async def get_current_user(
                 detail="Password setup required: You must establish a permanent password before accessing application workspace."
             )
 
-    # Set tenant context if token has an authenticated tenant
-    token_tenant = payload.get("tenant_id")
-    if token_tenant:
-        try:
-            t_uuid = uuid.UUID(token_tenant)
-            set_current_tenant_id(t_uuid)
-        except ValueError:
-            pass
+    if token_tenant and not any(ur.tenant_id == tenant_uuid for ur in user.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is not assigned to the institution in the access token."
+        )
 
     return user
 
@@ -143,7 +152,7 @@ def require_permission(permission_code: str) -> Callable:
         user_permissions = set()
 
         for ur in current_user.roles:
-            if ur.tenant_id == tenant_id or ur.tenant_id is None:
+            if tenant_id is not None and ur.tenant_id == tenant_id:
                 for perm in ur.role.permissions:
                     user_permissions.add(perm.code)
 

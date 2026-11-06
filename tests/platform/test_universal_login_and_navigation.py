@@ -16,7 +16,7 @@ async def test_01_platform_owner_universal_login(client: httpx.AsyncClient):
     """
     # 1. Login with username
     res1 = await client.post("/api/v1/auth/login", json={
-        "username": "superadmin",
+        "username": "admin@platform.erp.in",
         "password": "AdminSecurePassword2026!"
     })
     assert res1.status_code == 200, f"Login failed: {res1.text}"
@@ -48,28 +48,29 @@ async def test_02_all_institutional_roles_universal_login(client: httpx.AsyncCli
     Backend resolves identity, tenant, and primary role, returning exact destination URL.
     """
     test_personas = [
-        ("EMP-CHAIR-01", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/demo?role=CHAIRMAN_DIRECTOR"),
-        ("chairman@akshara.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/demo?role=CHAIRMAN_DIRECTOR"),
-        ("EMP-PRIN-01", "PrincipalSecurePassword2026!", "PRINCIPAL", "/demo?role=PRINCIPAL"),
-        ("principal@akshara.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/demo?role=PRINCIPAL"),
-        ("EMP-ACC-01", "AccountantSecure2026!", "ACCOUNTANT", "/demo?role=ACCOUNTANT"),
-        ("accountant@akshara.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/demo?role=ACCOUNTANT"),
-        ("EMP-EXAM-01", "ExamController2026!", "EXAM_CONTROLLER", "/demo?role=EXAM_CONTROLLER"),
-        ("exams@akshara.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/demo?role=EXAM_CONTROLLER"),
-        ("EMP-TCH-01", "TeacherPhysics2026!", "TEACHER", "/demo?role=TEACHER"),
-        ("teacher.physics@akshara.edu.in", "TeacherPhysics2026!", "TEACHER", "/demo?role=TEACHER"),
-        ("EMP-LIB-01", "LibrarianSecure2026!", "LIBRARIAN", "/demo?role=LIBRARIAN"),
-        ("librarian@akshara.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/demo?role=LIBRARIAN"),
-        ("ADM-2026-001", "StudentRahul2026!", "STUDENT", "/demo?role=STUDENT"),
-        ("student.rahul@akshara.edu.in", "StudentRahul2026!", "STUDENT", "/demo?role=STUDENT"),
-        ("PAR-2026-001", "ParentRahul2026!", "PARENT", "/demo?role=PARENT"),
-        ("parent.rahul@akshara.edu.in", "ParentRahul2026!", "PARENT", "/demo?role=PARENT"),
+        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/app"),
+        ("chairman@ourschool.edu.in", "ChairmanSecure2026!", "CHAIRMAN_DIRECTOR", "/app"),
+        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/app"),
+        ("principal@ourschool.edu.in", "PrincipalSecurePassword2026!", "PRINCIPAL", "/app"),
+        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/app"),
+        ("accountant@ourschool.edu.in", "AccountantSecure2026!", "ACCOUNTANT", "/app"),
+        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/app"),
+        ("exams@ourschool.edu.in", "ExamController2026!", "EXAM_CONTROLLER", "/app"),
+        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/app"),
+        ("teacher.physics@ourschool.edu.in", "TeacherPhysics2026!", "TEACHER", "/app"),
+        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/app"),
+        ("librarian@ourschool.edu.in", "LibrarianSecure2026!", "LIBRARIAN", "/app"),
+        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/app"),
+        ("student.rahul@ourschool.edu.in", "StudentRahul2026!", "STUDENT", "/app"),
+        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/app"),
+        ("parent.rahul@ourschool.edu.in", "ParentRahul2026!", "PARENT", "/app"),
     ]
 
     for identifier, password, expected_role, expected_dest in test_personas:
         res = await client.post("/api/v1/auth/login", json={
             "username": identifier,
-            "password": password
+            "password": password,
+            "tenant_code": "our-school-demo"
         })
         assert res.status_code == 200, f"Persona login failed for {identifier}: {res.text}"
         data = res.json()
@@ -77,7 +78,7 @@ async def test_02_all_institutional_roles_universal_login(client: httpx.AsyncCli
         assert data["primary_role"] == expected_role, f"Role mismatch for {identifier}: got {data['primary_role']}, expected {expected_role}"
         assert data["destination"] == expected_dest, f"Destination mismatch for {identifier}: got {data['destination']}, expected {expected_dest}"
         assert data["tenant_info"] is not None
-        assert data["tenant_info"]["code"] in ("our-school-demo", "akshara")
+        assert data["tenant_info"]["code"] == "our-school-demo"
         assert data["user"]["is_superadmin"] is False
 
 
@@ -87,8 +88,9 @@ async def test_03_invalid_password_returns_401(client: httpx.AsyncClient):
     Invalid credentials must return 401 with generic error message.
     """
     res = await client.post("/api/v1/auth/login", json={
-        "username": "principal@akshara.edu.in",
-        "password": "WrongPassword999!"
+        "username": "principal@ourschool.edu.in",
+        "password": "WrongPassword999!",
+        "tenant_code": "our-school-demo"
     })
     assert res.status_code == 401
     assert "username or password" in res.json()["detail"].lower()
@@ -100,7 +102,7 @@ async def test_04_brute_force_account_lockout(client: httpx.AsyncClient, db_sess
     5 failed login attempts triggers brute force lockout (HTTP 403 / 429).
     """
     await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
-    test_user_email = f"brute_test_{uuid.uuid4().hex[:6]}@akshara.edu.in"
+    test_user_email = f"brute_test_{uuid.uuid4().hex[:6]}@ourschool.edu.in"
     test_user = User(
         email=test_user_email,
         hashed_password=hash_password("RealSecurePassword123!"),
@@ -182,7 +184,8 @@ async def test_05_suspended_tenant_login_blocked(client: httpx.AsyncClient, db_s
 
     res = await client.post("/api/v1/auth/login", json={
         "username": user_email,
-        "password": "UserPassword2026!"
+        "password": "UserPassword2026!",
+        "tenant_code": suspended_tenant.code
     })
     assert res.status_code == 403
     assert "suspended" in res.json()["detail"].lower()
@@ -195,8 +198,9 @@ async def test_06_effective_access_intersects_subscription_and_permissions(clien
     TokenResponse returns entitled_modules and effective_permissions computed by the backend.
     """
     res = await client.post("/api/v1/auth/login", json={
-        "username": "principal@akshara.edu.in",
-        "password": "PrincipalSecurePassword2026!"
+        "username": "principal@ourschool.edu.in",
+        "password": "PrincipalSecurePassword2026!",
+        "tenant_code": "our-school-demo"
     })
     assert res.status_code == 200
     data = res.json()

@@ -5,10 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.database.base import Base
 from app.database.session import engine, AsyncSessionLocal
 from app.database.seed import seed_initial_data
-from app.database.rls import enable_row_level_security
 from app.middleware.tenant import TenantResolutionMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.platform import router as platform_router
@@ -20,66 +18,11 @@ from app.api.v1.attendance import router as attendance_router
 from app.api.v1.migration import router as migration_router
 from app.api.v1.leads import router as leads_router
 
-# Import all models to ensure they register on Base.metadata
-from app.modules.leads.models import WebsiteLead
-from app.modules.tenants.models import Tenant, Campus, TenantDomain
-from app.modules.identity.models import (
-    User,
-    Role,
-    Permission,
-    UserRole,
-    PermissionChangeAudit,
-    UserPermissionOverride,
-    DashboardLayoutConfig,
-    PermissionChangeRequest
-)
-from app.modules.subscriptions.models import (
-    SubscriptionPlan,
-    FeatureCatalog,
-    PlanFeature,
-    Subscription,
-    TenantFeatureOverride,
-    FeatureUsage,
-    SubscriptionAuditLog
-)
-from app.modules.examinations.models import (
-    Examination,
-    ExamAttendanceAndMarks,
-    OfflineSyncQueue,
-    ExternalExamProviderConfig,
-    ExamApprovalAudit
-)
-from app.modules.finance.models import (
-    FeeStructure,
-    FeeInvoice,
-    FeePayment,
-    FeeReceipt,
-    ReceiptAuditLog
-)
-from app.modules.academic.models import (
-    AcademicSection,
-    StudentSectionEnrolment,
-    StaffDutyAssignment,
-    HallTicket,
-    ConsolidatedFeeReportSnapshot,
-    Student,
-    AdmissionApplication
-)
-from app.modules.attendance.models import (
-    InstitutionAttendanceConfig,
-    DailyAttendanceRecord,
-    PeriodAttendanceRecord
-)
-from app.modules.migration.models import MigrationBatchLog
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown lifecycle handler."""
-    # Initialize database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        await enable_row_level_security(conn)
+    # Database schema and tenant RLS policies are applied by Alembic before the API starts.
+    # Never mutate production schema from application startup.
 
     # Seed initial platform features, subscription plans, roles and superadmin
     async with AsyncSessionLocal() as session:

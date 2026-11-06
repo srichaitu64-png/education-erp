@@ -1,0 +1,39 @@
+services:
+  control-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: education_control
+      POSTGRES_USER: control_plane
+      POSTGRES_PASSWORD: ${CONTROL_DB_PASSWORD:?Set CONTROL_DB_PASSWORD in the control-plane .env}
+    volumes:
+      - control_plane_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U control_plane -d education_control"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    networks: [control_net]
+
+  control-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://control_plane:${CONTROL_DB_PASSWORD:?Set CONTROL_DB_PASSWORD}@control-db:5432/education_control
+      AUTO_CREATE_SCHEMA: "false"
+    ports:
+      - "127.0.0.1:8100:8100"
+    depends_on:
+      control-db:
+        condition: service_healthy
+    networks: [control_net]
+
+volumes:
+  control_plane_data:
+
+networks:
+  control_net:
+    driver: bridge
