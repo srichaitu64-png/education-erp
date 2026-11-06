@@ -431,6 +431,7 @@ async def update_tenant_status(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     valid_statuses = ("active", "suspended", "trial", "expired")
     target_status = req.status.lower().strip()
     if target_status not in valid_statuses:
@@ -485,6 +486,7 @@ async def renew_tenant_subscription(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     stmt_sub = select(Subscription).where(Subscription.tenant_id == tenant.id).order_by(Subscription.created_at.desc()).limit(1)
     res_sub = await db.execute(stmt_sub)
     sub = res_sub.scalars().first()
@@ -539,6 +541,7 @@ async def change_tenant_plan(
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
 
+    await db.set_rls_context(tenant.id, is_superadmin=False)
     stmt_plan = select(SubscriptionPlan).where(SubscriptionPlan.code == req.new_plan_code.upper())
     res_plan = await db.execute(stmt_plan)
     new_plan = res_plan.scalars().first()
@@ -587,15 +590,16 @@ async def get_tenant_full_details(
     Platform Super Admin: Retrieve comprehensive institutional metadata, campuses,
     academic units, current subscription, entitled modules, and administrative users.
     """
-    stmt = (
-        select(Tenant)
-        .options(selectinload(Tenant.campuses))
-        .where(Tenant.id == tenant_id)
-    )
+    stmt = select(Tenant).where(Tenant.id == tenant_id)
     res = await db.execute(stmt)
     tenant = res.scalars().first()
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant institution not found")
+
+    await db.set_rls_context(tenant.id, is_superadmin=False)
+    campuses = (
+        await db.execute(select(Campus).where(Campus.tenant_id == tenant.id))
+    ).scalars().all()
 
     # Subscription
     stmt_sub = (
@@ -668,7 +672,7 @@ async def get_tenant_full_details(
         secondary_color=tenant.secondary_color,
         subdomain=tenant.subdomain,
         custom_domain=tenant.custom_domain,
-        campuses=[CampusOut.model_validate(c) for c in tenant.campuses]
+        campuses=[CampusOut.model_validate(c) for c in campuses]
     )
 
     return TenantFullDetailsOut(
