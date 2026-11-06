@@ -70,3 +70,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             except Exception:
                 await session.rollback()
             await session.close()
+            set_current_tenant_id(None)
