@@ -1,7 +1,8 @@
 from contextvars import ContextVar
 from typing import AsyncGenerator, Optional
 import uuid
-from sqlalchemy import text
+from sqlalchemy import text, event
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
