@@ -64,6 +64,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r apps/api/requirements.txt
 
+      - name: Apply Database Migrations
+        working-directory: ./apps/api
+        env:
+          ENVIRONMENT: testing
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/education_erp_test
+          SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
+        run: python -m alembic upgrade head
+
       - name: Run Full Regression Test Suite
         env:
           ENVIRONMENT: testing
