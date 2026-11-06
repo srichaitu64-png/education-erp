@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 import pytest
 from datetime import date
 from httpx import AsyncClient
@@ -7,7 +8,7 @@ from sqlalchemy import select, or_
 
 from app.core.security import create_access_token
 from app.modules.tenants.models import Tenant
-from app.modules.identity.models import User, Role, UserRole
+from app.modules.identity.models import User, PlatformSupportAccessSession, Role, UserRole
 from app.modules.academic.models import (
     AcademicSection,
     Student,
@@ -28,6 +29,16 @@ async def get_test_auth_headers(db_session: AsyncSession, tenant_code: str = "ou
     stmt_user = select(User).where(User.email == "admin@platform.erp.in")
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
     assert super_admin is not None
+    db_session.add(PlatformSupportAccessSession(
+        ticket_number=f"TEST-SUPPORT-{uuid.uuid4().hex[:12]}",
+        tenant_id=tenant.id,
+        requested_by_platform_user_id=super_admin.id,
+        reason="Automated integration test with explicit tenant support approval",
+        scope="FULL_ACCESS",
+        status="APPROVED",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    await db_session.commit()
 
     token = create_access_token(
         subject=str(super_admin.id), tenant_id=str(tenant.id), is_superadmin=True
