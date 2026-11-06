@@ -15,13 +15,13 @@ from app.modules.academic.models import AcademicSection
 async def test_01_get_and_update_attendance_config_daily_only(client: httpx.AsyncClient, db_session: AsyncSession):
     """Configuration A: Daily Attendance Only Mode."""
     # Fetch pilot tenant and admin user
-    tenant = (await db_session.execute(select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"])))).scalars().first()
+    tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
     assert tenant is not None
-    user = (await db_session.execute(select(User).where(User.is_superadmin == True))).scalars().first()
+    user = (await db_session.execute(select(User).where(User.email == "chairman@ourschool.edu.in"))).scalars().first()
     assert user is not None
 
-    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=True)
-    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "akshara"}
+    token = create_access_token(subject=str(user.id), tenant_id=str(tenant.id), is_superadmin=False)
+    headers = {"Authorization": f"Bearer {token}", "X-Tenant-Code": "our-school-demo"}
 
     # 1. Fetch initial configuration
     res = await client.get("/api/v1/attendance/config", headers=headers)
