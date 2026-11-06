@@ -93,8 +93,9 @@ async def create_tenant(
     db.add(tenant)
     await db.flush()
     set_current_tenant_id(tenant.id)
+    db.info["rls_tenant_id"] = tenant.id
     await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
         {"tenant_id": str(tenant.id)}
     )
 
@@ -220,8 +221,9 @@ async def onboard_institution(
     db.add(tenant)
     await db.flush()
     set_current_tenant_id(tenant.id)
+    db.info["rls_tenant_id"] = tenant.id
     await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
         {"tenant_id": str(tenant.id)}
     )
 
