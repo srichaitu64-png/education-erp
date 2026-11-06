@@ -1,4 +1,7 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 from typing import AsyncGenerator
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -80,7 +83,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.ENVIRONMENT == "production":
         # Production schema changes must be deployed through reviewed Alembic
         # migrations. Never run create_all() against customer data.
-        expected_revision = "b7e1c4f6a902"
+        alembic_config = AlembicConfig(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        expected_revision = ScriptDirectory.from_config(alembic_config).get_current_head()
         async with engine.connect() as conn:
             try:
                 result = await conn.execute(text("SELECT version_num FROM alembic_version"))
