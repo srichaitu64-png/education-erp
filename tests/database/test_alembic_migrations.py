@@ -2,10 +2,14 @@
 Automated Alembic Migration and Configuration Safety Tests
 Tests schema sync, upgrade/downgrade idempotency, and production configuration safety.
 """
+import asyncio
 import os
 import subprocess
+import sys
+from urllib.parse import urlparse, urlunparse
+import asyncpg
 import pytest
-from app.core.config import Settings
+from app.core.config import settings, Settings
 
 
 def test_settings_secret_key_production_validation():
@@ -56,10 +60,11 @@ def test_alembic_check_clean_dev_database():
     """Verify that alembic check detects zero discrepancies between SQLAlchemy models and DB schema."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
     result = subprocess.run(
-        ["./.venv/bin/alembic", "check"],
+        [sys.executable, "-m", "alembic", "check"],
         cwd=api_dir,
         capture_output=True,
-        text=True
+        text=True,
+        env=dict(os.environ)
     )
     assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
     assert "No new upgrade operations detected" in (result.stdout + result.stderr)
@@ -69,52 +74,59 @@ def test_alembic_upgrade_downgrade_cycle():
     """Verify that Alembic migrations can execute upgrade, downgrade, and re-upgrade without error."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
     cycle_db = "education_erp_mig_cycle_test"
-    db_url = f"postgresql+asyncpg://postgres@127.0.0.1:5433/{cycle_db}"
 
-    # Create temporary database
-    subprocess.run(
-        ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"DROP DATABASE IF EXISTS {cycle_db};"],
-        check=True,
-        capture_output=True
-    )
-    subprocess.run(
-        ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"CREATE DATABASE {cycle_db};"],
-        check=True,
-        capture_output=True
-    )
+    # Derive admin connection URL from configured settings.DATABASE_URL
+    raw_url = settings.DATABASE_URL.replace("+asyncpg", "")
+    parsed = urlparse(raw_url)
+    admin_url = urlunparse(parsed._replace(path="/postgres"))
+    cycle_db_url = urlunparse(parsed._replace(scheme="postgresql+asyncpg", path=f"/{cycle_db}"))
+
+    async def _manage_db(command: str):
+        conn = await asyncpg.connect(admin_url)
+        try:
+            await conn.execute(command)
+        finally:
+            await conn.close()
+
+    # Recreate clean temporary cycle database
+    asyncio.run(_manage_db(f"DROP DATABASE IF EXISTS {cycle_db};"))
+    asyncio.run(_manage_db(f"CREATE DATABASE {cycle_db};"))
 
     try:
         # 1. Upgrade to head
         up1 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "head"],
             cwd=api_dir,
             capture_output=True,
-            text=True
+            text=True,
+            env=dict(os.environ)
         )
         assert up1.returncode == 0, f"Upgrade failed: {up1.stderr}"
 
         # 2. Downgrade to base
         down = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "downgrade", "base"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "downgrade", "base"],
             cwd=api_dir,
             capture_output=True,
-            text=True
+            text=True,
+            env=dict(os.environ)
         )
         assert down.returncode == 0, f"Downgrade failed: {down.stderr}"
 
         # 3. Re-upgrade to head
         up2 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={cycle_db_url}", "upgrade", "head"],
             cwd=api_dir,
             capture_output=True,
-            text=True
+            text=True,
+            env=dict(os.environ)
         )
         assert up2.returncode == 0, f"Re-upgrade failed: {up2.stderr}"
 
     finally:
         # Cleanup temporary database
-        subprocess.run(
-            ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"DROP DATABASE IF EXISTS {cycle_db};"],
-            capture_output=True
-        )
+        try:
+            asyncio.run(_manage_db(f"DROP DATABASE IF EXISTS {cycle_db};"))
+        except Exception:
+            pass
 
