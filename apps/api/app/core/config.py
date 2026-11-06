@@ -40,8 +40,8 @@ class Settings(BaseSettings):
         if env == "production":
             if (
                 len(v) < 32
-                or "change-this" in v.lower()
-                or v in ("secret", "password", "default")
+                or any(marker in v.lower() for marker in ("change-this", "replace", "example", "your-secret"))
+                or v.lower() in ("secret", "password", "default")
             ):
                 raise ValueError(
                     "Insecure SECRET_KEY: In production, SECRET_KEY must be a cryptographically secure string of at least 32 characters and cannot use placeholder values."
