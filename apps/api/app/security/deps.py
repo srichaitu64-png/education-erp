@@ -81,7 +81,7 @@ async def get_current_user(
         except ValueError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid tenant ID in token")
         await db.execute(
-            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
             {"tenant_id": str(tenant_uuid)}
         )
     else:
@@ -91,11 +91,11 @@ async def get_current_user(
         tenant_uuid = get_current_tenant_id()
         if tenant_uuid:
             await db.execute(
-                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, false)"),
                 {"tenant_id": str(tenant_uuid)}
             )
         else:
-            await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+            await db.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
 
     stmt = (
         select(User)
@@ -115,7 +115,7 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
 
     await db.execute(
-        text("SELECT set_config('app.current_user_id', :user_id, true)"),
+        text("SELECT set_config('app.current_user_id', :user_id, false)"),
         {"user_id": str(user.id)}
     )
 
