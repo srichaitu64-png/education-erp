@@ -52,7 +52,7 @@ export const InstitutionalStockCardsView: React.FC<InstitutionalStockCardsViewPr
     tenantScope,
   } = useDemoStore();
 
-  const isTrial = tenantScope === 'akshara-trial';
+  const isTrial = tenantScope === 'akshara-trial' || tenantScope === 'pilot-clean';
   const totalFeeCollected = receipts.reduce((acc, r) => acc + (r.amount_paid || 0), 0);
 
   const pillars = [
@@ -276,7 +276,7 @@ export const InstitutionalStockCardsView: React.FC<InstitutionalStockCardsViewPr
             Operational Command Centre
           </div>
           <h2 className="text-xl font-black text-slate-900">
-            {isTrial ? 'Akshara Global Pilot Workspace' : 'Campus Operations & Institutional Modules'}
+            {isTrial ? 'Pilot Institution Operations Workspace' : 'Campus Operations & Institutional Modules'}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Select any module card below for instant navigation. Clean, noise-free presentation for all staff roles.

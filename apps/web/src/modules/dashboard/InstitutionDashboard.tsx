@@ -584,7 +584,7 @@ export const InstitutionDashboard: React.FC = () => {
               Verified Institution
             </span>
             <h2 className="text-2xl font-black">
-              {tenant?.name || (tenant?.code === 'akshara-trial' ? 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE' : 'OUR SCHOOL')}
+              {tenant?.name || (tenant?.code === 'akshara-trial' || tenant?.code === 'pilot-clean' ? 'PILOT INSTITUTION CAMPUS' : 'OUR SCHOOL')}
             </h2>
             <p className="text-blue-200 text-sm mt-1">
               Academic Year 2026–2027 • Main Campus Active • Multi-Tenant Isolated

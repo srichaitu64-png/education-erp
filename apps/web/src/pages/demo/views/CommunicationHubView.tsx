@@ -99,12 +99,12 @@ export const CommunicationHubView: React.FC = () => {
 
       {/* Ping Feedback Toast */}
       {pingFeedback && (
-        <div className="p-4 rounded-2xl bg-slate-900 border border-blue-500/40 text-xs font-bold text-blue-200 flex items-center justify-between shadow-xl">
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-900 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
             <span>{pingFeedback.message}</span>
           </div>
-          <span className="font-mono text-[10px] bg-blue-950 text-blue-300 px-2.5 py-1 rounded-lg border border-blue-800">
+          <span className="font-mono text-[10px] bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-300">
             LATENCY: {pingFeedback.latencyMs}ms
           </span>
         </div>
@@ -112,12 +112,12 @@ export const CommunicationHubView: React.FC = () => {
 
       {/* Broadcast Feedback Toast */}
       {broadcastFeedback && (
-        <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-800 text-xs font-bold text-emerald-200 flex items-center justify-between shadow-xl">
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <Send className="w-4 h-4 text-emerald-400 shrink-0" />
+            <Send className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{broadcastFeedback}</span>
           </div>
-          <span className="font-mono text-[10px] bg-emerald-900 text-emerald-200 px-2 py-0.5 rounded">
+          <span className="font-mono text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">
             DELIVERED
           </span>
         </div>
@@ -308,7 +308,7 @@ export const CommunicationHubView: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs text-slate-800">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">From Address</span>
-                <span className="text-purple-300 font-bold font-mono">notifications@akshara.edu.in</span>
+                <span className="text-purple-800 font-bold font-mono">notifications@institution.edu.in</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-600 block">SMTP Host</span>
@@ -412,10 +412,10 @@ export const CommunicationHubView: React.FC = () => {
       {/* ===================================================================== */}
       {activeTab === 'templates' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-2xl border border-slate-200">
+          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             <div>
               <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                <Languages className="w-4 h-4 text-blue-400" />
+                <Languages className="w-4 h-4 text-blue-600" />
                 Verified Multilingual Message Templates
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
@@ -437,7 +437,7 @@ export const CommunicationHubView: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                     selectedLanguage === lang.code
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {lang.label}
@@ -448,13 +448,13 @@ export const CommunicationHubView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredTemplates.map((tmpl) => (
-              <div key={tmpl.id} className="bg-slate-900/90 border border-slate-200 p-5 rounded-3xl space-y-3 shadow-xl">
+              <div key={tmpl.id} className="bg-white border border-slate-200 p-5 rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
                   <div>
                     <h3 className="text-xs font-bold text-slate-900">{tmpl.title}</h3>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">Template ID: {tmpl.id}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Template ID: {tmpl.id}</p>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
                     META APPROVED
                   </span>
                 </div>
@@ -464,9 +464,9 @@ export const CommunicationHubView: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-1 pt-1">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 mr-1 self-center">Variables:</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-600 mr-1 self-center">Variables:</span>
                   {tmpl.placeholders.map((p, idx) => (
-                    <span key={idx} className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800 text-blue-300">
+                    <span key={idx} className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                       {`{{${p}}}`}
                     </span>
                   ))}
@@ -483,10 +483,10 @@ export const CommunicationHubView: React.FC = () => {
       {activeTab === 'logs' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Dispatch Live Test Notification */}
-          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-4 shadow-xl">
+          <div className="lg:col-span-5 bg-white border border-slate-200 p-6 rounded-3xl space-y-4 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Send className="w-4 h-4 text-emerald-400" />
+                <Send className="w-4 h-4 text-emerald-600" />
                 Live Broadcast Dispatcher
               </h2>
               <p className="text-xs text-slate-600 mt-1">
@@ -496,7 +496,7 @@ export const CommunicationHubView: React.FC = () => {
 
             <form onSubmit={handleSendTestBroadcast} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Channel:</label>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase">Channel:</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {(['whatsapp', 'telegram', 'sms'] as const).map((ch) => (
                     <button
@@ -505,8 +505,8 @@ export const CommunicationHubView: React.FC = () => {
                       onClick={() => setTestChannel(ch)}
                       className={`py-2 rounded-xl font-bold uppercase text-[11px] transition-colors cursor-pointer border ${
                         testChannel === ch
-                          ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                       }`}
                     >
                       {ch}
@@ -516,41 +516,41 @@ export const CommunicationHubView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Recipient Name:</label>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase">Recipient Name:</label>
                 <input
                   type="text"
                   required
                   value={testRecipientName}
                   onChange={(e) => setTestRecipientName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Phone / Telegram Chat ID:</label>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase">Phone / Telegram Chat ID:</label>
                 <input
                   type="text"
                   required
                   value={testRecipientContact}
                   onChange={(e) => setTestRecipientContact(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Message Content:</label>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase">Message Content:</label>
                 <textarea
                   rows={4}
                   required
                   value={testMessage}
                   onChange={(e) => setTestMessage(e.target.value)}
-                  className="w-full mt-1 p-3 rounded-xl bg-white border border-slate-200 shadow-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs leading-relaxed"
+                  className="w-full mt-1 p-3 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs leading-relaxed"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" /> Dispatch Live Notification
               </button>
@@ -558,10 +558,10 @@ export const CommunicationHubView: React.FC = () => {
           </div>
 
           {/* Right: Live Delivery Audit Log Table */}
-          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-4 shadow-xl">
+          <div className="lg:col-span-7 bg-white border border-slate-200 p-6 rounded-3xl space-y-4 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-400" />
+                <Clock className="w-4 h-4 text-blue-600" />
                 Real-Time Delivery Confirmation Audit Log
               </h2>
               <p className="text-xs text-slate-600 mt-1">
@@ -571,7 +571,7 @@ export const CommunicationHubView: React.FC = () => {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
                   <tr>
                     <th className="p-3">Recipient</th>
                     <th className="p-3">Channel</th>
@@ -580,43 +580,43 @@ export const CommunicationHubView: React.FC = () => {
                     <th className="p-3 text-right">Time</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-medium">
+                <tbody className="divide-y divide-slate-200 font-medium">
                   {commDeliveryLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-800/40 transition-colors">
+                    <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="p-3">
                         <p className="font-bold text-slate-900 text-xs">{log.recipientName}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{log.recipientContact}</p>
+                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{log.recipientContact}</p>
                       </td>
 
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
                           log.channel === 'whatsapp'
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : log.channel === 'telegram'
-                            ? 'bg-blue-950 text-blue-300 border border-blue-800'
-                            : 'bg-amber-950 text-amber-300 border border-amber-800'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}>
                           {log.channel}
                         </span>
                       </td>
 
-                      <td className="p-3 text-slate-300 max-w-xs truncate text-[11px]">
+                      <td className="p-3 text-slate-700 max-w-xs truncate text-[11px]">
                         {log.messageText}
                       </td>
 
                       <td className="p-3 text-center">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
                           log.status === 'READ'
-                            ? 'bg-blue-950 text-blue-300 border border-blue-800'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
                             : log.status === 'DELIVERED'
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                            : 'bg-slate-800 text-slate-300'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}>
                           {log.status === 'READ' ? '✓✓ READ' : log.status === 'DELIVERED' ? '✓✓ DELIVERED' : '✓ SENT'}
                         </span>
                       </td>
 
-                      <td className="p-3 text-right text-slate-400 font-mono text-[10px]">
+                      <td className="p-3 text-right text-slate-500 font-mono text-[10px]">
                         {log.timestamp}
                       </td>
                     </tr>

@@ -44,7 +44,7 @@ const DEFAULT_FEATURES: FeatureItem[] = [
 ];
 
 const DEFAULT_TENANTS: TenantItem[] = [
-  { id: 'tenant-akshara', name: 'Akshara Global Educational Trust', code: 'AKSHARA-01', institution_type: 'SCHOOL_AND_COLLEGE', status: 'ACTIVE' },
+  { id: 'tenant-apex', name: 'Apex Global Educational Trust', code: 'APEX-01', institution_type: 'SCHOOL_AND_COLLEGE', status: 'ACTIVE' },
   { id: 'tenant-vidya', name: 'Vidyanikethan Public School', code: 'VPS-BLR', institution_type: 'SCHOOL', status: 'ACTIVE' },
   { id: 'tenant-st-marys', name: "St. Mary's Pre-University College", code: 'SMPUC-MYS', institution_type: 'PU_COLLEGE', status: 'ACTIVE' }
 ];
@@ -52,7 +52,7 @@ const DEFAULT_TENANTS: TenantItem[] = [
 export const EntitlementsManager: React.FC = () => {
   const [features, setFeatures] = useState<FeatureItem[]>(DEFAULT_FEATURES);
   const [tenants, setTenants] = useState<TenantItem[]>(DEFAULT_TENANTS);
-  const [selectedTenantId, setSelectedTenantId] = useState<string>('tenant-akshara');
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('tenant-apex');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState('ALL');
   const [loading, setLoading] = useState(false);

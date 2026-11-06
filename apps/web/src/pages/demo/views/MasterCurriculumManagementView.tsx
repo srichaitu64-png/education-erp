@@ -323,8 +323,8 @@ export const MasterCurriculumManagementView: React.FC = () => {
               <div className="max-w-md mx-auto">
                 <h3 className="text-base font-bold text-slate-900">No Master Subjects in Catalogue</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  {tenantScope === 'akshara-trial'
-                    ? 'Your trial workspace starts completely clean. Add individual master subjects or load the recommended Karnataka PU / CBSE catalogue template.'
+                  {tenantScope === 'akshara-trial' || tenantScope === 'pilot-clean'
+                    ? 'Your pilot workspace starts completely clean. Add individual master subjects or load the recommended Karnataka PU / CBSE catalogue template.'
                     : 'No subjects matched your search filters.'}
                 </p>
               </div>

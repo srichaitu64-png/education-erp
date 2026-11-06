@@ -38,6 +38,7 @@ import {
   Shield,
   Layers,
   Sparkles,
+  School,
   ArrowRight,
   CheckCircle2,
   AlertTriangle,
@@ -161,6 +162,8 @@ export const InteractiveDemoPage: React.FC = () => {
     resetDemoData,
     resetTrialData,
     staffMembers,
+    tenantScope,
+    institutionName,
     setTenantScope,
   } = useDemoStore();
 
@@ -175,7 +178,10 @@ export const InteractiveDemoPage: React.FC = () => {
 
   const handleRoleSwitch = (nextRole: UserRoleType) => {
     switchRole(nextRole);
-    setActiveTab('dashboard');
+    const nextPrivilege = ROLE_PRIVILEGES[nextRole] || ROLE_PRIVILEGES.PRINCIPAL;
+    if (nextRole !== 'SUPER_ADMIN' && !nextPrivilege.allowedTabs.includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
     try {
       const url = new URL(window.location.href);
       url.searchParams.set('role', nextRole);
@@ -185,13 +191,18 @@ export const InteractiveDemoPage: React.FC = () => {
     }
   };
 
-  // Synchronize tenant isolation scope: Trial starts 100% clean (0 records), Demo has 3 demo records
+  // Synchronize tenant isolation scope: Clean Pilot starts 100% clean (0 records), Demo has 3 demo records
   useEffect(() => {
-    if (tenant?.code === 'akshara-trial') {
-      setTenantScope('akshara-trial');
-    } else {
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode');
+    const tenantParam = params.get('tenant');
+
+    if (tenant?.code === 'pilot-clean' || tenant?.code === 'akshara-trial' || modeParam === 'clean' || tenantParam === 'pilot-clean') {
+      setTenantScope('pilot-clean');
+    } else if (tenant?.code === 'our-school-demo' || modeParam === 'demo') {
       setTenantScope('our-school-demo');
     }
+    // Note: Do not overwrite persistent user choice if already stored
   }, [tenant, setTenantScope]);
 
   // Sync role and tab from URL search parameters on initial mount without auto-shifting
@@ -614,21 +625,46 @@ export const InteractiveDemoPage: React.FC = () => {
       {/* Top Banner with Role Switcher & Reset */}
       <header className="bg-white border-b border-slate-200 text-slate-900 px-4 py-3 shrink-0 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {tenant?.code === 'akshara-trial' ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
-                <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                AKSHARA GLOBAL SCHOOL & PU COLLEGE • 30-DAY TRIAL PILOT
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                OUR SCHOOL • LIVE DEMO SANDBOX (ACTIVE DEMO)
-              </span>
-            )}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Workspace Mode Switcher (Pilot Clean vs Sample Demo) */}
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 shadow-inner">
+              <button
+                type="button"
+                onClick={() => {
+                  setTenantScope('pilot-clean');
+                  resetTrialData();
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial'
+                    ? 'bg-blue-600 text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Completely empty canvas with 0 records - perfect for entering live pilot data"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>🚀 Clean Pilot Project (0 Data)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTenantScope('our-school-demo');
+                  resetDemoData();
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  tenantScope === 'our-school-demo'
+                    ? 'bg-emerald-600 text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Pre-populated sandbox with 3 demonstration students and invoices"
+              >
+                <School className="w-3.5 h-3.5" />
+                <span>🧪 Demo Sandbox (3 Students)</span>
+              </button>
+            </div>
+
             <span className="text-xs text-slate-500 hidden sm:inline">
-              {tenant?.code === 'akshara-trial'
-                ? 'Independent Trial Pilot Sandbox • Clean Canvas Ready for Pilot Records'
+              {tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial'
+                ? 'Independent Pilot Sandbox • Clean Slate (0 Students, 0 Subjects, Ready for Entry)'
                 : '3 Fictional Demonstration Students • Connected Invoices, Marks & Hall Tickets'}
             </span>
           </div>
@@ -674,14 +710,14 @@ export const InteractiveDemoPage: React.FC = () => {
               </kbd>
             </button>
 
-            {tenant?.code === 'akshara-trial' ? (
+            {tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial' ? (
               <button
                 onClick={resetTrialData}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 flex items-center gap-1.5 border border-rose-300 transition-colors cursor-pointer shadow-xs"
-                title="Wipe trial data to 0 records for fresh pilot data entry"
+                title="Wipe pilot data to 0 records for fresh pilot data entry"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Reset Pilot (0 Records)
+                Clear Pilot (0 Records)
               </button>
             ) : (
               <button
@@ -720,8 +756,8 @@ export const InteractiveDemoPage: React.FC = () => {
               </>
             ) : (
               <span className="text-slate-700 font-medium">
-                {tenant?.code === 'akshara-trial'
-                  ? 'Akshara Global Trial Campus • School & PU College Units (Trial Pilot)'
+                {tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial'
+                  ? 'Pilot Institution Campus • School & PU College Units (Live Clean Slate)'
                   : 'OUR SCHOOL Demonstration Campus • CBSE & State Board • Affiliation # 830192 (Live Demo)'}
               </span>
             )}
@@ -919,8 +955,8 @@ export const InteractiveDemoPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1.5 rounded-xl bg-white text-purple-800 border border-purple-200 text-xs font-bold shadow-xs">
-                    {tenant?.code === 'akshara-trial' || (tenant?.name && tenant.name.toLowerCase().includes('akshara'))
-                      ? 'Akshara Global Educational Trust'
+                    {tenantScope === 'pilot-clean' || tenantScope === 'akshara-trial'
+                      ? 'Pilot Educational Trust (Pilot Governance)'
                       : 'OUR SCHOOL Educational Trust'}
                   </span>
                 </div>
@@ -1606,12 +1642,12 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
 
                   {/* Sub-tab pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-200 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs">
                     <button
                       onClick={() => setProgressCardSubTab('individual')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'individual'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -1622,7 +1658,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       onClick={() => setProgressCardSubTab('consolidated')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'consolidated'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -1633,7 +1669,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       onClick={() => setProgressCardSubTab('competitive')}
                       className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         progressCardSubTab === 'competitive'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -1649,7 +1685,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Header Details */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
+                        <span className="text-[10px] uppercase font-bold text-blue-700 tracking-wider">
                           Official Term Assessment Report Card
                         </span>
                         <h2 className="text-xl font-black text-slate-900 mt-0.5">{indCard.examName}</h2>
@@ -1660,11 +1696,11 @@ export const InteractiveDemoPage: React.FC = () => {
                       <div className="text-right">
                         <span className="text-xs text-slate-600 block font-medium">Student: <strong className="text-slate-900">{indCard.studentName}</strong></span>
                         <span className="text-xs text-slate-600 block font-mono">Admission #: {indCard.admissionNumber}</span>
-                        <span className="text-xs text-emerald-400 font-bold block">Class Attendance: {indCard.attendancePct}%</span>
+                        <span className="text-xs text-emerald-700 font-bold block">Class Attendance: {indCard.attendancePct}%</span>
                         <button
                           type="button"
                           onClick={() => handleOpenStudent360(indCard.studentId || indCard.admissionNumber)}
-                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 hover:bg-indigo-600 hover:text-white transition-colors cursor-pointer"
+                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
                         >
                           <span>Inspect Student 360° Profile</span>
                           <span>&rarr;</span>
@@ -1675,7 +1711,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Marks Breakdown Table */}
                     <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
+                        <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-3">Subject</th>
                             <th className="px-4 py-3 text-right">Theory (Max)</th>
@@ -1777,19 +1813,19 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Academic Indicators */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[11px] text-slate-600 uppercase font-bold">Class Attendance</span>
-                        <p className="text-xl font-black text-emerald-400 mt-1">{consCard.overallAttendancePct}%</p>
+                        <p className="text-xl font-black text-emerald-700 mt-1">{consCard.overallAttendancePct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Regularity benchmark achieved</p>
                       </div>
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[11px] text-slate-600 uppercase font-bold">Practical Lab Proficiency</span>
-                        <p className="text-xl font-black text-blue-400 mt-1">{consCard.practicalProficiencyPct}%</p>
+                        <p className="text-xl font-black text-blue-700 mt-1">{consCard.practicalProficiencyPct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Physics & Chemistry practical logbooks</p>
                       </div>
-                      <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-200">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <span className="text-[11px] text-slate-600 uppercase font-bold">Assignments & Homework</span>
-                        <p className="text-xl font-black text-purple-400 mt-1">{consCard.assignmentsScore}</p>
+                        <p className="text-xl font-black text-purple-700 mt-1">{consCard.assignmentsScore}</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Continuous assessment record</p>
                       </div>
                     </div>
@@ -1801,7 +1837,7 @@ export const InteractiveDemoPage: React.FC = () => {
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 mb-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 mb-1">
                           {compRep.programme}
                         </div>
                         <h2 className="text-xl font-black text-slate-900">{compRep.testName}</h2>
@@ -1810,7 +1846,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-black text-emerald-400 block">{compRep.netScore} / {compRep.totalMarks}</span>
+                        <span className="text-2xl font-black text-emerald-700 block">{compRep.netScore} / {compRep.totalMarks}</span>
                         <span className="text-xs text-slate-600">Percentile: <strong className="text-slate-900">{compRep.percentileEstimate}th %tile</strong></span>
                       </div>
                     </div>
@@ -1818,23 +1854,23 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Question Attempt Matrix */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Questions</span>
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Questions</span>
                         <p className="text-2xl font-black text-slate-900 mt-1">{compRep.totalQuestions}</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Physics, Chem, Botany, Zoo</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-emerald-400 block">Correct Answers (+4)</span>
-                        <p className="text-2xl font-black text-emerald-400 mt-1">{compRep.correctAnswers}</p>
-                        <p className="text-[10px] text-emerald-300 mt-0.5">+{compRep.correctMarks} Marks</p>
+                        <span className="text-[10px] uppercase font-bold text-emerald-700 block">Correct Answers (+4)</span>
+                        <p className="text-2xl font-black text-emerald-700 mt-1">{compRep.correctAnswers}</p>
+                        <p className="text-[10px] text-emerald-600 mt-0.5">+{compRep.correctMarks} Marks</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-rose-400 block">Incorrect (-1)</span>
-                        <p className="text-2xl font-black text-rose-400 mt-1">{compRep.incorrectAnswers}</p>
-                        <p className="text-[10px] text-rose-300 mt-0.5">{compRep.negativeMarks} Negative Marks</p>
+                        <span className="text-[10px] uppercase font-bold text-rose-700 block">Incorrect (-1)</span>
+                        <p className="text-2xl font-black text-rose-700 mt-1">{compRep.incorrectAnswers}</p>
+                        <p className="text-[10px] text-rose-600 mt-0.5">{compRep.negativeMarks} Negative Marks</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Accuracy Ratio</span>
-                        <p className="text-2xl font-black text-amber-400 mt-1">{compRep.accuracyPct}%</p>
+                        <span className="text-[10px] uppercase font-bold text-amber-800 block">Accuracy Ratio</span>
+                        <p className="text-2xl font-black text-amber-800 mt-1">{compRep.accuracyPct}%</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Unattempted: {compRep.unattemptedQuestions}</p>
                       </div>
                     </div>
@@ -1842,7 +1878,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Subject Breakdown Table */}
                     <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
+                        <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-2.5">Subject Section</th>
                             <th className="px-4 py-2.5 text-center">Questions</th>
@@ -1911,7 +1947,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       else if (r === 'COMPUTER_OPERATOR') setSelectedUserIdentity('Suresh Gowda (Data Operator)');
                       else setSelectedUserIdentity('Dr. Ramesh Kumar (EMP-PRIN-01)');
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                   >
                     <option value="PRINCIPAL">👑 Principal (Academic Authority)</option>
                     <option value="CHAIRMAN_DIRECTOR">🏛️ Chairman / Director (Institution Super Admin)</option>
@@ -2488,7 +2524,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                         >
                           {students.map((st) => (
-                            <option key={st.id} value={st.id} className="bg-slate-900 text-white">
+                            <option key={st.id} value={st.id} className="text-slate-900 bg-white">
                               {st.first_name} {st.last_name} ({st.admission_number} • {st.class_name})
                             </option>
                           ))}
@@ -2497,7 +2533,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* 2. Academic Year */}
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">2. Academic Session</label>
+                        <label className="block text-slate-700 font-bold mb-1 uppercase text-[10px]">2. Academic Session</label>
                         <select
                           value={multiAcademicYear}
                           onChange={(e) => setMultiAcademicYear(e.target.value)}
@@ -2525,8 +2561,8 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* 4. Curriculum / Stream */}
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1 uppercase text-[10px]">4. Standard Fee Catalog</label>
-                        <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-700">
+                        <label className="block text-slate-700 font-bold mb-1 uppercase text-[10px]">4. Standard Fee Catalog</label>
+                        <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
                           <button
                             type="button"
                             onClick={() => {
@@ -2535,8 +2571,8 @@ export const InteractiveDemoPage: React.FC = () => {
                             }}
                             className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
                               multiStream === 'School'
-                                ? 'bg-blue-600 text-white'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                             }`}
                           >
                             School (21 Heads)
@@ -2549,8 +2585,8 @@ export const InteractiveDemoPage: React.FC = () => {
                             }}
                             className={`flex-1 py-1.5 rounded-lg font-bold text-center transition-all cursor-pointer ${
                               multiStream === 'PU College'
-                                ? 'bg-blue-600 text-white'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                             }`}
                           >
                             PU College (18 Heads)
@@ -2562,11 +2598,11 @@ export const InteractiveDemoPage: React.FC = () => {
                     {/* Searchable Multi-Select Fee Head Dropdown & Active Pills */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                          <Search className="w-3.5 h-3.5 text-blue-400" />
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <Search className="w-3.5 h-3.5 text-blue-600" />
                           Search & Select Fee Heads ({multiSelectedHeadCodes.length} Selected)
                         </label>
-                        <span className="text-[11px] text-slate-600">
+                        <span className="text-[11px] text-slate-500">
                           Searchable dropdown across {availableHeads.length} institution fee heads
                         </span>
                       </div>
@@ -2579,26 +2615,26 @@ export const InteractiveDemoPage: React.FC = () => {
                           value={headSearchQuery}
                           onChange={(e) => setHeadSearchQuery(e.target.value)}
                           placeholder="Search fee head by name, code or category (e.g. Tuition, Lab, Hostel, Transport, Caution Deposit)..."
-                          className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </div>
 
                       {/* Active Selected Fee Heads Pills */}
                       {multiSelectedHeadCodes.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-200">
-                          <span className="text-[11px] font-bold text-slate-400 self-center mr-1">Active Heads:</span>
+                        <div className="flex flex-wrap gap-1.5 mb-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-[11px] font-bold text-slate-500 self-center mr-1">Active Heads:</span>
                           {multiSelectedHeadCodes.map(code => {
                             const hd = availableHeads.find(h => h.head_code === code) || { title: code.replace(/_/g, ' '), head_code: code };
                             return (
                               <span
                                 key={code}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-900/40 border border-blue-500/40 text-blue-200 text-xs font-semibold"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold"
                               >
                                 <span>{hd.title}</span>
                                 <button
                                   type="button"
                                   onClick={() => setMultiSelectedHeadCodes(multiSelectedHeadCodes.filter(c => c !== code))}
-                                  className="text-blue-400 hover:text-white font-bold ml-1 cursor-pointer"
+                                  className="text-blue-600 hover:text-blue-900 font-bold ml-1 cursor-pointer"
                                   title="Remove fee head"
                                 >
                                   ✕
@@ -2611,7 +2647,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                       {/* Filtered Dropdown Options (shows matching results when searching or click to view) */}
                       {headSearchQuery.trim().length > 0 && (
-                        <div className="max-h-48 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 shadow-xl mb-3">
+                        <div className="max-h-48 overflow-y-auto rounded-xl bg-white border border-slate-200 p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 shadow-lg mb-3">
                           {filteredHeads.map(h => {
                             const isSelected = multiSelectedHeadCodes.includes(h.head_code);
                             return (
@@ -2621,15 +2657,15 @@ export const InteractiveDemoPage: React.FC = () => {
                                 onClick={() => toggleFeeHead(h)}
                                 className={`p-2 rounded-lg text-left text-xs flex items-center justify-between border transition-all cursor-pointer ${
                                   isSelected
-                                    ? 'bg-blue-600/30 border-blue-500 text-white font-bold'
-                                    : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                                    ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold'
+                                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100'
                                 }`}
                               >
                                 <div className="truncate min-w-0 pr-2">
                                   <p className="truncate font-semibold">{h.title}</p>
-                                  <span className="text-[10px] text-slate-400 font-mono">₹{h.default_amount.toLocaleString()} • {h.category}</span>
+                                  <span className="text-[10px] text-slate-500 font-mono">₹{h.default_amount.toLocaleString()} • {h.category}</span>
                                 </div>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
                                   {isSelected ? '✓ Added' : '+ Add'}
                                 </span>
                               </button>
@@ -2641,7 +2677,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     {/* Fee Head Breakdown & Collection Input Table */}
                     {multiSelectedHeadCodes.length > 0 ? (
-                      <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-900/60">
+                      <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
                         <table className="w-full text-left text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
@@ -2821,13 +2857,13 @@ export const InteractiveDemoPage: React.FC = () => {
                   </div>
 
                   {/* Student Ledger Invoices Table */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
-                    <div className="p-4 border-b border-slate-200 bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-blue-400" />
+                        <CreditCard className="w-4 h-4 text-blue-600" />
                         Active Student Fee Accounts & Invoices
                       </h2>
-                      <span className="text-[11px] text-slate-600">
+                      <span className="text-[11px] text-slate-500">
                         Select an invoice below to process partial or full settlement with instantaneous receipt emission.
                       </span>
                     </div>
@@ -2854,25 +2890,25 @@ export const InteractiveDemoPage: React.FC = () => {
                                 <td className="p-3 font-mono text-slate-800 font-bold">{inv.invoice_number}</td>
                                 <td className="p-3">
                                   <span className="font-bold text-slate-900 block">{inv.student_name}</span>
-                                  <span className="text-[10px] text-slate-400 font-mono">{inv.admission_number} • {inv.class_name}</span>
+                                  <span className="text-[10px] text-slate-500 font-mono">{inv.admission_number} • {inv.class_name}</span>
                                 </td>
                                 <td className="p-3">
-                                  <span className="text-slate-700 block font-semibold">{inv.term_name || 'Term 1'}</span>
-                                  <span className="text-[9px] bg-slate-800 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                                  <span className="text-slate-800 block font-semibold">{inv.term_name || 'Term 1'}</span>
+                                  <span className="text-[9px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-mono font-bold">
                                     {inv.fee_head.replace('_', ' ')}
                                   </span>
                                 </td>
                                 <td className="p-3 font-mono font-bold text-slate-900">₹{inv.total_amount.toLocaleString()}</td>
-                                <td className="p-3 font-mono text-emerald-400 font-semibold">₹{inv.paid_amount.toLocaleString()}</td>
-                                <td className="p-3 font-mono font-bold text-rose-400">₹{inv.balance_amount.toLocaleString()}</td>
+                                <td className="p-3 font-mono text-emerald-700 font-semibold">₹{inv.paid_amount.toLocaleString()}</td>
+                                <td className="p-3 font-mono font-bold text-rose-700">₹{inv.balance_amount.toLocaleString()}</td>
                                 <td className="p-3 font-mono text-slate-600 text-[11px]">{inv.due_date}</td>
                                 <td className="p-3">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
                                     inv.status === 'PAID'
-                                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                                       : inv.status === 'OVERDUE'
-                                      ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                                      : 'bg-amber-950 text-amber-300 border border-amber-800'
+                                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                      : 'bg-amber-50 text-amber-800 border-amber-200'
                                   }`}>
                                     {inv.status}
                                   </span>
@@ -2885,7 +2921,7 @@ export const InteractiveDemoPage: React.FC = () => {
                                         setPaymentAmount(inv.balance_amount);
                                         setTransactionRef(`TXN/${Date.now().toString().slice(-6)}`);
                                       }}
-                                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all shadow-md hover:shadow-blue-500/20 cursor-pointer"
+                                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
                                     >
                                       Collect & Issue Receipt
                                     </button>
@@ -2898,9 +2934,9 @@ export const InteractiveDemoPage: React.FC = () => {
                                           setShowReceiptModal(true);
                                         }
                                       }}
-                                      className="text-emerald-400 hover:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200"
+                                      className="text-emerald-700 hover:text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"
                                     >
-                                      <Receipt className="w-3.5 h-3.5" /> View Receipt
+                                      <Receipt className="w-3.5 h-3.5 text-emerald-600" /> View Receipt
                                     </button>
                                   )}
                                 </td>
@@ -2928,30 +2964,30 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
                         <button
                           onClick={() => setSelectedInvoiceForPayment(null)}
-                          className="text-slate-400 hover:text-white text-xs font-bold bg-slate-800 px-2.5 py-1 rounded-lg"
+                          className="text-slate-600 hover:text-slate-900 text-xs font-bold bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg cursor-pointer"
                         >
                           Cancel
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">Total Invoice Due:</span>
+                          <span className="text-[10px] text-slate-500 uppercase font-bold">Total Invoice Due:</span>
                           <p className="text-lg font-black text-slate-900 font-mono">₹{selectedInvoiceForPayment.total_amount.toLocaleString()}</p>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">Already Paid:</span>
-                          <p className="text-lg font-black text-emerald-400 font-mono">₹{selectedInvoiceForPayment.paid_amount.toLocaleString()}</p>
+                          <span className="text-[10px] text-slate-500 uppercase font-bold">Already Paid:</span>
+                          <p className="text-lg font-black text-emerald-700 font-mono">₹{selectedInvoiceForPayment.paid_amount.toLocaleString()}</p>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold">Current Balance:</span>
-                          <p className="text-lg font-black text-rose-400 font-mono">₹{selectedInvoiceForPayment.balance_amount.toLocaleString()}</p>
+                          <span className="text-[10px] text-slate-500 uppercase font-bold">Current Balance:</span>
+                          <p className="text-lg font-black text-rose-700 font-mono">₹{selectedInvoiceForPayment.balance_amount.toLocaleString()}</p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
                             Payment Amount (Supports Partial Instalments):
                           </label>
                           <div className="relative">
@@ -2962,19 +2998,19 @@ export const InteractiveDemoPage: React.FC = () => {
                               max={selectedInvoiceForPayment.balance_amount}
                               value={paymentAmount}
                               onChange={(e) => setPaymentAmount(Math.min(selectedInvoiceForPayment.balance_amount, Math.max(1, Number(e.target.value))))}
-                              className="w-full bg-white border border-slate-200 text-slate-900 pl-8 pr-3 py-2 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full bg-white border border-slate-300 text-slate-900 pl-8 pr-3 py-2 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                           <div className="flex gap-2 mt-1.5">
                             <button
                               onClick={() => setPaymentAmount(selectedInvoiceForPayment.balance_amount)}
-                              className="text-[10px] bg-slate-800 hover:bg-slate-700 text-blue-400 font-bold px-2 py-0.5 rounded cursor-pointer"
+                              className="text-[10px] bg-slate-100 hover:bg-slate-200 text-blue-700 border border-slate-200 font-bold px-2 py-0.5 rounded cursor-pointer"
                             >
                               Pay Full (₹{selectedInvoiceForPayment.balance_amount.toLocaleString()})
                             </button>
                             <button
                               onClick={() => setPaymentAmount(Math.ceil(selectedInvoiceForPayment.balance_amount / 2))}
-                              className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded cursor-pointer"
+                              className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold px-2 py-0.5 rounded cursor-pointer"
                             >
                               50% Instalment
                             </button>
@@ -2982,13 +3018,13 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
                             Payment Method:
                           </label>
                           <select
                             value={paymentMethod}
                             onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)}
-                            className="w-full bg-slate-900 border border-slate-700 text-amber-300 px-3 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 px-3 py-2 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                           >
                             <option value="UPI">📱 UPI (QR / PhonePe / GPay / Paytm)</option>
                             <option value="CASH">💵 Cash at Counter</option>
@@ -2999,7 +3035,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-slate-300 mb-1">
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
                             Transaction Reference / UTR Number:
                           </label>
                           <input
@@ -3007,18 +3043,18 @@ export const InteractiveDemoPage: React.FC = () => {
                             value={transactionRef}
                             onChange={(e) => setTransactionRef(e.target.value)}
                             placeholder="e.g. UPI/89210 or UTR987654321"
-                            className="w-full bg-white border border-slate-200 text-slate-900 px-3 py-2 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-white border border-slate-300 text-slate-900 px-3 py-2 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
 
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-3 border-t border-slate-200">
-                        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={paymentVerificationConfirmed}
                             onChange={(e) => setPaymentVerificationConfirmed(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700 cursor-pointer"
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
                           />
                           <span>Confirm funds verified in bank account or cash drawer</span>
                         </label>
@@ -3075,11 +3111,11 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400 font-bold">Method:</span>
+                      <span className="text-slate-600 font-bold">Method:</span>
                       <select
                         value={receiptRegisterFilterMethod}
                         onChange={(e) => setReceiptRegisterFilterMethod(e.target.value)}
-                        className="bg-slate-900 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold"
+                        className="bg-white border border-slate-300 text-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 shadow-xs"
                       >
                         <option value="ALL">All Methods</option>
                         <option value="UPI">UPI</option>
@@ -3296,8 +3332,8 @@ export const InteractiveDemoPage: React.FC = () => {
                     </div>
 
                     {/* Category-Wise Breakdown Matrix */}
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden shadow-xl">
-                      <div className="p-4 border-b border-slate-200 bg-slate-900/50">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                      <div className="p-4 border-b border-slate-200 bg-slate-50">
                         <h3 className="text-sm font-bold text-slate-900">Fee Head Category Wise Collection Breakdown</h3>
                       </div>
                       <div className="overflow-x-auto">
@@ -3521,17 +3557,17 @@ export const InteractiveDemoPage: React.FC = () => {
 
                         {/* Term Schedule Breakdown */}
                         <div>
-                          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                             Configured Terms / Semesters Schedule
                           </h4>
                           <div className="space-y-1.5">
                             {fs.terms_config.map((t) => (
-                              <div key={t.term_code} className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                              <div key={t.term_code} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
                                 <div>
                                   <span className="font-bold text-slate-900 block">{t.name}</span>
-                                  <span className="text-[10px] text-slate-400 font-mono">Due Date: {t.due_date}</span>
+                                  <span className="text-[10px] text-slate-500 font-mono">Due Date: {t.due_date}</span>
                                 </div>
-                                <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
+                                <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
                                   {t.share_pct}% Installment
                                 </span>
                               </div>
@@ -3541,14 +3577,14 @@ export const InteractiveDemoPage: React.FC = () => {
 
                         {/* Fee Heads Breakdown */}
                         <div>
-                          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                             Institution-Defined Fee Heads
                           </h4>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             {fs.fee_heads.map((h) => (
-                              <div key={h.head_code} className="bg-slate-900/40 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
-                                <span className="text-slate-300 text-[11px] truncate pr-2">{h.title}</span>
-                                <span className="font-mono font-bold text-slate-200 shrink-0">₹{h.amount.toLocaleString()}</span>
+                              <div key={h.head_code} className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                                <span className="text-slate-800 text-[11px] truncate pr-2 font-medium">{h.title}</span>
+                                <span className="font-mono font-bold text-slate-900 shrink-0">₹{h.amount.toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
@@ -3567,17 +3603,17 @@ export const InteractiveDemoPage: React.FC = () => {
               {/* MULTI-FORMAT OFFICIAL RECEIPT PREVIEW & PRINT MODAL */}
               {/* ============================================================= */}
               {showReceiptModal && activeReceiptForModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-                  <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl my-8">
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl my-8 text-slate-900">
                     {/* Modal Top Bar */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                          <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
                             Official Verified Fee Receipt
                           </span>
                           {activeReceiptForModal.is_duplicate && (
-                            <span className="text-xs bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded font-bold uppercase">
+                            <span className="text-xs bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded font-bold uppercase">
                               DUPLICATE (Reprint #{activeReceiptForModal.reprint_count})
                             </span>
                           )}
@@ -3705,7 +3741,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             </div>
                             <div className="text-center">
                               <span className="font-bold text-slate-800 uppercase block mb-1">
-                                {tenant?.code === 'akshara-trial' ? 'Akshara Accounts Dept' : 'OUR SCHOOL Accounts Dept'}
+                                {activeReceiptForModal.institution_branding?.institution_name || 'Campus Accounts Dept'}
                               </span>
                               <div className="w-28 border-b border-slate-900 mb-1"></div>
                               <span>Authorized Signatory Seal</span>
@@ -3718,7 +3754,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       {receiptPrintLayout === '80MM' && (
                         <div className="max-w-[320px] mx-auto text-left font-mono text-[11px] leading-tight space-y-2 border border-dashed border-slate-400 p-4 bg-amber-50/20">
                           <div className="text-center border-b border-dashed border-slate-400 pb-2">
-                            <p className="font-black text-sm">AKSHARA GLOBAL CAMPUS</p>
+                            <p className="font-black text-sm">{activeReceiptForModal.institution_branding?.institution_name || 'CAMPUS INSTITUTION'}</p>
                             <p className="text-[9px]">BENGALURU - 560085</p>
                             <p className="text-[9px]">PH: +91 80 2345 6789</p>
                             {activeReceiptForModal.is_duplicate && (
@@ -3760,7 +3796,7 @@ export const InteractiveDemoPage: React.FC = () => {
                           </div>
                           <div className="text-center border-t border-dashed border-slate-400 pt-2 text-[9px]">
                             <p>VERIFY: {activeReceiptForModal.qr_verification_code.slice(0, 24)}...</p>
-                            <p className="mt-1 font-bold">THANK YOU - AKSHARA ACCOUNTS</p>
+                            <p className="mt-1 font-bold">THANK YOU - ACCOUNTS DEPARTMENT</p>
                           </div>
                         </div>
                       )}
@@ -3769,7 +3805,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       {receiptPrintLayout === '58MM' && (
                         <div className="max-w-[240px] mx-auto text-left font-mono text-[10px] leading-snug space-y-1.5 border border-dashed border-slate-400 p-3 bg-amber-50/20">
                           <div className="text-center border-b border-dashed border-slate-400 pb-1.5">
-                            <p className="font-black">AKSHARA ERP</p>
+                            <p className="font-black">CAMPUS ERP</p>
                             <p className="text-[8px]">FEES RECEIPT</p>
                             {activeReceiptForModal.is_duplicate && (
                               <p className="text-rose-600 font-bold text-[8px]">* DUPLICATE *</p>
@@ -3844,7 +3880,7 @@ export const InteractiveDemoPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => setShowReceiptModal(false)}
-                          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-800 cursor-pointer"
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 border border-slate-200 cursor-pointer"
                         >
                           Close Preview
                         </button>
@@ -3856,16 +3892,16 @@ export const InteractiveDemoPage: React.FC = () => {
 
               {/* Add Institution-Specific Fee Head Modal */}
               {showAddHeadModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                  <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl text-xs space-y-4">
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl text-xs space-y-4 text-slate-900">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                       <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                        <Plus className="w-4 h-4 text-purple-400" />
+                        <Plus className="w-4 h-4 text-purple-600" />
                         Add Institution-Specific Fee Head
                       </h3>
                       <button
                         onClick={() => { setShowAddHeadModal(false); setNewHeadFeedback(null); }}
-                        className="text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
+                        className="text-slate-400 hover:text-slate-700 font-bold text-sm cursor-pointer"
                       >
                         ✕
                       </button>
@@ -3874,8 +3910,8 @@ export const InteractiveDemoPage: React.FC = () => {
                     {newHeadFeedback && (
                       <div className={`p-3 rounded-xl text-xs font-semibold ${
                         newHeadFeedback.startsWith('Permission denied')
-                          ? 'bg-rose-950 text-rose-200 border border-rose-800'
-                          : 'bg-emerald-950 text-emerald-200 border border-emerald-800'
+                          ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       }`}>
                         {newHeadFeedback}
                       </div>
@@ -3883,7 +3919,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">Fee Head Name / Title *</label>
+                        <label className="block text-slate-700 font-bold mb-1">Fee Head Name / Title *</label>
                         <input
                           type="text"
                           value={newHeadTitle}
@@ -3892,28 +3928,28 @@ export const InteractiveDemoPage: React.FC = () => {
                             setNewHeadCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '_'));
                           }}
                           placeholder="e.g. Robotics & AI Lab Fee"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-300 font-bold mb-1">Fee Head Identifier Code</label>
+                        <label className="block text-slate-700 font-bold mb-1">Fee Head Identifier Code</label>
                         <input
                           type="text"
                           value={newHeadCode}
                           onChange={(e) => setNewHeadCode(e.target.value)}
                           placeholder="e.g. ROBOTICS_AI_LAB"
-                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-slate-300 font-bold mb-1">Category</label>
+                          <label className="block text-slate-700 font-bold mb-1">Category</label>
                           <select
                             value={newHeadCategory}
                             onChange={(e) => setNewHeadCategory(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                           >
                             <option value="Tuition">Tuition</option>
                             <option value="Admission">Admission</option>
@@ -3930,24 +3966,24 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-slate-300 font-bold mb-1">Default Base Amount (₹)</label>
+                          <label className="block text-slate-700 font-bold mb-1">Default Base Amount (₹)</label>
                           <input
                             type="number"
                             min="0"
                             value={newHeadAmount}
                             onChange={(e) => setNewHeadAmount(Number(e.target.value) || 0)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-slate-300 font-bold mb-1">Applicable Level</label>
+                          <label className="block text-slate-700 font-bold mb-1">Applicable Level</label>
                           <select
                             value={newHeadInstType}
                             onChange={(e) => setNewHeadInstType(e.target.value as any)}
-                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                           >
                             <option value="School">School Only</option>
                             <option value="PU College">PU College Only</option>
@@ -3956,16 +3992,16 @@ export const InteractiveDemoPage: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-slate-300 font-bold mb-1">Refundable Caution?</label>
+                          <label className="block text-slate-700 font-bold mb-1">Refundable Caution?</label>
                           <div className="flex items-center gap-2 mt-2">
                             <input
                               type="checkbox"
                               id="refToggle"
                               checked={newHeadRefundable}
                               onChange={(e) => setNewHeadRefundable(e.target.checked)}
-                              className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                              className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300"
                             />
-                            <label htmlFor="refToggle" className="text-slate-300">Yes (Security Deposit)</label>
+                            <label htmlFor="refToggle" className="text-slate-700">Yes (Security Deposit)</label>
                           </div>
                         </div>
                       </div>
@@ -3975,7 +4011,7 @@ export const InteractiveDemoPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowAddHeadModal(false)}
-                        className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 font-bold hover:bg-slate-200 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -4075,8 +4111,8 @@ export const InteractiveDemoPage: React.FC = () => {
                       onClick={() => setMigrationStep(s.step)}
                       className={`p-2.5 rounded-xl transition-all cursor-pointer ${
                         migrationStep === s.step
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black'
-                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                          ? 'bg-blue-600 text-white shadow-sm font-black'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                       }`}
                     >
                       {s.title}
@@ -4091,15 +4127,15 @@ export const InteractiveDemoPage: React.FC = () => {
                     <p className="text-xs text-slate-600">
                       Supported formats: Excel (.xlsx, .xls), CSV (.csv), Word (.docx), Scanned PDF (OCR Extraction), and JSON.
                     </p>
-                    <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center space-y-3 bg-slate-900/40">
-                      <Upload className="w-8 h-8 text-blue-400 mx-auto" />
+                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center space-y-3 bg-slate-50">
+                      <Upload className="w-8 h-8 text-blue-600 mx-auto" />
                       <div>
                         <p className="text-sm font-bold text-slate-900">Active Ingest File: {batch.fileName}</p>
                         <p className="text-xs text-slate-600">Format: {batch.fileFormat} • Total Records: {batch.totalRecords.toLocaleString('en-IN')}</p>
                       </div>
                       <button
                         onClick={() => setMigrationStep(2)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
                       >
                         Proceed to Column Mapping →
                       </button>
@@ -4116,7 +4152,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     </p>
                     <div className="overflow-x-auto rounded-xl border border-slate-200">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-200">
+                        <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
                             <th className="px-4 py-3">Legacy Source Header</th>
                             <th className="px-4 py-3">Mapped Target Field</th>
@@ -4127,14 +4163,14 @@ export const InteractiveDemoPage: React.FC = () => {
                         <tbody className="divide-y divide-slate-200">
                           {batch.columnMappings.map((m, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80">
-                              <td className="px-4 py-3 font-mono font-bold text-amber-300">{m.sourceHeader}</td>
-                              <td className="px-4 py-3 font-bold text-blue-400">{m.targetField}</td>
+                              <td className="px-4 py-3 font-mono font-bold text-amber-900">{m.sourceHeader}</td>
+                              <td className="px-4 py-3 font-bold text-blue-700">{m.targetField}</td>
                               <td className="px-4 py-3">
-                                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[10px]">
+                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px]">
                                   {(m.confidence * 100).toFixed(0)}% MATCH
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-slate-300 font-mono text-[11px]">{m.sampleValue}</td>
+                              <td className="px-4 py-3 text-slate-700 font-mono text-[11px]">{m.sampleValue}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -4143,7 +4179,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="flex justify-end">
                       <button
                         onClick={() => setMigrationStep(3)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs"
                       >
                         Proceed to Duplicate Resolution →
                       </button>
@@ -4163,18 +4199,18 @@ export const InteractiveDemoPage: React.FC = () => {
                         <div key={c.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                           <div>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              c.matchType === 'EXACT_DUPLICATE' ? 'bg-rose-950 text-rose-300' : 'bg-amber-950 text-amber-300'
+                              c.matchType === 'EXACT_DUPLICATE' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}>
                               {c.matchType}
                             </span>
                             <p className="font-bold text-slate-900 text-sm mt-1">Source Row #{c.sourceRow}: {c.sourceName} ({c.sourceAdmissionNo})</p>
-                            <p className="text-slate-400 text-[11px]">Matches Existing: {c.existingRecordName} • Phone: {c.sourcePhone}</p>
+                            <p className="text-slate-600 text-[11px]">Matches Existing: {c.existingRecordName} • Phone: {c.sourcePhone}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => resolveMigrationCandidate(batch.id, c.id, 'SKIP')}
                               className={`px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer ${
-                                c.resolvedAction === 'SKIP' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-300'
+                                c.resolvedAction === 'SKIP' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
                               }`}
                             >
                               Skip
@@ -4182,7 +4218,7 @@ export const InteractiveDemoPage: React.FC = () => {
                             <button
                               onClick={() => resolveMigrationCandidate(batch.id, c.id, 'MERGE')}
                               className={`px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer ${
-                                c.resolvedAction === 'MERGE' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'
+                                c.resolvedAction === 'MERGE' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
                               }`}
                             >
                               Merge
@@ -4194,7 +4230,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="flex justify-end">
                       <button
                         onClick={() => setMigrationStep(4)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs"
                       >
                         Proceed to Validation Preview →
                       </button>
@@ -4208,16 +4244,16 @@ export const InteractiveDemoPage: React.FC = () => {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Step 4: Pre-Commit Validation Summary</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold">Total Ingest Records</span>
+                        <span className="text-[10px] text-slate-600 uppercase font-bold">Total Ingest Records</span>
                         <p className="text-2xl font-black text-slate-900 mt-1">{batch.totalRecords}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-emerald-400 uppercase font-bold">Clean New Admissions</span>
-                        <p className="text-2xl font-black text-emerald-400 mt-1">{batch.cleanNewRecordsCount}</p>
+                        <span className="text-[10px] text-emerald-700 uppercase font-bold">Clean New Admissions</span>
+                        <p className="text-2xl font-black text-emerald-700 mt-1">{batch.cleanNewRecordsCount}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-amber-400 uppercase font-bold">Resolved Duplicates</span>
-                        <p className="text-2xl font-black text-amber-400 mt-1">{batch.exactMatchesCount + batch.probableMatchesCount}</p>
+                        <span className="text-[10px] text-amber-700 uppercase font-bold">Resolved Duplicates</span>
+                        <p className="text-2xl font-black text-amber-700 mt-1">{batch.exactMatchesCount + batch.probableMatchesCount}</p>
                       </div>
                     </div>
                     <div className="flex justify-end">
@@ -4268,7 +4304,7 @@ export const InteractiveDemoPage: React.FC = () => {
                     <div className="flex items-start justify-between border-b border-slate-200 pb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded font-mono font-bold">
+                          <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-bold">
                             {rt.route_code}
                           </span>
                           <h3 className="font-bold text-slate-900 text-sm">{rt.route_name}</h3>
@@ -4278,43 +4314,43 @@ export const InteractiveDemoPage: React.FC = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          rt.status === 'IN_TRANSIT' ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                          rt.status === 'IN_TRANSIT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}>
                           {rt.status.replace('_', ' ')}
                         </span>
                         {rt.status === 'IN_TRANSIT' && (
-                          <p className="text-[11px] text-emerald-400 font-mono mt-0.5">Speed: {rt.current_speed_kmh} km/h</p>
+                          <p className="text-[11px] text-emerald-700 font-mono mt-0.5 font-bold">Speed: {rt.current_speed_kmh} km/h</p>
                         )}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <p className="text-slate-400">Driver: <strong className="text-slate-200">{rt.driver_name}</strong></p>
-                        <p className="text-slate-400">Phone: <strong className="text-slate-200">{rt.driver_phone}</strong></p>
+                        <p className="text-slate-600">Driver: <strong className="text-slate-900">{rt.driver_name}</strong></p>
+                        <p className="text-slate-600">Phone: <strong className="text-slate-900">{rt.driver_phone}</strong></p>
                       </div>
                       <div>
-                        <p className="text-slate-400">Attendant: <strong className="text-slate-200">{rt.attendant_name}</strong></p>
-                        <p className="text-slate-400">Capacity: <strong className="text-slate-200">{rt.capacity} Students</strong></p>
+                        <p className="text-slate-600">Attendant: <strong className="text-slate-900">{rt.attendant_name}</strong></p>
+                        <p className="text-slate-600">Capacity: <strong className="text-slate-900">{rt.capacity} Students</strong></p>
                       </div>
                     </div>
 
                     {/* Stops List */}
                     <div className="space-y-1.5 pt-2">
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Route Stops & Arrival Schedule:</p>
+                      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Route Stops & Arrival Schedule:</p>
                       {rt.stops.map((st, sidx) => (
                         <div key={sidx} className={`p-2 rounded-lg flex items-center justify-between text-xs ${
-                          st.is_passed ? 'bg-slate-900/40 text-slate-500' : 'bg-slate-900 text-slate-200 font-medium'
+                          st.is_passed ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 text-slate-900 font-medium border border-slate-200'
                         }`}>
                           <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${st.is_passed ? 'bg-slate-600' : 'bg-emerald-400'}`}></span>
+                            <span className={`w-2 h-2 rounded-full ${st.is_passed ? 'bg-slate-400' : 'bg-emerald-500'}`}></span>
                             <span>{st.stop_name}</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-mono text-[11px]">{st.scheduled_time}</span>
+                            <span className="font-mono text-[11px] font-bold">{st.scheduled_time}</span>
                             {st.student_count > 0 && (
-                              <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-bold">
                                 {st.student_count} Students
                               </span>
                             )}
@@ -4325,7 +4361,7 @@ export const InteractiveDemoPage: React.FC = () => {
 
                     <button
                       onClick={() => toggleTripStatus(rt.id)}
-                      className="w-full py-2 bg-slate-900 hover:bg-slate-850 border border-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
                     >
                       {rt.status === 'IN_TRANSIT' ? 'End Morning Bus Trip' : 'Start Morning Bus Trip'}
                     </button>

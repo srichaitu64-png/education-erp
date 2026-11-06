@@ -1085,7 +1085,7 @@ async def preview_dashboard_as_role(
     return {
         "preview_role": role_code,
         "tenant": {
-            "name": tenant.name if tenant else "Akshara Global School & College",
+            "name": tenant.name if tenant else "Pilot Institution School & College",
             "code": tenant_code
         },
         "safe_demo_mode": True,

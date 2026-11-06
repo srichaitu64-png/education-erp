@@ -109,7 +109,7 @@ export const PlatformLoginPage: React.FC = () => {
     }
 
     // Explicit boundary check: Institutional accounts are barred from Platform Owner login
-    if (inputVal.toLowerCase().includes('akshara.edu.in') || inputVal.toLowerCase().startsWith('emp-') || inputVal.toLowerCase().startsWith('adm-')) {
+    if (inputVal.toLowerCase().includes('pilot-trial.edu.in') || inputVal.toLowerCase().includes('akshara.edu.in') || inputVal.toLowerCase().startsWith('emp-') || inputVal.toLowerCase().startsWith('adm-')) {
       setErrorMessage(
         'Institutional campus accounts (Schools, PU Colleges) cannot access the private SaaS Platform Control Plane. Please sign in via the campus portal at /login.'
       );

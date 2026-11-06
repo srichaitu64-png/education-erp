@@ -5,7 +5,7 @@ import {
   UserCheck, Key, Layout, Building2, FlaskConical, Bus, MessageSquare,
   Upload, ShieldAlert, Lock, ChevronDown, ChevronRight, Menu, X, Shield, ShieldCheck
 } from 'lucide-react';
-import { UserRoleType } from '../../../store/demoStore';
+import { UserRoleType, useDemoStore } from '../../../store/demoStore';
 import { useAuthStore } from '../../../store/authStore';
 
 export interface NavItemConfig {
@@ -166,11 +166,12 @@ export const ProfessionalSidebarNavigation: React.FC<ProfessionalSidebarNavigati
   };
 
   const { tenant } = useAuthStore();
-  const isTrial = tenant?.code === 'akshara-trial';
-  const brandName = isTrial ? 'Akshara Global ERP' : 'OUR SCHOOL ERP';
-  const brandSub = isTrial ? 'School & PU College (Trial Pilot)' : 'OUR SCHOOL • Live Demo Sandbox';
-  const brandInitial = isTrial ? 'A' : 'O';
-  const brandBg = isTrial ? 'bg-amber-600' : 'bg-emerald-600';
+  const { tenantScope, institutionName } = useDemoStore();
+  const isTrial = tenant?.code === 'akshara-trial' || tenantScope === 'akshara-trial' || tenantScope === 'pilot-clean';
+  const brandName = isTrial ? (institutionName || 'PILOT CAMPUS ERP') : 'OUR SCHOOL ERP';
+  const brandSub = isTrial ? 'Pilot Project • Clean Canvas' : 'OUR SCHOOL • Live Demo Sandbox';
+  const brandInitial = isTrial ? 'P' : 'O';
+  const brandBg = isTrial ? 'bg-blue-600' : 'bg-emerald-600';
 
   return (
     <>

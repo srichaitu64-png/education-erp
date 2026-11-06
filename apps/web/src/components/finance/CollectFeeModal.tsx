@@ -267,7 +267,7 @@ export const CollectFeeModal: React.FC<CollectFeeModalProps> = ({
 
   const institutionName = tenantScope === 'our-school-demo'
     ? 'OUR SCHOOL Demonstration Campus'
-    : 'Akshara Global School & PU College';
+    : 'Pilot Institution Campus';
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">

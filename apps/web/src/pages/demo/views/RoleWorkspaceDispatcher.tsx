@@ -20,7 +20,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
 }) => {
   const { academicSections, staffDuties, exams, feeSnapshots, students, staffMembers, receipts, attendance, tenantScope } = useDemoStore();
 
-  const isTrial = tenantScope === 'akshara-trial';
+  const isTrial = tenantScope === 'akshara-trial' || tenantScope === 'pilot-clean';
   const enrolledCount = students.length;
   const facultyCount = staffMembers.length;
   const totalCollected = receipts.reduce((acc, r) => acc + (r.amount_paid || 0), 0);

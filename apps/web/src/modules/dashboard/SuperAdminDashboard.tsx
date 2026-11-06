@@ -84,11 +84,11 @@ const DEFAULT_TENANTS: TenantSummary[] = [
   },
   {
     id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-    name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-    code: 'akshara-trial',
+    name: 'PILOT INSTITUTION SCHOOL AND PU COLLEGE',
+    code: 'pilot-clean',
     institution_type: 'composite_group',
     status: 'TRIAL ACTIVE',
-    email: 'info@akshara-trial.edu.in',
+    email: 'info@pilot-trial.edu.in',
     campuses: [{ name: 'Main Campus', city: 'Bengaluru' }]
   }
 ];

@@ -1571,6 +1571,8 @@ interface DemoState {
   // Multi-Institution Tenant Isolation Scope
   tenantScope: string;
   setTenantScope: (code: string) => void;
+  institutionName: string;
+  setInstitutionName: (name: string) => void;
 
   resetDemoData: () => void;
 }
@@ -1881,9 +1883,9 @@ export const initialCommChannels: CommunicationChannelConfig[] = [
     lastPingTime: '2 mins ago (Latency: 124ms)',
     credentials: {
       phoneNumberId: '109283746152840',
-      wabaId: 'waba_99281734_akshara',
+      wabaId: 'waba_99281734_pilot',
       accessToken: 'EAAG9...[Meta System Token Verified]',
-      webhookVerifyToken: 'akshara_wh_token_2026_secure'
+      webhookVerifyToken: 'pilot_wh_token_2026_secure'
     }
   },
   {
@@ -1993,7 +1995,7 @@ export const initialCommDeliveryLogs: CommunicationDeliveryLog[] = [
   {
     id: 'LOG-MSG-9903',
     recipientName: 'Class XII Physics Faculty & Students',
-    recipientContact: '@akshara_official_alerts',
+    recipientContact: '@institution_official_alerts',
     recipientRole: 'STUDENT',
     channel: 'telegram',
     eventTrigger: 'PRACTICAL_SCHEDULE',
@@ -2810,7 +2812,7 @@ const initialExams: DemoExam[] = [
     online_provider_name: 'TCS iON Assessment Engine',
     question_paper_attached: false,
     status: 'SCHEDULED',
-    instructions: 'Institution subscription reference: TCS-ION-AKSHARA-2026. External platform costs billed separately.',
+    instructions: 'Institution subscription reference: TCS-ION-PILOT-2026. External platform costs billed separately.',
     schedules: [
       { id: 'sch-8', subject: 'All Board Papers Pre-Mock', exam_date: '2026-12-05', start_time: '09:00 AM', end_time: '12:00 PM', room: 'TCS Authorized Center', invigilator: 'TCS Invigilator Lead', theory_max: 100, practical_max: 0, passing_marks: 35 },
     ],
@@ -3378,11 +3380,11 @@ const initialAcceptanceTestState: AcceptanceTestState = {
         { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 10000, remaining: 10000 }
       ],
       institution_branding: {
-        institution_name: 'Akshara Global Educational Institutions',
-        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        institution_name: 'Composite Model Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | State Pre-University Board',
+        address: 'Educational Enclave, 80 Feet Road, Bengaluru, Karnataka - 560085',
         phone: '+91 80 2345 6789',
-        email: 'accounts@akshara.erp.in',
+        email: 'accounts@institution.edu.in',
         receipt_header_note: 'Official First Instalment Fee Receipt - Verified Bank Transfer'
       },
       qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00125:AKG-2026-0152:50000',
@@ -3418,11 +3420,11 @@ const initialAcceptanceTestState: AcceptanceTestState = {
         { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 5000, remaining: 5000 }
       ],
       institution_branding: {
-        institution_name: 'Akshara Global Educational Institutions',
-        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        institution_name: 'Composite Model Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | State Pre-University Board',
+        address: 'Educational Enclave, 80 Feet Road, Bengaluru, Karnataka - 560085',
         phone: '+91 80 2345 6789',
-        email: 'accounts@akshara.erp.in',
+        email: 'accounts@institution.edu.in',
         receipt_header_note: 'Official Second Instalment Fee Receipt - Verified Digital Payment'
       },
       qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00126:AKG-2026-0152:30000',
@@ -3573,21 +3575,26 @@ export const useDemoStore = create<DemoState>()(
   currentRole: 'PRINCIPAL',
   switchRole: (role) => set({ currentRole: role }),
 
-  tenantScope: 'our-school-demo',
-  staffMembers: initialStaffMembers,
+  tenantScope: 'pilot-clean',
+  institutionName: 'Pilot Institution School & College',
+  setInstitutionName: (name: string) => set({ institutionName: name }),
+  staffMembers: [],
 
   setTenantScope: (code: string) => {
     if (code === get().tenantScope) {
       return; // Preserve existing mutations and local storage across page reloads
     }
-    if (code === 'akshara-trial') {
+    if (code === 'pilot-clean' || code === 'akshara-trial') {
       set({
-        tenantScope: 'akshara-trial',
+        tenantScope: 'pilot-clean',
+        institutionName: 'Pilot Institution School & College',
         students: [],
         invoices: [],
         receipts: [],
         receiptAudits: [],
         feeStructures: [],
+        activeFeeInstitutionFilter: 'ALL',
+        customFeeHeads: [],
         admissions: [],
         attendance: [],
         marks: [],
@@ -3597,12 +3604,17 @@ export const useDemoStore = create<DemoState>()(
         staffMembers: [],
         staffDuties: [],
         academicSections: [],
+        studentTransfers: [],
         exams: [],
         subjects: [],
         masterSubjectCatalogue: [],
         curriculumMappings: [],
         transportRoutes: [],
         feeSnapshots: [],
+        laboratories: [],
+        labInventory: [],
+        labMovements: [],
+        labExperiments: [],
       });
     } else {
       set({
@@ -3610,6 +3622,10 @@ export const useDemoStore = create<DemoState>()(
         students: initialStudents,
         invoices: initialInvoices,
         receipts: initialReceipts,
+        receiptAudits: initialReceiptAudits,
+        feeStructures: initialFeeStructures,
+        activeFeeInstitutionFilter: 'ALL',
+        customFeeHeads: [],
         admissions: initialAdmissions,
         attendance: initialAttendance,
         marks: initialMarks,
@@ -3619,12 +3635,17 @@ export const useDemoStore = create<DemoState>()(
         staffMembers: initialStaffMembers,
         staffDuties: initialStaffDuties,
         academicSections: initialAcademicSections,
+        studentTransfers: [],
         exams: initialExams,
         subjects: initialSubjects,
         masterSubjectCatalogue: initialMasterSubjects,
         curriculumMappings: initialCurriculumMappings,
         transportRoutes: initialTransportRoutes,
         feeSnapshots: initialFeeSnapshots,
+        laboratories: initialLaboratories,
+        labInventory: initialLabInventory,
+        labMovements: initialLabMovements,
+        labExperiments: initialLabExperiments,
       });
     }
   },
@@ -3647,24 +3668,24 @@ export const useDemoStore = create<DemoState>()(
     set((state) => ({ staffMembers: [newStaff, ...state.staffMembers] }));
   },
 
-  students: initialStudents,
-  admissions: initialAdmissions,
-  invoices: initialInvoices,
-  receipts: initialReceipts,
-  receiptAudits: initialReceiptAudits,
-  feeStructures: initialFeeStructures,
+  students: [],
+  admissions: [],
+  invoices: [],
+  receipts: [],
+  receiptAudits: [],
+  feeStructures: [],
   activeFeeInstitutionFilter: 'ALL',
   customFeeHeads: [],
-  attendance: initialAttendance,
+  attendance: [],
   attendanceConfig: initialAttendanceConfig,
-  detailedDailyAttendance: initialDetailedDailyAttendance,
-  periodAttendance: initialPeriodAttendance,
-  marks: initialMarks,
-  exams: initialExams,
-  subjects: initialSubjects,
-  masterSubjectCatalogue: initialMasterSubjects,
-  curriculumMappings: initialCurriculumMappings,
-  transportRoutes: initialTransportRoutes,
+  detailedDailyAttendance: [],
+  periodAttendance: [],
+  marks: [],
+  exams: [],
+  subjects: [],
+  masterSubjectCatalogue: [],
+  curriculumMappings: [],
+  transportRoutes: [],
   externalProviders: initialExternalProviders,
 
   // Acceptance test and enhanced suites
@@ -3692,10 +3713,10 @@ export const useDemoStore = create<DemoState>()(
   designerNavConfigs: initialNavConfigs,
   designerVersion: 2,
   designerStatus: 'PUBLISHED',
-      laboratories: initialLaboratories,
-      labInventory: initialLabInventory,
-      labMovements: initialLabMovements,
-      labExperiments: initialLabExperiments,
+  laboratories: [],
+  labInventory: [],
+  labMovements: [],
+  labExperiments: [],
       activeLabFilter: 'ALL',
       commChannels: initialCommChannels,
       commTemplates: initialCommTemplates,
@@ -3995,11 +4016,11 @@ export const useDemoStore = create<DemoState>()(
         collected_by: state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`,
         allocations: finalAllocations,
         institution_branding: {
-          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
-          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : (state.institutionName || 'Pilot Institution School & College'),
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'Composite School & PU College • Pilot Campus',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Institutional Campus, Educational District, Karnataka - 560085',
           phone: '+91 80 2345 6789',
-          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@institution.edu.in',
           receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
         },
         qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${amount}`,
@@ -4118,11 +4139,11 @@ export const useDemoStore = create<DemoState>()(
         collected_by: payload.collected_by || (state.currentRole === 'ACCOUNTANT' ? 'Authorized Cashier' : `${state.currentRole} User`),
         allocations: allocations,
         institution_branding: {
-          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
-          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : (state.institutionName || 'Pilot Institution School & College'),
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'Composite School & PU College • Pilot Campus',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Institutional Campus, Educational District, Karnataka - 560085',
           phone: '+91 80 2345 6789',
-          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@institution.edu.in',
           receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
         },
         qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${totalPaid}`,
@@ -4225,11 +4246,11 @@ export const useDemoStore = create<DemoState>()(
           },
         ],
         institution_branding: {
-          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : 'Akshara Global Educational Institutions',
-          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+          institution_name: state.tenantScope === 'our-school-demo' ? 'OUR SCHOOL (Demo Campus)' : (state.institutionName || 'Pilot Institution School & College'),
+          affiliation: state.tenantScope === 'our-school-demo' ? 'Central Board of Secondary Education • Affiliation # 830192' : 'Composite School & PU College • Pilot Campus',
+          address: state.tenantScope === 'our-school-demo' ? 'Demonstration Campus, Main Educational Enclave, Bengaluru - 560001' : 'Institutional Campus, Educational District, Karnataka - 560085',
           phone: '+91 80 2345 6789',
-          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@akshara.erp.in',
+          email: state.tenantScope === 'our-school-demo' ? 'accounts@ourschool.edu.in' : 'accounts@institution.edu.in',
           receipt_header_note: 'Computer Generated Official Fee Receipt - Valid with Authorized Signatory Seal',
         },
         qr_verification_code: `VERIFY:RECEIPT:${receiptNumber}:${txnRef.replace(/[^a-zA-Z0-9]/g, '')}:${amount}`,
@@ -4714,7 +4735,8 @@ export const useDemoStore = create<DemoState>()(
   resetTrialData: () => {
     set({
       currentRole: 'PRINCIPAL',
-      tenantScope: 'akshara-trial',
+      tenantScope: 'pilot-clean',
+      institutionName: 'Pilot Institution School & College',
       staffMembers: [],
       students: [],
       admissions: [],
@@ -4993,11 +5015,11 @@ export const useDemoStore = create<DemoState>()(
         { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 10000, remaining: 10000 }
       ],
       institution_branding: {
-        institution_name: 'Akshara Global Educational Institutions',
-        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        institution_name: 'Composite Model Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | State Pre-University Board',
+        address: 'Educational Enclave, 80 Feet Road, Bengaluru, Karnataka - 560085',
         phone: '+91 80 2345 6789',
-        email: 'accounts@akshara.erp.in',
+        email: 'accounts@institution.edu.in',
         receipt_header_note: 'Official First Instalment Fee Receipt - Verified Bank Transfer'
       },
       qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00125:AKG-2026-0152:50000',
@@ -5055,11 +5077,11 @@ export const useDemoStore = create<DemoState>()(
         { head: 'BOOKS', title: 'Books & NEET Study Materials', allocated: 5000, remaining: 5000 }
       ],
       institution_branding: {
-        institution_name: 'Akshara Global Educational Institutions',
-        affiliation: 'CBSE Affiliation # 830192 | Karnataka State Pre-University Board',
-        address: 'Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085',
+        institution_name: 'Composite Model Institutions',
+        affiliation: 'CBSE Affiliation # 830192 | State Pre-University Board',
+        address: 'Educational Enclave, 80 Feet Road, Bengaluru, Karnataka - 560085',
         phone: '+91 80 2345 6789',
-        email: 'accounts@akshara.erp.in',
+        email: 'accounts@institution.edu.in',
         receipt_header_note: 'Official Second Instalment Fee Receipt - Verified Digital Payment'
       },
       qr_verification_code: 'VERIFY:RECEIPT:REC-2026-00126:AKG-2026-0152:30000',

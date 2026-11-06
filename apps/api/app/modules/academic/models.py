@@ -139,7 +139,7 @@ class HallTicket(TenantBaseModel):
     class_name: Mapped[str] = mapped_column(String(64), nullable=False)
     section_code: Mapped[str] = mapped_column(String(16), nullable=False)
     
-    exam_centre: Mapped[str] = mapped_column(String(255), nullable=False, default="Akshara Global Campus")
+    exam_centre: Mapped[str] = mapped_column(String(255), nullable=False, default="Campus Main Examination Centre")
     room_number: Mapped[str] = mapped_column(String(64), nullable=False)
     seat_number: Mapped[str] = mapped_column(String(32), nullable=False)
     

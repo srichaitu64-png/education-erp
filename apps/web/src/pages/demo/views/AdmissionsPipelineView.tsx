@@ -373,8 +373,8 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
           <div className="max-w-md mx-auto">
             <h3 className="text-base font-bold text-slate-900">No Admission Applications Found</h3>
             <p className="text-xs text-slate-500 mt-1">
-              {tenantScope === 'akshara-trial'
-                ? 'Your trial admissions pipeline is ready for authentic pilot applications. Register your first admission enquiry to begin the lifecycle.'
+              {tenantScope === 'akshara-trial' || tenantScope === 'pilot-clean'
+                ? 'Your pilot admissions pipeline is ready for authentic student applications. Register your first admission enquiry to begin the lifecycle.'
                 : 'No applicants matched your search and stage filter criteria.'}
             </p>
           </div>

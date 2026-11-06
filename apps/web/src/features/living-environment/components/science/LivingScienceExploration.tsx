@@ -44,7 +44,7 @@ export const LivingScienceExploration: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
-                  Akshara Living Science Lab
+                  Interactive Living Science Lab
                 </span>
                 <span className="text-xs text-slate-500 font-medium">Real-World Environmental Phenomena</span>
               </div>
@@ -234,7 +234,7 @@ export const LivingScienceExploration: React.FC = () => {
         {/* Footer */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
           <p className="text-xs text-slate-500 font-medium">
-            Akshara Science Curriculum • Inspiring curiosity in everyday nature
+            Living Environmental Science Curriculum • Inspiring curiosity in everyday nature
           </p>
           <button
             onClick={toggleScienceDrawer}

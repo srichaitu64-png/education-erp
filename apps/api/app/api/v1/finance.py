@@ -271,15 +271,15 @@ async def collect_fee_and_generate_receipt(
     # Count receipts to generate deterministic monotonic receipt number
     count_stmt = select(func.count(FeeReceipt.id)).where(FeeReceipt.tenant_id == tenant_id)
     receipt_count = (await db.execute(count_stmt)).scalar() or 0
-    receipt_num = f"RCP-AKSH-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
+    receipt_num = f"RCP-CAMP-{invoice.academic_year.replace('-', '')}-{1001 + receipt_count}"
 
     # Institution branding metadata
     branding = {
-        "institution_name": "Akshara Global Educational Institutions",
+        "institution_name": "Pilot Educational Institutions",
         "affiliation": "Affiliated to State Pre-University & Secondary Education Board",
-        "address": "Campus Ground, 80 Feet Road, Bengaluru, Karnataka - 560085",
+        "address": "Campus Ground, Knowledge Corridor, Bengaluru, Karnataka - 560085",
         "phone": "+91 80 2345 6789",
-        "email": "accounts@akshara.erp.in",
+        "email": "accounts@institution.erp.in",
         "receipt_header_note": "Computer Generated Fee Receipt - Valid with Authorized Signatory Seal",
     }
 

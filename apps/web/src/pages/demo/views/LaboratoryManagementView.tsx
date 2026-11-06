@@ -235,8 +235,8 @@ export const LaboratoryManagementView: React.FC = () => {
               onClick={() => setSubTab(tab.id as any)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-200'
+                  ? 'bg-blue-600 text-white shadow-xs font-black'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -252,14 +252,14 @@ export const LaboratoryManagementView: React.FC = () => {
       {subTab === 'inventory' && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-200 text-xs">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs text-xs">
             {/* Laboratory Selector */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-              <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider shrink-0">Laboratory:</span>
+              <span className="font-bold text-slate-500 uppercase text-[10px] tracking-wider shrink-0">Laboratory:</span>
               <button
                 onClick={() => setActiveLabFilter('ALL')}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-colors shrink-0 cursor-pointer ${
-                  activeLabFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-700 hover:bg-slate-700'
+                  activeLabFilter === 'ALL' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                 }`}
               >
                 All Labs ({labInventory.length})
@@ -269,7 +269,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   key={lab.id}
                   onClick={() => setActiveLabFilter(lab.id)}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-colors shrink-0 cursor-pointer ${
-                    activeLabFilter === lab.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-700 hover:bg-slate-700'
+                    activeLabFilter === lab.id ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                   }`}
                 >
                   {lab.name.split(' ')[0]} ({lab.type})
@@ -285,13 +285,13 @@ export const LaboratoryManagementView: React.FC = () => {
                 placeholder="Search material ID, name, rack..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-300 shadow-xs text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* Inventory Table */}
-          <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
@@ -306,32 +306,32 @@ export const LaboratoryManagementView: React.FC = () => {
                     <th className="p-4 text-center">Quick Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-medium">
+                <tbody className="divide-y divide-slate-200 font-medium">
                   {filteredItems.map((item) => {
                     const lab = laboratories.find(l => l.id === item.labId);
                     const isLowStock = item.currentStock <= item.minStockLevel;
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-blue-950/80 border border-blue-800/60 flex items-center justify-center font-mono font-bold text-blue-400 text-[10px]">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center font-mono font-bold text-blue-700 text-[10px]">
                               QR
                             </div>
                             <div>
                               <p className="font-bold text-slate-900 text-xs">{item.name}</p>
-                              <p className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">
-                                ID: <span className="text-blue-300">{item.id}</span> • Batch: {item.batchNumber}
+                              <p className="text-[10px] text-slate-500 font-mono font-medium mt-0.5">
+                                ID: <span className="text-blue-700 font-bold">{item.id}</span> • Batch: {item.batchNumber}
                               </p>
                             </div>
                           </div>
                         </td>
 
                         <td className="p-4">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-700 border border-slate-700">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                             {lab?.name || item.labId}
                           </span>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{lab?.roomNumber}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{lab?.roomNumber}</p>
                         </td>
 
                         <td className="p-4 text-slate-700 font-mono text-[11px]">
@@ -339,16 +339,16 @@ export const LaboratoryManagementView: React.FC = () => {
                         </td>
 
                         <td className="p-4 text-center">
-                          <span className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs inline-flex items-center gap-1 ${
+                          <span className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs inline-flex items-center gap-1 border ${
                             isLowStock 
-                              ? 'bg-amber-950/90 text-amber-300 border border-amber-800' 
-                              : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                           }`}>
                             {item.currentStock} {item.unit}
-                            {isLowStock && <AlertTriangle className="w-3 h-3 text-amber-400" />}
+                            {isLowStock && <AlertTriangle className="w-3 h-3 text-amber-600" />}
                           </span>
                           {isLowStock && (
-                            <span className="block text-[9px] text-amber-400 font-bold mt-0.5">Low Stock Alert</span>
+                            <span className="block text-[9px] text-amber-700 font-bold mt-0.5">Low Stock Alert</span>
                           )}
                         </td>
 
@@ -356,17 +356,17 @@ export const LaboratoryManagementView: React.FC = () => {
                           ₹{item.unitPrice.toLocaleString('en-IN')}
                         </td>
 
-                        <td className="p-4 text-right font-mono font-bold text-emerald-400">
+                        <td className="p-4 text-right font-mono font-bold text-emerald-700">
                           ₹{item.totalValue.toLocaleString('en-IN')}
                         </td>
 
                         <td className="p-4 text-center">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                             item.condition === 'OPERATIONAL'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : item.condition === 'CALIBRATION_DUE'
-                              ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                              : 'bg-red-950 text-red-300 border border-red-800'
+                              ? 'bg-purple-50 text-purple-800 border-purple-200'
+                              : 'bg-rose-50 text-rose-800 border-rose-200'
                           }`}>
                             {item.condition}
                           </span>
@@ -379,7 +379,7 @@ export const LaboratoryManagementView: React.FC = () => {
                                 setSelectedItemForQR(item);
                                 setSubTab('qr_scanner');
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer border border-blue-700/50"
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer border border-blue-200"
                             >
                               <QrCode className="w-3 h-3" /> QR & Issue
                             </button>
@@ -401,10 +401,10 @@ export const LaboratoryManagementView: React.FC = () => {
       {subTab === 'qr_scanner' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: QR Label & Print Card */}
-          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xl">
+          <div className="lg:col-span-5 bg-white border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xs">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-blue-400" />
+                <QrCode className="w-4 h-4 text-blue-600" />
                 Laboratory Material QR Label Generator
               </h2>
               <p className="text-xs text-slate-600 mt-1">
@@ -423,7 +423,7 @@ export const LaboratoryManagementView: React.FC = () => {
                   const it = labInventory.find(i => i.id === e.target.value);
                   if (it) setSelectedItemForQR(it);
                 }}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 shadow-xs text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 shadow-xs text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 {labInventory.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -434,14 +434,14 @@ export const LaboratoryManagementView: React.FC = () => {
             </div>
 
             {/* Physical Printable QR Sticker Mockup */}
-            <div className="p-5 rounded-2xl bg-white text-slate-950 border-2 border-dashed border-slate-300 shadow-2xl space-y-3 font-sans">
+            <div className="p-5 rounded-2xl bg-white text-slate-950 border-2 border-dashed border-slate-300 shadow-sm space-y-3 font-sans">
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                 <div className="flex items-center gap-1.5">
                   <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-[9px] font-black">
-                    AG
+                    PL
                   </div>
                   <span className="font-black text-[11px] uppercase tracking-wider text-slate-900">
-                    OUR SCHOOL ERP
+                    CAMPUS LAB INVENTORY
                   </span>
                 </div>
                 <span className="text-[9px] font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
@@ -478,7 +478,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[8px] font-mono text-slate-500">
                 <span>Scan with Camera or USB Scanner</span>
-                <span>Bengaluru Campus</span>
+                <span>Main Campus</span>
               </div>
             </div>
 
@@ -486,26 +486,26 @@ export const LaboratoryManagementView: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 onClick={() => alert(`🖨️ Printing A4 Sticker Sheet (24 Labels/page) for ${selectedItemForQR.name}...`)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-300"
               >
-                <Printer className="w-3.5 h-3.5 text-blue-400" /> A4 Sticker Sheet
+                <Printer className="w-3.5 h-3.5 text-blue-600" /> A4 Sticker Sheet
               </button>
 
               <button
                 onClick={() => alert(`🖨️ Printing 80mm Barcode/QR Thermal Label for ${selectedItemForQR.name}...`)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-300"
               >
-                <Printer className="w-3.5 h-3.5 text-emerald-400" /> 80mm Thermal
+                <Printer className="w-3.5 h-3.5 text-emerald-600" /> 80mm Thermal
               </button>
             </div>
           </div>
 
           {/* Right Column: Authenticated Scan Action Workbench */}
-          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xl">
+          <div className="lg:col-span-7 bg-white border border-slate-200 p-6 rounded-3xl space-y-6 shadow-xs">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   Authenticated QR Item Actions
                 </h2>
                 <p className="text-xs text-slate-600 mt-1">
@@ -518,30 +518,30 @@ export const LaboratoryManagementView: React.FC = () => {
                   setScannedFeedback(`Camera Scanner Verified [${selectedItemForQR.id}]: ${selectedItemForQR.name}`);
                   setTimeout(() => setScannedFeedback(null), 4000);
                 }}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <QrCode className="w-3.5 h-3.5" /> Simulate Scan
               </button>
             </div>
 
             {scannedFeedback && (
-              <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-800 text-xs text-emerald-200 font-bold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 {scannedFeedback}
               </div>
             )}
 
             {/* Item Live Details Card */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                 <div>
-                  <h3 className="text-sm font-black text-white">{selectedItemForQR.name}</h3>
+                  <h3 className="text-sm font-black text-slate-900">{selectedItemForQR.name}</h3>
                   <p className="text-[10px] text-slate-600 font-mono font-medium mt-0.5">Asset Code: {selectedItemForQR.id}</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono ${
                   selectedItemForQR.currentStock <= selectedItemForQR.minStockLevel
-                    ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                 }`}>
                   Current Stock: {selectedItemForQR.currentStock} {selectedItemForQR.unit}
                 </span>
@@ -550,27 +550,27 @@ export const LaboratoryManagementView: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Category</span>
-                  <span className="text-slate-200 font-semibold">{selectedItemForQR.category}</span>
+                  <span className="text-slate-800 font-semibold">{selectedItemForQR.category}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Storage Shelf</span>
-                  <span className="text-slate-200 font-semibold">{selectedItemForQR.storageLocation}</span>
+                  <span className="text-slate-800 font-semibold">{selectedItemForQR.storageLocation}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Condition</span>
-                  <span className="text-slate-200 font-semibold">{selectedItemForQR.condition}</span>
+                  <span className="text-slate-800 font-semibold">{selectedItemForQR.condition}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Unit Cost</span>
-                  <span className="text-slate-200 font-mono">₹{selectedItemForQR.unitPrice.toLocaleString('en-IN')}</span>
+                  <span className="text-slate-800 font-mono font-bold">₹{selectedItemForQR.unitPrice.toLocaleString('en-IN')}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Manufacturer</span>
-                  <span className="text-slate-200 font-semibold truncate">{selectedItemForQR.manufacturer}</span>
+                  <span className="text-slate-800 font-semibold truncate">{selectedItemForQR.manufacturer}</span>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Safety Class</span>
-                  <span className="text-amber-300 font-semibold text-[11px] truncate">{selectedItemForQR.safetyClassification}</span>
+                  <span className="text-amber-800 font-semibold text-[11px] truncate">{selectedItemForQR.safetyClassification}</span>
                 </div>
               </div>
             </div>
@@ -578,56 +578,56 @@ export const LaboratoryManagementView: React.FC = () => {
             {/* Quick Actions Forms */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Action 1: Issue Item to Faculty/Student */}
-              <form onSubmit={handleIssueSubmit} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-blue-400">
+              <form onSubmit={handleIssueSubmit} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-blue-700">
                   <ArrowRight className="w-3.5 h-3.5" /> Issue to Practical Batch
                 </h4>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Quantity to Issue:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Quantity to Issue:</label>
                   <input
                     type="number"
                     min="1"
                     max={selectedItemForQR.currentStock}
                     value={issueQuantity}
                     onChange={(e) => setIssueQuantity(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Faculty / Requester:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Faculty / Requester:</label>
                   <input
                     type="text"
                     value={issueRequester}
                     onChange={(e) => setIssueRequester(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Practical Purpose:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Practical Purpose:</label>
                   <input
                     type="text"
                     value={issuePurpose}
                     onChange={(e) => setIssuePurpose(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={selectedItemForQR.currentStock <= 0}
-                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer"
+                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
                 >
                   Confirm Issue & Deduct Stock
                 </button>
               </form>
 
               {/* Action 2: Return or Record Consumption */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-emerald-400">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 text-emerald-700">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Return Custody / Consume
                   </h4>
                   <p className="text-[11px] text-slate-600 mt-1">
@@ -638,14 +638,14 @@ export const LaboratoryManagementView: React.FC = () => {
                 <div className="space-y-2 pt-2">
                   <button
                     onClick={() => handleReturnSubmit(issueQuantity, 0)}
-                    className="w-full py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <PackageCheck className="w-3.5 h-3.5" /> Restock Return (+{issueQuantity} {selectedItemForQR.unit})
                   </button>
 
                   <button
                     onClick={() => handleReturnSubmit(0, 1)}
-                    className="w-full py-2 rounded-xl bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <FlaskConical className="w-3.5 h-3.5" /> Record Consumption (-1 {selectedItemForQR.unit})
                   </button>
@@ -658,7 +658,7 @@ export const LaboratoryManagementView: React.FC = () => {
                         alert(`Audit Status: ${res.status}. Discrepancy: ${res.discrepancy} units.`);
                       }
                     }}
-                    className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                    className="w-full py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs transition-colors cursor-pointer border border-slate-300 shadow-xs"
                   >
                     Physical Stock Verification Count
                   </button>
@@ -673,11 +673,11 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 3: ISSUE & RETURN MOVEMENTS LEDGER */}
       {/* ===================================================================== */}
       {subTab === 'movements' && (
-        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <PackageCheck className="w-4 h-4 text-blue-400" />
+                <PackageCheck className="w-4 h-4 text-blue-600" />
                 Immutable Laboratory Stock Movement Ledger
               </h2>
               <p className="text-xs text-slate-600 mt-1">
@@ -700,31 +700,31 @@ export const LaboratoryManagementView: React.FC = () => {
                   <th className="p-3.5 text-center">Balance After</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-200 font-medium">
                 {labMovements.map((mov) => (
-                  <tr key={mov.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="p-3.5 font-mono text-blue-400 font-bold text-[11px]">{mov.id}</td>
-                    <td className="p-3.5 text-white font-bold">{mov.itemName}</td>
+                  <tr key={mov.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="p-3.5 font-mono text-blue-700 font-bold text-[11px]">{mov.id}</td>
+                    <td className="p-3.5 text-slate-900 font-bold">{mov.itemName}</td>
                     <td className="p-3.5">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         mov.type === 'ISSUE'
-                          ? 'bg-blue-950 text-blue-300 border border-blue-800'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
                           : mov.type === 'RETURN'
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : mov.type === 'CONSUMPTION'
-                          ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                          : 'bg-purple-950 text-purple-300 border border-purple-800'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-purple-50 text-purple-700 border border-purple-200'
                       }`}>
                         {mov.type}
                       </span>
                     </td>
-                    <td className="p-3.5 text-center font-bold font-mono text-slate-200">
+                    <td className="p-3.5 text-center font-bold font-mono text-slate-900">
                       {mov.quantity} {mov.unit}
                     </td>
                     <td className="p-3.5 text-slate-700">{mov.requestedBy}</td>
                     <td className="p-3.5 text-slate-600 text-[11px] max-w-xs truncate">{mov.purpose}</td>
-                    <td className="p-3.5 text-slate-400 font-mono text-[10px]">{mov.timestamp}</td>
-                    <td className="p-3.5 text-center font-bold font-mono text-emerald-400">{mov.balanceAfter}</td>
+                    <td className="p-3.5 text-slate-500 font-mono text-[10px]">{mov.timestamp}</td>
+                    <td className="p-3.5 text-center font-bold font-mono text-emerald-700">{mov.balanceAfter}</td>
                   </tr>
                 ))}
               </tbody>
@@ -737,10 +737,10 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 4: EQUIPMENT MAINTENANCE & CALIBRATION */}
       {/* ===================================================================== */}
       {subTab === 'maintenance' && (
-        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs p-6 space-y-4">
           <div>
             <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-purple-400" />
+              <Wrench className="w-4 h-4 text-purple-600" />
               Equipment Calibration & Preventive Maintenance Schedule
             </h2>
             <p className="text-xs text-slate-600 mt-1">
@@ -750,7 +750,7 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {labInventory.filter(i => i.category === 'REUSABLE_EQUIPMENT' || i.category === 'COMPUTING_HARDWARE').map((eq) => (
-              <div key={eq.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div key={eq.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-bold text-slate-900">{eq.name}</h3>
@@ -758,23 +758,23 @@ export const LaboratoryManagementView: React.FC = () => {
                   </div>
                   <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${
                     eq.condition === 'OPERATIONAL'
-                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : eq.condition === 'CALIBRATION_DUE'
-                      ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                      : 'bg-red-950 text-red-300 border border-red-800'
+                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                      : 'bg-red-50 text-red-700 border border-red-200'
                   }`}>
                     {eq.condition}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
                   <div>
                     <span className="text-[9px] uppercase font-bold text-slate-500 block">Manufacturer</span>
-                    <span className="text-slate-200">{eq.manufacturer}</span>
+                    <span className="text-slate-800 font-medium">{eq.manufacturer}</span>
                   </div>
                   <div>
                     <span className="text-[9px] uppercase font-bold text-slate-500 block">Last Verified Date</span>
-                    <span className="text-slate-200 font-mono">{eq.lastVerifiedDate}</span>
+                    <span className="text-slate-800 font-mono font-medium">{eq.lastVerifiedDate}</span>
                   </div>
                 </div>
 
@@ -784,7 +784,7 @@ export const LaboratoryManagementView: React.FC = () => {
                       recordMaintenance(eq.id, '2027-11-04', 'OPERATIONAL');
                       alert(`Certified Calibration completed for ${eq.name}. Marked OPERATIONAL until 2027.`);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-xs font-bold transition-colors cursor-pointer border border-emerald-700/50"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-colors cursor-pointer border border-emerald-300"
                   >
                     Mark Calibration Certified
                   </button>
@@ -799,10 +799,10 @@ export const LaboratoryManagementView: React.FC = () => {
       {/* SUB-TAB 5: PRACTICALS & EXPERIMENT LINKAGE */}
       {/* ===================================================================== */}
       {subTab === 'experiments' && (
-        <div className="bg-slate-900/90 border border-slate-200 rounded-3xl overflow-hidden shadow-xl p-6 space-y-4">
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs p-6 space-y-4">
           <div>
             <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <FlaskConical className="w-4 h-4 text-emerald-400" />
+              <FlaskConical className="w-4 h-4 text-emerald-600" />
               Board Syllabus Practical Sessions & Required Inventory
             </h2>
             <p className="text-xs text-slate-600 mt-1">
@@ -812,15 +812,15 @@ export const LaboratoryManagementView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
             {labExperiments.map((exp) => (
-              <div key={exp.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div key={exp.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                     {exp.subject}
                   </span>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                     exp.status === 'COMPLETED'
-                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      : 'bg-amber-950 text-amber-300 border border-amber-800'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
                     {exp.status}
                   </span>
@@ -828,11 +828,11 @@ export const LaboratoryManagementView: React.FC = () => {
 
                 <div>
                   <h3 className="text-xs font-bold text-slate-900">{exp.title}</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Target: {exp.classGroup} • Faculty: {exp.teacherName}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Target: {exp.classGroup} • Faculty: {exp.teacherName}</p>
                 </div>
 
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Required Apparatus & Reagents:</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-600 block mb-1">Required Apparatus & Reagents:</span>
                   <ul className="list-disc list-inside text-[11px] text-slate-700 space-y-0.5">
                     {exp.requiredMaterials.map((m, idx) => (
                       <li key={idx} className="truncate">{m}</li>
@@ -851,36 +851,36 @@ export const LaboratoryManagementView: React.FC = () => {
 
       {/* Register Material Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <FlaskConical className="w-4 h-4 text-blue-400" />
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <FlaskConical className="w-4 h-4 text-blue-600" />
                 Register New Laboratory Material / Equipment
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
             </div>
 
             <form onSubmit={handleCreateMaterial} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[10px] font-bold text-slate-600 uppercase">Material Name:</label>
+                <label className="block text-[10px] font-bold text-slate-700 uppercase">Material Name:</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Digital Spectrophotometer 340-1000nm"
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Laboratory:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Laboratory:</label>
                   <select
                     value={newItemLabId}
                     onChange={(e) => setNewItemLabId(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {laboratories.map(l => (
                       <option key={l.id} value={l.id}>{l.name.split(' ')[0]} ({l.type})</option>
@@ -889,11 +889,11 @@ export const LaboratoryManagementView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Category:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Category:</label>
                   <select
                     value={newItemCategory}
                     onChange={(e) => setNewItemCategory(e.target.value as any)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="REUSABLE_EQUIPMENT">Reusable Equipment</option>
                     <option value="CONSUMABLE_CHEMICAL">Consumable Chemical</option>
@@ -906,57 +906,57 @@ export const LaboratoryManagementView: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Current Stock:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Current Stock:</label>
                   <input
                     type="number"
                     min="1"
                     value={newItemStock}
                     onChange={(e) => setNewItemStock(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Min Stock:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Min Stock:</label>
                   <input
                     type="number"
                     min="1"
                     value={newItemMinStock}
                     onChange={(e) => setNewItemMinStock(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Unit Price (₹):</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Unit Price (₹):</label>
                   <input
                     type="number"
                     min="0"
                     value={newItemPrice}
                     onChange={(e) => setNewItemPrice(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Shelf / Rack Location:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Shelf / Rack Location:</label>
                   <input
                     type="text"
                     value={newItemLocation}
                     onChange={(e) => setNewItemLocation(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Unit Measurement:</label>
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase">Unit Measurement:</label>
                   <input
                     type="text"
                     value={newItemUnit}
                     onChange={(e) => setNewItemUnit(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1 px-3 py-2 rounded-xl bg-white border border-slate-300 shadow-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -965,13 +965,13 @@ export const LaboratoryManagementView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-700 font-bold hover:bg-slate-700 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer border border-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer shadow-sm"
                 >
                   Register Material
                 </button>

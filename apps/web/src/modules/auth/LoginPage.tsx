@@ -41,7 +41,7 @@ const STATIC_PREVIEW_DIRECTORY = [
     tenantId: null,
   },
   {
-    identifiers: ['admin', 'demo', 'ourschool', 'our-school-demo', 'admin@ourschool.edu.in', 'principal@akshara.edu.in'],
+    identifiers: ['admin', 'demo', 'ourschool', 'our-school-demo', 'admin@ourschool.edu.in', 'principal@pilot-trial.edu.in'],
     pass: ['demo123', 'demo', 'PrincipalSecurePassword2026!', 'admin123'],
     destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
@@ -61,19 +61,19 @@ const STATIC_PREVIEW_DIRECTORY = [
     },
   },
   {
-    identifiers: ['akshara', 'akshara-trial', 'trial', 'trial-chair', 'admin@akshara-trial.edu.in', 'chairman@akshara-trial.edu.in'],
+    identifiers: ['pilot', 'pilot-clean', 'akshara', 'akshara-trial', 'trial', 'trial-chair', 'admin@pilot-trial.edu.in', 'chairman@pilot-trial.edu.in', 'chairman@akshara-trial.edu.in'],
     pass: ['admin123@', 'admin123', 'ChairmanTrialSecure2026!', 'Chairman@2026!', 'Chairm@n2026!', 'demo123'],
     destination: '/demo?role=CHAIRMAN_DIRECTOR',
     role: 'CHAIRMAN_DIRECTOR',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'Dr. Anand Hegde (Chairman, Akshara Global)',
-    email: 'chairman@akshara-trial.edu.in',
+    fullName: 'Dr. S. K. Sharma (Chairman, Pilot Institution)',
+    email: 'chairman@pilot-trial.edu.in',
     tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
     tenant: {
       id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
+      name: 'PILOT INSTITUTION SCHOOL AND PU COLLEGE',
+      code: 'pilot-clean',
       institution_type: 'composite_group',
       status: 'TRIAL ACTIVE',
       primary_color: '#d97706',
@@ -81,37 +81,37 @@ const STATIC_PREVIEW_DIRECTORY = [
     },
   },
   {
-    identifiers: ['trial-school-prin', 'school.principal@akshara-trial.edu.in'],
+    identifiers: ['trial-school-prin', 'school.principal@pilot-trial.edu.in', 'school.principal@akshara-trial.edu.in'],
     pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
     destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'School Principal (Akshara Global)',
-    email: 'school.principal@akshara-trial.edu.in',
+    fullName: 'School Principal (Pilot Institution)',
+    email: 'school.principal@pilot-trial.edu.in',
     tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
     tenant: {
       id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
+      name: 'PILOT INSTITUTION SCHOOL AND PU COLLEGE',
+      code: 'pilot-clean',
       institution_type: 'composite_group',
       status: 'TRIAL ACTIVE',
     },
   },
   {
-    identifiers: ['trial-pu-prin', 'pu.principal@akshara-trial.edu.in'],
+    identifiers: ['trial-pu-prin', 'pu.principal@pilot-trial.edu.in', 'pu.principal@akshara-trial.edu.in'],
     pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
     destination: '/demo?role=PRINCIPAL',
     role: 'PRINCIPAL',
     authority: 'INSTITUTION',
     isSuperadmin: false,
-    fullName: 'PU College Principal (Akshara Global)',
-    email: 'pu.principal@akshara-trial.edu.in',
+    fullName: 'PU College Principal (Pilot Institution)',
+    email: 'pu.principal@pilot-trial.edu.in',
     tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
     tenant: {
       id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
+      name: 'PILOT INSTITUTION SCHOOL AND PU COLLEGE',
+      code: 'pilot-clean',
       institution_type: 'composite_group',
       status: 'TRIAL ACTIVE',
     },
@@ -426,14 +426,14 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setUsernameOrId('chairman@akshara-trial.edu.in');
+                setUsernameOrId('chairman@pilot-trial.edu.in');
                 setPassword('Chairman@2026!');
                 setErrorMessage(null);
               }}
               className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 text-center transition-all truncate"
-              title="Akshara 30-Day Trial (Clean Canvas)"
+              title="30-Day Clean Pilot Project (Clean Canvas)"
             >
-              🎓 Trial Pilot
+              🎓 Clean Pilot
             </button>
           </div>
         </div>

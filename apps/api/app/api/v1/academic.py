@@ -804,7 +804,7 @@ async def generate_hall_tickets(
             student_name=f"{s.first_name} {s.last_name}",
             class_name=s.class_name,
             section_code=s.section_or_stream,
-            exam_centre="Akshara Global Main Campus",
+            exam_centre="Pilot Institution Main Campus",
             room_number=payload.room_number or "Hall 101",
             seat_number=seat_no,
             eligibility_status="ELIGIBLE" if (not payload.enforce_fee_clearance or s.fee_balance <= 0) else "PENDING_FEE_APPROVAL",
