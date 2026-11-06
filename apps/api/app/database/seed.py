@@ -944,14 +944,12 @@ async def seed_initial_data(db: AsyncSession) -> None:
                         "name": "OUR SCHOOL Demo Public School",
                         "level": "School",
                         "type": "k12",
-                        "principal_email": "school.principal@akshara-trial.edu.in"
                     },
                     {
                         "code": "PU_COLLEGE",
                         "name": "Akshara Pre-University College",
                         "level": "PU College",
                         "type": "composite_pu",
-                        "principal_email": "pu.principal@akshara-trial.edu.in"
                     }
                 ],
                 "trial_policy": {
@@ -972,7 +970,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             code="MAIN",
             is_main=True,
             address="Campus Ground, 80 Feet Road, Bengaluru",
-            contact_email="principal@akshara-trial.edu.in",
+            contact_email="chairman@akshara-trial.edu.in",
             contact_phone="+91 80 2345 6789"
         )
         db.add(trial_campus)
