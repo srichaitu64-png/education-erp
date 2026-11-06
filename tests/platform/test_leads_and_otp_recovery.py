@@ -11,7 +11,7 @@ from app.modules.leads.models import WebsiteLead
 async def platform_token(client: httpx.AsyncClient) -> str:
     """Obtain valid Platform Super Admin JWT access token using requested platform bootstrap credentials."""
     res = await client.post("/api/v1/auth/login", json={
-        "username": admin@platform.erp.in,
+        "username": "admin@platform.erp.in",
         "password": "AdminSecurePassword2026!"
     })
     assert res.status_code == 200, f"Superadmin login failed: {res.text}"
