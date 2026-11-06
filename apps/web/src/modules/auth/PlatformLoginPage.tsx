@@ -20,54 +20,6 @@ import { useAuthStore } from '../../store/authStore';
 import { useDemoStore } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 
-export interface PlatformDemoAccount {
-  role: 'SUPER_ADMIN' | 'BACKUP_SUPER_ADMIN' | 'DEVELOPER';
-  label: string;
-  shortLabel: string;
-  email: string;
-  username: string;
-  pass: string;
-  fullName: string;
-  badge: string;
-  canDo: string;
-}
-
-export const PLATFORM_DEMO_ACCOUNTS: PlatformDemoAccount[] = [
-  {
-    role: 'SUPER_ADMIN',
-    label: 'Platform Super Admin (SaaS Owner)',
-    shortLabel: '🌐 Super Admin',
-    email: 'admin@platform.erp.in',
-    username: 'superadmin',
-    pass: 'AdminSecurePassword2026!',
-    fullName: 'Global Platform Administrator',
-    badge: 'Platform Root Authority',
-    canDo: 'Global control over all 1,000+ tenancies, plan pricing, MRR analytics, and system health',
-  },
-  {
-    role: 'BACKUP_SUPER_ADMIN',
-    label: 'Backup Super Admin (Security)',
-    shortLabel: '🛡️ Backup Super Admin',
-    email: 'backup.admin@platform.erp.in',
-    username: 'backup.admin',
-    pass: 'BackupSecurePass2026!',
-    fullName: 'Secondary Platform Administrator',
-    badge: 'Disaster Recovery',
-    canDo: 'Secondary emergency recovery, failover validation, and immutable platform audit logs',
-  },
-  {
-    role: 'DEVELOPER',
-    label: 'Platform Developer (DevOps)',
-    shortLabel: '💻 Platform Developer',
-    email: 'developer@platform.erp.in',
-    username: 'developer',
-    pass: 'DevSecurePass2026!',
-    fullName: 'Platform Infrastructure Engineer',
-    badge: 'Infrastructure Telemetry',
-    canDo: 'API telemetry, database performance diagnostics, zero-access to live student gradebooks',
-  },
-];
-
 export const PlatformLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
@@ -77,7 +29,6 @@ export const PlatformLoginPage: React.FC = () => {
   const [usernameOrId, setUsernameOrId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [activeAccount, setActiveAccount] = useState<PlatformDemoAccount | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -90,13 +41,6 @@ export const PlatformLoginPage: React.FC = () => {
     }
   };
 
-  const handleAutofill = (acc: PlatformDemoAccount) => {
-    setActiveAccount(acc);
-    setUsernameOrId(acc.email);
-    setPassword(acc.pass);
-    setSelectedRole(acc.role);
-    setErrorMessage(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,64 +66,28 @@ export const PlatformLoginPage: React.FC = () => {
       const payload = {
         email: inputVal,
         password,
-        role: selectedRole,
       };
 
-      try {
-        const res = await api.post('/auth/login', payload);
-        const { access_token, refresh_token, user } = res.data;
-        if (!user.is_superadmin) {
-          throw new Error('This account does not have SaaS Platform Super Admin privileges.');
-        }
-        await login(access_token, refresh_token, user);
-        switchRole('SUPER_ADMIN');
-        navigate('/platform');
-        return;
-      } catch (apiErr: any) {
-        // Fallback for static hosting on Vercel or offline backend
-        const searchVal = inputVal.toLowerCase();
-        const matched = PLATFORM_DEMO_ACCOUNTS.find(
-          (acc) =>
-            (acc.email.toLowerCase() === searchVal ||
-              acc.username.toLowerCase() === searchVal) &&
-            acc.pass === password
-        );
-
-        if (matched) {
-          const mockUser = {
-            id: `usr-${matched.role.toLowerCase()}`,
-            email: matched.email,
-            full_name: matched.fullName,
-            phone: '+91 99000 00001',
-            is_active: true,
-            is_superadmin: true,
-            roles: [
-              {
-                id: `role-${matched.role.toLowerCase()}`,
-                name: matched.label,
-                code: matched.role,
-                tenant_id: null,
-                permissions: ['*'],
-              },
-            ],
-          };
-
-          await login('mock_jwt_access_token_platform', 'mock_jwt_refresh_token_platform', mockUser);
-          switchRole('SUPER_ADMIN');
-          navigate('/platform');
-          return;
-        }
-
-        throw apiErr;
+      const res = await api.post('/auth/login', payload);
+      const { access_token, refresh_token, user } = res.data || {};
+      if (!access_token || !user) {
+        throw new Error('The authentication service returned an invalid response.');
       }
+      if (!user.is_superadmin) {
+        throw new Error('This account does not have SaaS Platform Super Admin privileges.');
+      }
+
+      await login(access_token, refresh_token, user);
+      switchRole('SUPER_ADMIN');
+      navigate('/platform');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (detail) {
         setErrorMessage(detail);
+      } else if (!err.response) {
+        setErrorMessage('Unable to reach the authentication service. Please check your connection and try again.');
       } else {
-        setErrorMessage(
-          'Invalid credentials or unassigned platform role. Use the Quick Platform Demo Accounts below.'
-        );
+        setErrorMessage('Invalid credentials or unassigned platform role. Please verify your account.');
       }
     } finally {
       setLoading(false);
@@ -208,45 +116,9 @@ export const PlatformLoginPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Platform Demo Credentials Picker */}
-        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              Platform Owner Demo Credentials (1-Click Fill)
-            </span>
-            <span className="text-[10px] text-slate-500 font-medium">Root Access</span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {PLATFORM_DEMO_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.role}
-                type="button"
-                onClick={() => handleAutofill(acc)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                  selectedRole === acc.role && (usernameOrId === acc.email || usernameOrId === acc.username)
-                    ? 'bg-purple-600/30 text-purple-200 border-purple-500/60 shadow-sm'
-                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white'
-                }`}
-              >
-                <span>{acc.shortLabel}</span>
-              </button>
-            ))}
-          </div>
-
-          {activeAccount && (
-            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-purple-900/40 text-[11px] text-slate-300 space-y-1 mt-1">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-white">{activeAccount.fullName}</span>
-                <span className="text-[10px] font-semibold text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-800/60">
-                  {activeAccount.badge}
-                </span>
-              </div>
-              <p className="text-slate-400 text-[10px] leading-relaxed">{activeAccount.canDo}</p>
-            </div>
-          )}
-        </div>
+        <p className="text-center text-xs text-slate-400">
+          Restricted access. Sign in using credentials provisioned for an authorized platform administrator.
+        </p>
 
         {/* Error Banner */}
         {errorMessage && (
