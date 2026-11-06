@@ -165,7 +165,15 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         # reset this to false and install the signed tenant scope for each request.
         await session.execute(text("SELECT set_config('app.is_superadmin', 'true', false)"))
         await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
-        app.dependency_overrides[get_db] = lambda: session
+
+        async def override_get_db():
+            # Every API request starts with a non-privileged database context,
+            # including public endpoints and requests that reuse this test session.
+            await session.execute(text("SELECT set_config('app.is_superadmin', 'false', false)"))
+            await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
+            yield session
+
+        app.dependency_overrides[get_db] = override_get_db
         yield session
         await session.rollback()
         app.dependency_overrides.pop(get_db, None)
