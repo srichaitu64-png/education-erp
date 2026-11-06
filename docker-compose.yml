@@ -1,4 +1,21 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: erp_migrate
+    restart: "no"
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://erp_app:${ERP_APP_PASSWORD:?Set ERP_APP_PASSWORD in .env}@db:5432/education_erp_prod
+      SECRET_KEY: ${SECRET_KEY:?Set a unique SECRET_KEY in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - erp_net
+
   api:
     build:
       context: .
@@ -21,8 +38,8 @@ services:
       BOOTSTRAP_SUPERADMIN_EMAIL: ${BOOTSTRAP_SUPERADMIN_EMAIL:-admin@platform.erp.in}
       BOOTSTRAP_SUPERADMIN_PASSWORD: ${BOOTSTRAP_SUPERADMIN_PASSWORD:-}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_started
     networks:
