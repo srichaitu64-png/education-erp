@@ -35,6 +35,7 @@ async def test_authentication_login_flow(client, db_session: AsyncSession):
         is_superadmin=False
     )
     db_session.add(user)
+    await db_session.flush()
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
     assert tenant is not None, "OUR SCHOOL demo tenant must be seeded for authentication tests"
     principal_role = (
@@ -87,6 +88,7 @@ async def test_superadmin_privilege_enforcement(client, db_session: AsyncSession
         is_superadmin=True
     )
     db_session.add_all([regular_user, superadmin_user])
+    await db_session.flush()
     tenant = (await db_session.execute(select(Tenant).where(Tenant.code == "our-school-demo"))).scalars().first()
     assert tenant is not None
     regular_role = (
