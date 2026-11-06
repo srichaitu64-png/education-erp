@@ -1,4 +1,5 @@
 import uuid
+import secrets
 from datetime import datetime, date, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -806,7 +807,8 @@ async def generate_hall_tickets(
         exam_name = getattr(exam, "name", None) or getattr(exam, "title", "Examination")
         ticket_no = f"HT-{exam.id.hex[:6].upper()}-{s.admission_number}"
         seat_no = f"S-{(idx + 1):03d}"
-        qr_code = f"TICKET:{ticket_no}:{s.admission_number}:{exam_name}"
+        # Random bearer secret: do not derive QR credentials from public ticket data.
+        qr_code = secrets.token_urlsafe(32)
 
         ht = HallTicket(
             tenant_id=tenant_id,
