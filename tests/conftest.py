@@ -160,6 +160,11 @@ def pytest_sessionfinish(session, exitstatus):
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Provide a clean database session for each test."""
     async with TestAsyncSessionLocal() as session:
+        # Test fixture writes are privileged setup operations. Use session-level context
+        # so it survives fixture commits; authenticated API dependencies explicitly
+        # reset this to false and install the signed tenant scope for each request.
+        await session.execute(text("SELECT set_config('app.is_superadmin', 'true', false)"))
+        await session.execute(text("SELECT set_config('app.current_tenant_id', '', false)"))
         app.dependency_overrides[get_db] = lambda: session
         yield session
         await session.rollback()
