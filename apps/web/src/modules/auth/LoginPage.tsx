@@ -16,189 +16,10 @@ import { useDemoStore, UserRoleType } from '../../store/demoStore';
 import { ForgotPasswordModal } from '../../components/auth/ForgotPasswordModal';
 import { FirstLoginPasswordModal } from '../../components/auth/FirstLoginPasswordModal';
 
-// Internal offline credential catalog for static-only environments / preview builds.
-// Note: This catalog is NEVER exposed or rendered as buttons or dropdowns on the screen.
-const STATIC_PREVIEW_DIRECTORY = [
-  {
-    identifiers: ['siva', 'superadmin', 'owner', 'admin@platform.erp.in', 'owner@educationos.internal'],
-    pass: [
-      'Myerp2026@',
-      'AdminSecurePassword2026!',
-      'Adm1nSecurePassword2026!',
-      'SuperAdmin@2026!',
-      'SuperAdm1n@2026!',
-      'siva',
-      'admin',
-      'superadmin',
-      'admin123'
-    ],
-    destination: '/platform',
-    role: 'SUPER_ADMIN',
-    authority: 'PLATFORM',
-    isSuperadmin: true,
-    fullName: 'Platform Super Administrator',
-    email: 'admin@platform.erp.in',
-    tenantId: null,
-  },
-  {
-    identifiers: ['admin', 'demo', 'ourschool', 'our-school-demo', 'admin@ourschool.edu.in', 'principal@akshara.edu.in'],
-    pass: ['demo123', 'demo', 'PrincipalSecurePassword2026!', 'admin123'],
-    destination: '/demo?role=PRINCIPAL',
-    role: 'PRINCIPAL',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'OUR SCHOOL Administrator (Demo)',
-    email: 'admin@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-    tenant: {
-      id: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-      name: 'OUR SCHOOL',
-      code: 'our-school-demo',
-      institution_type: 'demo',
-      status: 'ACTIVE DEMO',
-      primary_color: '#0284c7',
-      secondary_color: '#0369a1',
-    },
-  },
-  {
-    identifiers: ['akshara', 'akshara-trial', 'trial', 'trial-chair', 'admin@akshara-trial.edu.in', 'chairman@akshara-trial.edu.in'],
-    pass: ['admin123@', 'admin123', 'ChairmanTrialSecure2026!', 'Chairman@2026!', 'Chairm@n2026!', 'demo123'],
-    destination: '/demo?role=CHAIRMAN_DIRECTOR',
-    role: 'CHAIRMAN_DIRECTOR',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Dr. Anand Hegde (Chairman, Akshara Global)',
-    email: 'chairman@akshara-trial.edu.in',
-    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-    tenant: {
-      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
-      institution_type: 'composite_group',
-      status: 'TRIAL ACTIVE',
-      primary_color: '#d97706',
-      secondary_color: '#b45309',
-    },
-  },
-  {
-    identifiers: ['trial-school-prin', 'school.principal@akshara-trial.edu.in'],
-    pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
-    destination: '/demo?role=PRINCIPAL',
-    role: 'PRINCIPAL',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'School Principal (Akshara Global)',
-    email: 'school.principal@akshara-trial.edu.in',
-    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-    tenant: {
-      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
-      institution_type: 'composite_group',
-      status: 'TRIAL ACTIVE',
-    },
-  },
-  {
-    identifiers: ['trial-pu-prin', 'pu.principal@akshara-trial.edu.in'],
-    pass: ['admin123@', 'admin123', 'PrincipalSecurePassword2026!', 'demo123'],
-    destination: '/demo?role=PRINCIPAL',
-    role: 'PRINCIPAL',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'PU College Principal (Akshara Global)',
-    email: 'pu.principal@akshara-trial.edu.in',
-    tenantId: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-    tenant: {
-      id: '1c44e550-9cfc-4bd5-9bb2-8ef1bf237b5c',
-      name: 'AKSHARA GLOBAL SCHOOL AND PU COLLEGE',
-      code: 'akshara-trial',
-      institution_type: 'composite_group',
-      status: 'TRIAL ACTIVE',
-    },
-  },
-  {
-    identifiers: ['principal', 'principal@ourschool.edu.in', 'emp-prin-01'],
-    pass: ['PrincipalSecurePassword2026!', 'demo123'],
-    destination: '/demo?role=PRINCIPAL',
-    role: 'PRINCIPAL',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Dr. Ramesh Kumar (Principal, OUR SCHOOL)',
-    email: 'principal@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['accountant', 'accountant@ourschool.edu.in', 'emp-acc-01'],
-    pass: ['AccountantSecure2026!', 'demo123'],
-    destination: '/demo?role=ACCOUNTANT',
-    role: 'ACCOUNTANT',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Venkatesh Iyer (Senior Accountant, OUR SCHOOL)',
-    email: 'accountant@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['exams', 'exams@ourschool.edu.in', 'emp-exam-01'],
-    pass: ['ExamController2026!', 'demo123'],
-    destination: '/demo?role=EXAM_CONTROLLER',
-    role: 'EXAM_CONTROLLER',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Prof. Ananth Murthy (Exam Controller, OUR SCHOOL)',
-    email: 'exams@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['teacher', 'teacher.physics@ourschool.edu.in', 'emp-tch-01'],
-    pass: ['TeacherPhysics2026!', 'demo123'],
-    destination: '/demo?role=TEACHER',
-    role: 'TEACHER',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Lakshmi Prasad (Physics Faculty, OUR SCHOOL)',
-    email: 'teacher.physics@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['librarian', 'librarian@ourschool.edu.in', 'emp-lib-01'],
-    pass: ['LibrarianSecure2026!', 'demo123'],
-    destination: '/demo?role=LIBRARIAN',
-    role: 'LIBRARIAN',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'V. S. Rao (Chief Librarian, OUR SCHOOL)',
-    email: 'librarian@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['student', 'student.rahul@ourschool.edu.in', 'adm-2026-001'],
-    pass: ['StudentRahul2026!', 'demo123'],
-    destination: '/demo?role=STUDENT',
-    role: 'STUDENT',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Rahul Kumar (Class I PUC Science, OUR SCHOOL)',
-    email: 'student.rahul@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-  {
-    identifiers: ['parent', 'parent.rahul@ourschool.edu.in', 'par-2026-001'],
-    pass: ['ParentRahul2026!', 'demo123'],
-    destination: '/demo?role=PARENT',
-    role: 'PARENT',
-    authority: 'INSTITUTION',
-    isSuperadmin: false,
-    fullName: 'Ramesh Kumar (Parent of Rahul, OUR SCHOOL)',
-    email: 'parent.rahul@ourschool.edu.in',
-    tenantId: '66601a28-a6e4-4cc8-857b-b9963e222e3b',
-  },
-];
-
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { switchRole, setTenantScope } = useDemoStore();
+  const { switchRole } = useDemoStore();
 
   // Controlled form state
   const [usernameOrId, setUsernameOrId] = useState('');
@@ -245,100 +66,43 @@ export const LoginPage: React.FC = () => {
         remember_me: rememberMe,
       };
 
-      try {
-        const res = await api.post('/auth/login', payload);
-        // In static preview hosting (e.g. Vercel hosting Vite SPA),
-        // /api/v1/auth/login gets rewritten to index.html with 200 OK.
-        // We verify that res.data is a valid JSON object with access_token.
-        if (!res.data || typeof res.data !== 'object' || !res.data.access_token) {
-          throw new Error('Static preview mode - Fallback to client directory');
-        }
-
-        const {
-          access_token,
-          refresh_token,
-          user,
-          destination,
-          primary_role,
-        } = res.data;
-
-        // If user is required to reset temporary password on initial login
-        if (user?.must_change_password) {
-          setPendingAuthSession({
-            token: access_token,
-            refreshToken: refresh_token,
-            user,
-            destination: destination || (user.is_superadmin ? '/platform' : '/app'),
-            primaryRole: primary_role,
-          });
-          setShowFirstLoginModal(true);
-          return;
-        }
-
-        await login(access_token, refresh_token, user);
-        if (primary_role) {
-          switchRole(primary_role as UserRoleType);
-        }
-        navigate(destination || (user.is_superadmin ? '/platform' : '/app'));
-        return;
-      } catch (apiErr: any) {
-        // Seamless fallback for offline backend / static preview mode or known preview accounts
-        const normalizedInput = inputVal.toLowerCase();
-        const matched = STATIC_PREVIEW_DIRECTORY.find((acc) => {
-          const idMatch = acc.identifiers.includes(normalizedInput);
-          const passMatch = Array.isArray(acc.pass)
-            ? acc.pass.includes(password) || acc.pass.some(p => p.toLowerCase() === password.toLowerCase())
-            : acc.pass === password || (acc.pass as string).toLowerCase() === password.toLowerCase();
-          return idMatch && passMatch;
-        });
-
-        if (matched) {
-          const mockUser = {
-            id: `usr-${matched.role.toLowerCase()}`,
-            email: matched.email,
-            full_name: matched.fullName,
-            phone: '+91 98450 12345',
-            is_active: true,
-            is_superadmin: matched.isSuperadmin,
-            roles: [
-              {
-                id: `role-${matched.role.toLowerCase()}`,
-                name: matched.role,
-                code: matched.role,
-                tenant_id: matched.tenantId,
-                permissions: ['*'],
-              },
-            ],
-          };
-
-          try {
-            await login('preview_access_token', 'preview_refresh_token', mockUser);
-          } catch (loginErr) {
-            console.warn('Preview login profile sync note:', loginErr);
-          }
-
-          if ((matched as any).tenant) {
-            useAuthStore.setState({ tenant: (matched as any).tenant });
-            setTenantScope((matched as any).tenant.code || 'our-school-demo');
-          }
-          if (matched.role) {
-            switchRole(matched.role as UserRoleType);
-          }
-          navigate(matched.destination);
-          return;
-        }
-
-        // If no static match and backend returned valid JSON detail
-        if (apiErr.response?.data?.detail && typeof apiErr.response.data === 'object') {
-          throw apiErr;
-        }
-
-        throw apiErr;
+      const res = await api.post('/auth/login', payload);
+      if (!res.data || typeof res.data !== 'object' || !res.data.access_token) {
+        throw new Error('The authentication service returned an invalid response.');
       }
+
+      const {
+        access_token,
+        refresh_token,
+        user,
+        destination,
+        primary_role,
+      } = res.data;
+
+      // Require the server-issued first-login password change before creating a session.
+      if (user?.must_change_password) {
+        setPendingAuthSession({
+          token: access_token,
+          refreshToken: refresh_token,
+          user,
+          destination: destination || (user.is_superadmin ? '/platform' : '/app'),
+          primaryRole: primary_role,
+        });
+        setShowFirstLoginModal(true);
+        return;
+      }
+
+      await login(access_token, refresh_token, user);
+      if (primary_role) {
+        switchRole(primary_role as UserRoleType);
+      }
+      navigate(destination || (user.is_superadmin ? '/platform' : '/app'));
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (detail) {
         setErrorMessage(detail);
+      } else if (!err.response) {
+        setErrorMessage('Unable to reach the authentication service. Please check your connection and try again.');
       } else {
         setErrorMessage('Invalid username, email, or password. Please verify your credentials.');
       }
@@ -392,51 +156,9 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
-        {/* Quick Demo Credentials Helper */}
-        <div className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>⚡ Quick Demo Credentials</span>
-            <span className="text-[10px] text-blue-400">1-Click Fill</span>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-            <button
-              type="button"
-              onClick={() => {
-                setUsernameOrId('superadmin');
-                setPassword('SuperAdmin@2026!');
-                setErrorMessage(null);
-              }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white font-bold border border-slate-700 text-center transition-all truncate"
-              title="Super Admin: superadmin / SuperAdmin@2026!"
-            >
-              🌐 Super Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsernameOrId('admin');
-                setPassword('demo123');
-                setErrorMessage(null);
-              }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 font-bold border border-slate-700 text-center transition-all truncate"
-              title="OUR SCHOOL Demo: admin / demo123"
-            >
-              🏫 Demo School
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsernameOrId('chairman@akshara-trial.edu.in');
-                setPassword('Chairman@2026!');
-                setErrorMessage(null);
-              }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 text-center transition-all truncate"
-              title="Akshara 30-Day Trial (Clean Canvas)"
-            >
-              🎓 Trial Pilot
-            </button>
-          </div>
-        </div>
+        <p className="text-center text-xs text-slate-400">
+          Sign in with the account credentials issued by your institution administrator.
+        </p>
 
         {/* Universal Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
