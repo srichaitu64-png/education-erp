@@ -1,7 +1,7 @@
 from contextvars import ContextVar
 from typing import AsyncGenerator, Optional
 import uuid
-from sqlalchemy import text
+from sqlalchemy import text, event
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -24,11 +24,7 @@ def set_current_tenant_id(tenant_id: Optional[uuid.UUID]) -> None:
 
 
 class RLSAsyncSession(AsyncSession):
-    """Reapply transaction-local RLS context after commits and rollbacks.
-
-    Tenant and privilege GUCs must survive ORM code that commits more than once
-    during a request, but must never leak to the next pooled connection user.
-    """
+    """Async session that keeps transaction-local RLS context across commits."""
 
     async def set_rls_context(
         self,
@@ -39,27 +35,29 @@ class RLSAsyncSession(AsyncSession):
         self.info["_rls_tenant_id"] = str(tenant_id) if tenant_id else ""
         self.info["_rls_is_superadmin"] = bool(is_superadmin)
         set_current_tenant_id(tenant_id)
-        await self._apply_rls_context()
-
-    async def _apply_rls_context(self) -> None:
-        if not self.info.get("_rls_context_enabled"):
-            return
-        await super().execute(
+        await self.execute(
             text("SELECT set_config('app.is_superadmin', :flag, true)"),
-            {"flag": "true" if self.info.get("_rls_is_superadmin") else "false"},
+            {"flag": "true" if is_superadmin else "false"},
         )
-        await super().execute(
+        await self.execute(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-            {"tenant_id": self.info.get("_rls_tenant_id", "")},
+            {"tenant_id": str(tenant_id) if tenant_id else ""},
         )
 
-    async def commit(self) -> None:
-        await super().commit()
-        await self._apply_rls_context()
 
-    async def rollback(self) -> None:
-        await super().rollback()
-        await self._apply_rls_context()
+@event.listens_for(RLSAsyncSession.sync_session_class, "after_begin")
+def _apply_rls_context_after_begin(sync_session, transaction, connection):
+    """Reapply GUCs on every new DB transaction, including after explicit commits."""
+    if not sync_session.info.get("_rls_context_enabled"):
+        return
+    connection.execute(
+        text("SELECT set_config('app.is_superadmin', :flag, true)"),
+        {"flag": "true" if sync_session.info.get("_rls_is_superadmin") else "false"},
+    )
+    connection.execute(
+        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+        {"tenant_id": sync_session.info.get("_rls_tenant_id", "")},
+    )
 
 
 # Primary asynchronous SQLAlchemy engine
