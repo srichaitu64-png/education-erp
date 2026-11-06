@@ -140,6 +140,7 @@ DEFAULT_PERMISSIONS: List[Dict[str, str]] = [
     # Students & Admissions
     {"code": "students.view", "name": "View Students", "module": "students"},
     {"code": "students.create", "name": "Register Students", "module": "students"},
+    {"code": "students.import", "name": "Import Existing Student Records", "module": "students"},
     {"code": "students.edit", "name": "Edit Students", "module": "students"},
     {"code": "students.archive", "name": "Archive Students", "module": "students"},
     {"code": "admissions.manage", "name": "Manage Admissions", "module": "admissions"},
