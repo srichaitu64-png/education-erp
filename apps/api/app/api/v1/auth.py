@@ -88,6 +88,7 @@ async def login(
 
     # Institutional alias / code resolution for student & staff IDs
     CODE_TO_EMAIL = {
+            "superadmin": "admin@platform.erp.in",
             "emp-chair-01": "chairman@akshara.edu.in",
             "emp-prin-01": "principal@akshara.edu.in",
             "emp-acc-01": "accountant@akshara.edu.in",
@@ -204,10 +205,44 @@ async def login(
         )
 
     if not user.is_superadmin and not req.tenant_code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Institution code is required for institutional accounts."
+        # Preserve convenient single-institution login without widening RLS:
+        # probe each tenant separately and only retain a unique membership scope.
+        tenant_ids = (await db.execute(select(Tenant.id))).scalars().all()
+        matching_tenants = []
+        for candidate_tenant_id in tenant_ids:
+            await db.execute(
+                text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+                {"tenant_id": str(candidate_tenant_id)}
+            )
+            membership = await db.execute(
+                select(UserRole.tenant_id).where(
+                    UserRole.user_id == user.id,
+                    UserRole.tenant_id == candidate_tenant_id
+                ).limit(1)
+            )
+            if membership.scalar_one_or_none() is not None:
+                matching_tenants.append(candidate_tenant_id)
+        if len(matching_tenants) != 1:
+            await db.execute(text("SELECT set_config('app.current_tenant_id', '', true)"))
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Institution code is required when the account belongs to more than one institution or has no active institution assignment."
+            )
+        login_tenant = await db.get(Tenant, matching_tenants[0])
+        await db.execute(
+            text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(matching_tenants[0])}
         )
+        scoped_user_stmt = (
+            select(User)
+            .options(
+                selectinload(User.roles)
+                .selectinload(UserRole.role)
+                .selectinload(Role.permissions)
+            )
+            .where(User.id == user.id)
+        )
+        user = (await db.execute(scoped_user_stmt)).scalars().first()
 
     # Reset failure counters on successful authentication
     user.failed_login_attempts = 0
