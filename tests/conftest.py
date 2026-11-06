@@ -22,13 +22,12 @@ from app.core.security import hash_password, verify_password
 from app.modules.identity.models import User, Role, UserRole
 from app.main import app
 
-# Dedicated test database engine using NullPool so each test event loop gets fresh connections
+# Application test sessions use the same non-superuser role as the running API.
 test_engine = create_async_engine(
     settings.TEST_DATABASE_URL,
     echo=False,
     poolclass=NullPool
 )
-
 TestAsyncSessionLocal = async_sessionmaker(
     bind=test_engine,
     class_=AsyncSession,
@@ -37,34 +36,44 @@ TestAsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False
 )
 
+# Privileged setup is limited to disposable test-database lifecycle operations.
+bootstrap_engine = create_async_engine(
+    settings.TEST_ADMIN_DATABASE_URL or settings.DATABASE_URL,
+    echo=False,
+    poolclass=NullPool
+)
+
 
 def pytest_sessionstart(session):
-    """Synchronous session start hook to build schema and seed test database."""
+    """Build the disposable schema as admin, then run tests as the NOBYPASSRLS app role."""
     async def _setup():
-        async with test_engine.begin() as conn:
+        async with bootstrap_engine.begin() as conn:
             await conn.execute(text("""
                 DO $$
                 BEGIN
                   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'erp_app') THEN
-                    CREATE ROLE erp_app WITH LOGIN PASSWORD 'erp_app_pass' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+                    CREATE ROLE erp_app WITH LOGIN PASSWORD 'erp_app_pass'
+                      NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
                   END IF;
-                  GRANT USAGE, CREATE ON SCHEMA public TO erp_app;
-                  GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO erp_app;
-                  GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO erp_app;
-                  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO erp_app;
-                  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO erp_app;
                 END
                 $$;
             """))
+            await conn.execute(text(
+                "ALTER ROLE erp_app WITH LOGIN PASSWORD 'erp_app_pass' "
+                "NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS"
+            ))
+            await conn.execute(text("GRANT CONNECT ON DATABASE education_erp_test TO erp_app"))
+            await conn.execute(text("GRANT USAGE, CREATE ON SCHEMA public TO erp_app"))
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
             await enable_row_level_security(conn)
+            await conn.execute(text("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO erp_app"))
+            await conn.execute(text("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO erp_app"))
 
         async with TestAsyncSessionLocal() as s:
             await seed_initial_data(s)
 
             # Provision deterministic platform credentials only inside the disposable test DB.
-            # Production seeding never receives or uses this test password.
             admin_email = "admin@platform.erp.in"
             admin_result = await s.execute(select(User).where(User.email == admin_email))
             test_admin = admin_result.scalars().first()
@@ -105,7 +114,7 @@ def pytest_sessionstart(session):
                     s.add(otp_admin)
                     await s.flush()
                 else:
-                    otp_admin.hashed_password = hash_password("OTPAdminSecurePassword2026!")
+                    otp_admin.hashed_password = hash_password(TEST_OTP_ADMIN_PASSWORD)
                     otp_admin.is_active = True
                     otp_admin.is_superadmin = True
                     otp_admin.must_change_password = False
@@ -129,6 +138,7 @@ def pytest_sessionstart(session):
                 if not assignment_result.scalars().first():
                     s.add(UserRole(user_id=test_admin.id, role_id=super_role.id, tenant_id=None))
             await s.commit()
+
             assert test_admin.is_superadmin is True
             assert verify_password("AdminSecurePassword2026!", test_admin.hashed_password)
 
@@ -136,11 +146,12 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Teardown test database."""
+    """Teardown the disposable test database using the bootstrap connection."""
     async def _teardown():
-        async with test_engine.begin() as conn:
+        async with bootstrap_engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
         await test_engine.dispose()
+        await bootstrap_engine.dispose()
 
     asyncio.run(_teardown())
 
