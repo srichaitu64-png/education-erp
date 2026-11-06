@@ -1,120 +1,96 @@
 """
-Automated Alembic Migration and Configuration Safety Tests
-Tests schema sync, upgrade/downgrade idempotency, and production configuration safety.
+Automated Alembic Migration and Configuration Safety Tests.
+Uses the database service supplied by CI (or TEST_DATABASE_URL locally).
 """
 import os
 import subprocess
+import sys
+import uuid
 import pytest
+
+import psycopg2
+from sqlalchemy.engine import make_url
 from app.core.config import Settings
+
+
+def _api_dir() -> str:
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
+
+
+def _alembic(*args: str, db_url: str | None = None) -> subprocess.CompletedProcess:
+    command = [sys.executable, "-m", "alembic"]
+    if db_url:
+        command += ["-x", f"db_url={db_url}"]
+    command.extend(args)
+    return subprocess.run(command, cwd=_api_dir(), capture_output=True, text=True, env=os.environ.copy())
+
+
+def _admin_connection():
+    raw_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not raw_url:
+        raise RuntimeError("TEST_DATABASE_URL or DATABASE_URL must be set for migration tests")
+    url = make_url(raw_url)
+    return psycopg2.connect(
+        host=url.host or "127.0.0.1",
+        port=url.port or 5432,
+        user=url.username or "postgres",
+        password=url.password or os.getenv("PGPASSWORD"),
+        dbname="postgres",
+    ), url
 
 
 def test_settings_secret_key_production_validation():
     """Verify that insecure or short SECRET_KEY is strictly rejected in production."""
-    # Development allows default key
     dev_settings = Settings(ENVIRONMENT="development")
     assert dev_settings.SECRET_KEY is not None
 
-    # Production rejects default key
     with pytest.raises(ValueError, match="Insecure SECRET_KEY"):
-        Settings(
-            ENVIRONMENT="production",
-            SECRET_KEY="change-this-to-a-secure-random-256-bit-key-in-production"
-        )
+        Settings(ENVIRONMENT="production", SECRET_KEY="change-this-to-a-secure-random-256-bit-key-in-production")
 
-    # Production rejects short key
     with pytest.raises(ValueError, match="Insecure SECRET_KEY"):
-        Settings(
-            ENVIRONMENT="production",
-            SECRET_KEY="short-secret-key"
-        )
+        Settings(ENVIRONMENT="production", SECRET_KEY="short-secret-key")
 
-    # Production accepts valid 32+ character key
     valid_key = "x" * 32
-    prod_settings = Settings(
-        ENVIRONMENT="production",
-        SECRET_KEY=valid_key
-    )
+    prod_settings = Settings(ENVIRONMENT="production", SECRET_KEY=valid_key)
     assert prod_settings.SECRET_KEY == valid_key
 
 
 def test_settings_cors_origins_parsing():
-    """Verify that CORS origins can be parsed from comma-separated strings and include Vercel origin."""
+    """Verify that CORS origins can be parsed and include the deployed Vercel origin."""
     default_settings = Settings()
     assert "https://education-erp-nine.vercel.app" in default_settings.ALLOWED_ORIGINS
 
-    # Test comma-separated string parsing
-    custom_origins_settings = Settings(
-        ALLOWED_ORIGINS="https://app.educationos.com, https://admin.educationos.com"
-    )
-    assert custom_origins_settings.ALLOWED_ORIGINS == [
-        "https://app.educationos.com",
-        "https://admin.educationos.com"
-    ]
+    custom = Settings(ALLOWED_ORIGINS="https://app.educationos.com, https://admin.educationos.com")
+    assert custom.ALLOWED_ORIGINS == ["https://app.educationos.com", "https://admin.educationos.com"]
 
 
 def test_alembic_check_clean_dev_database():
-    """Verify that alembic check detects zero discrepancies between SQLAlchemy models and DB schema."""
-    api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
-    result = subprocess.run(
-        ["./.venv/bin/alembic", "check"],
-        cwd=api_dir,
-        capture_output=True,
-        text=True
-    )
+    """Verify that Alembic detects no schema drift after the CI migration step."""
+    result = _alembic("check")
     assert result.returncode == 0, f"Alembic check failed: {result.stderr or result.stdout}"
     assert "No new upgrade operations detected" in (result.stdout + result.stderr)
 
 
 def test_alembic_upgrade_downgrade_cycle():
-    """Verify that Alembic migrations can execute upgrade, downgrade, and re-upgrade without error."""
-    api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
-    cycle_db = "education_erp_mig_cycle_test"
-    db_url = f"postgresql+asyncpg://postgres@127.0.0.1:5433/{cycle_db}"
-
-    # Create temporary database
-    subprocess.run(
-        ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"DROP DATABASE IF EXISTS {cycle_db};"],
-        check=True,
-        capture_output=True
-    )
-    subprocess.run(
-        ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"CREATE DATABASE {cycle_db};"],
-        check=True,
-        capture_output=True
-    )
-
+    """Verify migration upgrade, downgrade and re-upgrade against an isolated temporary database."""
+    admin_conn, base_url = _admin_connection()
+    cycle_db = f"erp_mig_{uuid.uuid4().hex[:12]}"
+    admin_conn.autocommit = True
     try:
-        # 1. Upgrade to head
-        up1 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
-            cwd=api_dir,
-            capture_output=True,
-            text=True
+        with admin_conn.cursor() as cursor:
+            cursor.execute(f'CREATE DATABASE "{cycle_db}"')
+        cycle_url = base_url.set(database=cycle_db).render_as_string(hide_password=False).replace(
+            "postgresql://", "postgresql+asyncpg://"
         )
-        assert up1.returncode == 0, f"Upgrade failed: {up1.stderr}"
+        up1 = _alembic("upgrade", "head", db_url=cycle_url)
+        assert up1.returncode == 0, f"Upgrade failed: {up1.stderr or up1.stdout}"
 
-        # 2. Downgrade to base
-        down = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "downgrade", "base"],
-            cwd=api_dir,
-            capture_output=True,
-            text=True
-        )
-        assert down.returncode == 0, f"Downgrade failed: {down.stderr}"
+        down = _alembic("downgrade", "base", db_url=cycle_url)
+        assert down.returncode == 0, f"Downgrade failed: {down.stderr or down.stdout}"
 
-        # 3. Re-upgrade to head
-        up2 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
-            cwd=api_dir,
-            capture_output=True,
-            text=True
-        )
-        assert up2.returncode == 0, f"Re-upgrade failed: {up2.stderr}"
-
+        up2 = _alembic("upgrade", "head", db_url=cycle_url)
+        assert up2.returncode == 0, f"Re-upgrade failed: {up2.stderr or up2.stdout}"
     finally:
-        # Cleanup temporary database
-        subprocess.run(
-            ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-c", f"DROP DATABASE IF EXISTS {cycle_db};"],
-            capture_output=True
-        )
-
+        with admin_conn.cursor() as cursor:
+            cursor.execute(f'DROP DATABASE IF EXISTS "{cycle_db}" WITH (FORCE)')
+        admin_conn.close()
