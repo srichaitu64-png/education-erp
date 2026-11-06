@@ -92,6 +92,9 @@ async def create_tenant(
     )
     db.add(tenant)
     await db.flush()
+    # The platform owner has provisioned this tenant. Scope subsequent tenant
+    # records (campus, subscription and initial membership) to this new tenant.
+    await db.set_rls_context(tenant.id, is_superadmin=False)
 
     # Create default Main Campus
     main_campus = Campus(
@@ -214,6 +217,8 @@ async def onboard_institution(
     )
     db.add(tenant)
     await db.flush()
+    # Scope all tenant-owned provisioning records to the newly created tenant.
+    await db.set_rls_context(tenant.id, is_superadmin=False)
 
     # Configure campuses
     created_campuses = []
@@ -1185,10 +1190,7 @@ async def request_support_access(
     # Support-session metadata is tenant-scoped. The platform owner may create
     # a request for one explicitly selected tenant, but this does not grant
     # access to that tenant's student, staff, or financial records.
-    await db.execute(
-        text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
-        {"tenant_id": str(tenant_id)},
-    )
+    await db.set_rls_context(tenant_id, is_superadmin=False)
 
     ticket_num = f"SUP-{datetime.now(timezone.utc).year}-{uuid.uuid4().hex[:6].upper()}"
     session = PlatformSupportAccessSession(
