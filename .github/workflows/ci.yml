@@ -17,6 +17,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Validate Compose and database init script
+        env:
+          POSTGRES_DB: education_erp_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          ERP_APP_PASSWORD: erp_app_pass
+          SECRET_KEY: ci-compose-validation-secret-key-32-chars-minimum
+        run: |
+          docker compose config --quiet
+          sh -n infrastructure/docker/init-db/01-create-app-role.sh
+
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
