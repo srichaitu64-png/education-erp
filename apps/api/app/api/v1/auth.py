@@ -126,6 +126,7 @@ async def login(
         login_tenant = tenant_result.scalars().first()
         if not login_tenant:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Institution code not found")
+        db.info["rls_tenant_id"] = login_tenant.id
         await db.execute(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(login_tenant.id)}
@@ -151,6 +152,7 @@ async def login(
     res = await db.execute(stmt)
     user = res.scalars().first()
     if user:
+        db.info["rls_user_id"] = user.id
         await db.execute(
             text("SELECT set_config('app.current_user_id', :user_id, true)"),
             {"user_id": str(user.id)}
@@ -234,6 +236,7 @@ async def login(
                 detail="Institution code is required when the account belongs to more than one institution or has no active institution assignment."
             )
         login_tenant = await db.get(Tenant, matching_tenants[0])
+        db.info["rls_tenant_id"] = matching_tenants[0]
         await db.execute(
             text("SELECT set_config('app.current_tenant_id', :tenant_id, true)"),
             {"tenant_id": str(matching_tenants[0])}
