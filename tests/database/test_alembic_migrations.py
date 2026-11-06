@@ -4,6 +4,7 @@ Tests schema sync, upgrade/downgrade idempotency, and production configuration s
 """
 import os
 import subprocess
+import sys
 import pytest
 from app.core.config import Settings
 
@@ -56,7 +57,7 @@ def test_alembic_check_clean_dev_database():
     """Verify that alembic check detects zero discrepancies between SQLAlchemy models and DB schema."""
     api_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../apps/api"))
     result = subprocess.run(
-        ["./.venv/bin/alembic", "check"],
+        [sys.executable, "-m", "alembic", "check"],
         cwd=api_dir,
         capture_output=True,
         text=True
@@ -86,7 +87,7 @@ def test_alembic_upgrade_downgrade_cycle():
     try:
         # 1. Upgrade to head
         up1 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
             cwd=api_dir,
             capture_output=True,
             text=True
@@ -95,7 +96,7 @@ def test_alembic_upgrade_downgrade_cycle():
 
         # 2. Downgrade to base
         down = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "downgrade", "base"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={db_url}", "downgrade", "base"],
             cwd=api_dir,
             capture_output=True,
             text=True
@@ -104,7 +105,7 @@ def test_alembic_upgrade_downgrade_cycle():
 
         # 3. Re-upgrade to head
         up2 = subprocess.run(
-            ["./.venv/bin/alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-x", f"db_url={db_url}", "upgrade", "head"],
             cwd=api_dir,
             capture_output=True,
             text=True
