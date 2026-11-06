@@ -132,10 +132,24 @@ async def get_current_user(
             detail="Institution context is required for institutional accounts."
         )
 
-    if tenant_uuid and not user.is_superadmin:
+    if tenant_uuid and is_platform_developer:
+        support_stmt = select(PlatformSupportAccessSession).where(
+            PlatformSupportAccessSession.tenant_id == tenant_uuid,
+            PlatformSupportAccessSession.requested_by_platform_user_id == user.id,
+            PlatformSupportAccessSession.status == "APPROVED",
+            PlatformSupportAccessSession.expires_at > datetime.now(timezone.utc),
+            PlatformSupportAccessSession.revoked_at.is_(None)
+        )
+        support_result = await db.execute(support_stmt)
+        if not support_result.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="An approved, active tenant support session is required for platform developer access."
+            )
+    elif tenant_uuid and not user.is_superadmin:
         if not any(role.tenant_id == tenant_uuid for role in user.roles):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not assigned to the selected institution.")
-    if tenant_uuid and user.is_superadmin:
+    elif tenant_uuid and user.is_superadmin:
         support_stmt = select(PlatformSupportAccessSession).where(
             PlatformSupportAccessSession.tenant_id == tenant_uuid,
             PlatformSupportAccessSession.requested_by_platform_user_id == user.id,
