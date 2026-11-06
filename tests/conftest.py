@@ -107,6 +107,8 @@ async def client() -> AsyncGenerator[httpx.AsyncClient, None]:
     """HTTP client whose requests execute with the restricted application DB role."""
     async def override_get_db():
         async with TestAsyncSessionLocal() as session:
+            session.info["rls_tenant_id"] = set_current_tenant_id.__globals__["get_current_tenant_id"]()
+            session.info["rls_user_id"] = None
             try:
                 yield session
                 await session.commit()
