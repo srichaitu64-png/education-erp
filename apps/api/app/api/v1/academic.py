@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 
 from app.database.session import get_db, get_current_tenant_id
-from app.security.deps import get_current_user
+from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User, UserRole, Role
 from app.modules.tenants.models import Tenant
 from app.modules.finance.models import FeeInvoice
@@ -351,7 +351,7 @@ async def list_students(
 async def create_student(
     payload: StudentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("students.create"))
 ):
     """
     Register a student into the canonical student master.
@@ -573,7 +573,7 @@ async def list_admission_applications(
 async def submit_admission_application(
     payload: AdmissionApplicationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("admissions.manage"))
 ):
     """Submit a prospective student admission application."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
@@ -609,7 +609,7 @@ async def approve_admission_application(
     admission_id: uuid.UUID,
     payload: AdmissionApproveRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("admissions.manage"))
 ):
     """
     Atomically convert an approved admission into one canonical student and one
@@ -796,7 +796,7 @@ async def list_institution_staff(
 async def generate_hall_tickets(
     payload: HallTicketCreateRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(require_permission("exams.manage"))
 ):
     """Batch generate official examination hall tickets for students in class/section."""
     tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
