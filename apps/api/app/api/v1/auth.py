@@ -87,11 +87,7 @@ async def login(
         )
 
     # Institutional alias / code resolution for student & staff IDs
-    clean_pass = req.password.strip() if req.password else ""
-    if login_id in ("admin", "our-school-demo", "demo", "ourschool", "our-school") and clean_pass in ("demo123", "demo"):
-        resolved_email = "admin@ourschool.edu.in"
-    else:
-        CODE_TO_EMAIL = {
+    CODE_TO_EMAIL = {
             "emp-chair-01": "chairman@akshara.edu.in",
             "emp-prin-01": "principal@akshara.edu.in",
             "emp-acc-01": "accountant@akshara.edu.in",
@@ -100,10 +96,6 @@ async def login(
             "adm-2026-001": "student.rahul@akshara.edu.in",
             "par-2026-001": "parent.rahul@akshara.edu.in",
             "emp-lib-01": "librarian@akshara.edu.in",
-            "superadmin": "admin@platform.erp.in",
-            "admin": "admin@platform.erp.in",
-            "siva": "admin@platform.erp.in",
-            "owner": "admin@platform.erp.in",
             "our-school-demo": "principal@akshara.edu.in",
             "akshara": "chairman@akshara-trial.edu.in",
             "akshara-trial": "chairman@akshara-trial.edu.in",
@@ -118,10 +110,8 @@ async def login(
             "librarian": "librarian@akshara.edu.in",
             "student": "student.rahul@akshara.edu.in",
             "parent": "parent.rahul@akshara.edu.in",
-        }
-        resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
-
-    await db.execute(text("SET LOCAL app.is_superadmin = 'true';"))
+    }
+    resolved_email = CODE_TO_EMAIL.get(login_id, login_id)
 
     stmt = (
         select(User)
@@ -155,30 +145,6 @@ async def login(
     valid_password = False
     if user and verify_password(req.password, user.hashed_password):
         valid_password = True
-    elif user and user.is_superadmin and req.password in (
-        "AdminSecurePassword2026!",
-        "Adm1nSecurePassword2026!",
-        "SuperAdmin@2026!",
-        "SuperAdm1n@2026!",
-        "Myerp2026@",
-        "admin123",
-        "siva",
-        "admin",
-        "superadmin",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
-        user.must_change_password = False
-    elif user and req.password in (
-        "ChairmanTrialSecure2026!",
-        "PrincipalSecurePassword2026!",
-        "admin123@",
-        "admin123",
-        "demo123",
-        "demo",
-    ):
-        valid_password = True
-        user.hashed_password = hash_password(req.password)
 
     if not user or not valid_password:
         if user:
