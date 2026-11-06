@@ -73,7 +73,9 @@ async def run(apply: bool) -> None:
                     UserRole.tenant_id == tenant.id,
                 )
             )
-            # Keep the User row for audit/history and any other institution memberships.\n            # Removing this tenant assignment alone prevents access to the Akshara pilot.\n
+            # Keep the User row for audit/history and any other institution memberships.
+            # Removing this tenant assignment alone prevents access to the Akshara pilot.
+
         # Never modify the Chairman identity or any tenant-level data.
         chairman = (
             await db.execute(select(User).where(User.email == PRESERVED_CHAIRMAN))
