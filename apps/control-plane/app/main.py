@@ -4,8 +4,8 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -103,10 +103,6 @@ class SupportGrantCreate(BaseModel):
     duration_minutes: int = Field(default=30, ge=5, le=120)
 
 
-class SupportGrantApproval(BaseModel):
-    approved_by: str = Field(min_length=2, max_length=160)
-
-
 def model_dict(row):
     return {c.name: getattr(row, c.name) for c in row.__table__.columns}
 
@@ -162,7 +158,6 @@ def request_deployment(institution_id: str, payload: DeploymentCreate, db: Sessi
     db.flush()
     audit(db, "platform-admin", "deployment.requested", "deployment", row.id, {"mode": row.mode, "region": row.region})
     db.commit()
-    # A worker/provider adapter must perform cloud provisioning. This endpoint only records a safe request.
     return {"deployment": model_dict(row), "provisioning": "QUEUED_FOR_PROVIDER_ADAPTER"}
 
 
@@ -252,7 +247,7 @@ def request_support_grant(payload: SupportGrantCreate, db: Session = Depends(get
 
 
 @app.post("/platform/v1/support-grants/{grant_id}/approve", dependencies=[Depends(require_platform_admin)])
-def approve_support_grant(grant_id: str, payload: SupportGrantApproval, db: Session = Depends(get_db)):
+def approve_support_grant(grant_id: str, db: Session = Depends(get_db)):
     row = db.get(SupportGrant, grant_id)
     if not row or row.status != "PENDING":
         raise HTTPException(404, "Pending support request not found")
@@ -260,9 +255,9 @@ def approve_support_grant(grant_id: str, payload: SupportGrantApproval, db: Sess
         row.status = "EXPIRED"
         db.commit()
         raise HTTPException(409, "Support request has expired")
-    row.approved_by = payload.approved_by
+    row.approved_by = "platform-admin"
     row.status = "APPROVED"
-    audit(db, payload.approved_by, "support.approved", "support_grant", row.id, {"scopes": row.scopes})
+    audit(db, "platform-admin", "support.approved", "support_grant", row.id, {"scopes": row.scopes})
     db.commit()
     # Approval is an auditable grant record; it does not itself create a remote login/session.
     return model_dict(row)
