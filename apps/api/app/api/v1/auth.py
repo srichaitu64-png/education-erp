@@ -150,6 +150,11 @@ async def login(
     )
     res = await db.execute(stmt)
     user = res.scalars().first()
+    if user:
+        await db.execute(
+            text("SELECT set_config('app.current_user_id', :user_id, true)"),
+            {"user_id": str(user.id)}
+        )
 
     ip_addr = request.client.host if request.client else "127.0.0.1"
     user_agent = request.headers.get("user-agent", "Unknown")
@@ -801,6 +806,11 @@ async def confirm_password_reset(
         )
 
     user = token_obj.user
+    if user:
+        await db.execute(
+            text("SELECT set_config('app.current_user_id', :user_id, true)"),
+            {"user_id": str(user.id)}
+        )
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -897,6 +907,11 @@ async def request_password_reset_otp(
     )
     res = await db.execute(stmt)
     user = res.scalars().first()
+    if user:
+        await db.execute(
+            text("SELECT set_config('app.current_user_id', :user_id, true)"),
+            {"user_id": str(user.id)}
+        )
 
     import random
     otp_code = f"{random.randint(100000, 999999)}"
