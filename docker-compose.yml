@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       ENVIRONMENT: production
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the deployment environment}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?Set POSTGRES_USER}@db:5432/${POSTGRES_DB:?Set POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:?Set a unique, random SECRET_KEY (at least 32 characters)}
       INITIAL_SUPERADMIN_PASSWORD: ${INITIAL_SUPERADMIN_PASSWORD:-}
@@ -45,7 +45,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$\${POSTGRES_USER}\" -d \"$\${POSTGRES_DB}\""]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
       retries: 10
