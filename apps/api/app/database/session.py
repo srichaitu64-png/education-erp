@@ -24,15 +24,20 @@ def set_current_tenant_id(tenant_id: Optional[uuid.UUID]) -> None:
     current_tenant_context.set(tenant_id)
 
 
-# Primary asynchronous SQLAlchemy engine
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=(settings.ENVIRONMENT == "development_verbose"),
-    pool_size=15,
-    max_overflow=20,
-    pool_pre_ping=True,
-    **({"poolclass": NullPool} if settings.ENVIRONMENT == "testing" else {})
-)
+# Primary asynchronous SQLAlchemy engine. NullPool in tests prevents asyncpg
+# connections from being reused across pytest's per-test event loops.
+_engine_options = {
+    "echo": settings.ENVIRONMENT == "development_verbose",
+}
+if settings.ENVIRONMENT == "testing":
+    _engine_options["poolclass"] = NullPool
+else:
+    _engine_options.update(
+        pool_size=15,
+        max_overflow=20,
+        pool_pre_ping=True,
+    )
+engine = create_async_engine(settings.DATABASE_URL, **_engine_options)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
