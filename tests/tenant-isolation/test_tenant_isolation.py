@@ -4,7 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.tenants.models import Tenant, Campus
-from app.modules.identity.models import User
+from app.modules.identity.models import User, Role, UserRole
 from app.core.security import create_access_token, hash_password
 
 
@@ -84,14 +84,13 @@ async def test_database_row_level_security_isolation(db_session: AsyncSession):
 
     assert len(campuses_seen_by_none) == 0, "Unauthenticated query leaked tenant data!"
 
-    # 5. Super Admin query across tenants
+    # 5. The legacy app.is_superadmin GUC must not bypass tenant RLS.
     db_session.expire_all()
-    await db_session.execute(text("RESET ROLE"))
     await db_session.execute(text("SELECT set_config('app.is_superadmin', 'true', true)"))
     res_admin = await db_session.execute(stmt)
     campuses_seen_by_admin = res_admin.scalars().all()
 
-    assert len(campuses_seen_by_admin) >= 2
+    assert len(campuses_seen_by_admin) == 0, "Legacy superadmin GUC bypassed tenant RLS!"
 
 
 @pytest.mark.asyncio
@@ -126,6 +125,12 @@ async def test_api_tenant_boundary_enforcement(client, db_session: AsyncSession)
         is_superadmin=False
     )
     db_session.add(user_a)
+    await db_session.flush()
+    principal_role = (await db_session.execute(
+        select(Role).where(Role.code == "PRINCIPAL", Role.tenant_id == None)
+    )).scalars().first()
+    assert principal_role is not None
+    db_session.add(UserRole(user_id=user_a.id, role_id=principal_role.id, tenant_id=tenant_a.id))
     await db_session.commit()
 
     tenant_a_id = tenant_a.id
