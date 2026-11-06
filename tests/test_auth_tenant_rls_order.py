@@ -43,7 +43,7 @@ async def test_tenant_rls_is_set_on_open_session_before_roles_are_loaded():
     superadmin_sql = str(db.execute.await_args_list[2].args[0])
     assert "app.current_tenant_id" in tenant_context_sql
     assert "app.is_superadmin" in superadmin_sql
-    assert db.execute.await_args_list[1].kwargs["params"]["tenant_id"] == str(tenant_id)
+    assert db.execute.await_args_list[1].args[1]["tenant_id"] == str(tenant_id)
 
 
 @pytest.mark.asyncio
