@@ -32,6 +32,12 @@ import {
   ExternalLink,
   FileCheck
 } from 'lucide-react';
+import { Navbar } from '../../components/Navbar';
+import { Footer } from '../../components/Footer';
+import {
+  LivingEnvironmentBackdrop,
+  LiveEnvironmentStatusPill,
+} from '../../features/living-environment';
 
 interface MockInstitution {
   id: string;
@@ -246,16 +252,28 @@ export const HomePage: React.FC = () => {
   const currentInst = MOCK_INSTITUTIONS[activeInstitutionKey] || MOCK_INSTITUTIONS.our_school;
 
   return (
-    <div className="space-y-24 pb-20 overflow-hidden">
-      {/* 1. Hero Section */}
-      <section className="relative pt-12 lg:pt-20 pb-16 bg-gradient-to-b from-blue-50/70 via-white to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto space-y-6">
-            {/* Top Eyebrow Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-blue-100/80 text-blue-800 border border-blue-300 shadow-sm animate-pulse">
-              <Sparkles className="w-4 h-4 text-blue-600" />
-              Rated #1 Commercial Education ERP SaaS Platform
-            </div>
+    <div className="relative min-h-screen overflow-hidden text-gray-900 selection:bg-blue-600 selection:text-white">
+      {/* Living Sky, Atmosphere, Animals, Ocean & Science Environment */}
+      <LivingEnvironmentBackdrop />
+
+      {/* Main Navigation */}
+      <Navbar />
+
+      <div className="space-y-24 pb-20">
+        {/* 1. Hero Section */}
+        <section className="relative pt-6 sm:pt-10 pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-4xl mx-auto space-y-6">
+              {/* Real-World Environmental Status & Science Pill */}
+              <div className="flex justify-center mb-2">
+                <LiveEnvironmentStatusPill />
+              </div>
+
+              {/* Top Eyebrow Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-white/90 backdrop-blur-md text-blue-800 border border-blue-200/90 shadow-xs animate-pulse">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                Rated #1 Commercial Education ERP SaaS Platform
+              </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-gray-950 tracking-tight leading-[1.1]">
@@ -1030,6 +1048,10 @@ export const HomePage: React.FC = () => {
           </Link>
         </div>
       </section>
+      </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -122,11 +122,27 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
 
     if (!formData.first_name.trim() || !formData.last_name.trim()) {
       setErrorMessage('Student first name and last name are required.');
+      setActiveTab('personal');
       return;
     }
 
-    if (!formData.guardian_name.trim() || !formData.guardian_phone.trim()) {
-      setErrorMessage('Guardian / Parent name and contact phone number are mandatory.');
+    const parentOrGuardianName = formData.guardian_name.trim() || formData.father_name.trim() || formData.mother_name.trim();
+    if (!parentOrGuardianName) {
+      setErrorMessage('Parent / Guardian Name is mandatory.');
+      setActiveTab('guardian');
+      return;
+    }
+
+    const cleanContact = (formData.guardian_phone || formData.father_mobile || '').replace(/\D/g, '');
+    if (cleanContact.length !== 10) {
+      setErrorMessage('Parent / Guardian contact number must be exactly 10 digits (e.g. 9845012345).');
+      setActiveTab('guardian');
+      return;
+    }
+
+    if (!formData.class_name.trim()) {
+      setErrorMessage('Class / Grade is mandatory.');
+      setActiveTab('academic');
       return;
     }
 
@@ -422,9 +438,12 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Father's Full Name</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    Father's Full Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
+                    required
                     value={formData.father_name}
                     onChange={(e) => handleChange('father_name', e.target.value)}
                     placeholder="e.g. Rajesh Sharma"
@@ -432,12 +451,21 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Father's Mobile Number</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                      Father's Mobile (10 Digits) <span className="text-rose-500">*</span>
+                    </label>
+                    <span className={`text-[10px] font-mono font-bold ${formData.father_mobile.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {formData.father_mobile.length}/10 {formData.father_mobile.length === 10 && '✓'}
+                    </span>
+                  </div>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={formData.father_mobile}
-                    onChange={(e) => handleChange('father_mobile', e.target.value)}
-                    placeholder="+91 98450 12345"
+                    onChange={(e) => handleChange('father_mobile', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9845012345"
                     className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
@@ -455,12 +483,19 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Mother's Mobile Number</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">Mother's Mobile (10 Digits)</label>
+                    <span className={`text-[10px] font-mono font-bold ${formData.mother_mobile.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {formData.mother_mobile.length ? `${formData.mother_mobile.length}/10` : ''}
+                    </span>
+                  </div>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={formData.mother_mobile}
-                    onChange={(e) => handleChange('mother_mobile', e.target.value)}
-                    placeholder="+91 98450 12346"
+                    onChange={(e) => handleChange('mother_mobile', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9845012346"
                     className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
@@ -468,7 +503,9 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Primary Guardian Name *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    Primary Guardian Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -479,13 +516,22 @@ export const CreateStudentModal: React.FC<CreateStudentModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Guardian Phone / WhatsApp *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                      Guardian Phone (10 Digits) <span className="text-rose-500">*</span>
+                    </label>
+                    <span className={`text-[10px] font-mono font-bold ${formData.guardian_phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {formData.guardian_phone.length}/10 {formData.guardian_phone.length === 10 && '✓'}
+                    </span>
+                  </div>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     required
                     value={formData.guardian_phone}
-                    onChange={(e) => handleChange('guardian_phone', e.target.value)}
-                    placeholder="+91 98450 12345"
+                    onChange={(e) => handleChange('guardian_phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9845012345"
                     className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-mono placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>

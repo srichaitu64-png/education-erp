@@ -22,18 +22,36 @@ export const CreateAdmissionEnquiryModal: React.FC<CreateAdmissionEnquiryModalPr
   const [parentEmail, setParentEmail] = useState('');
   const [source, setSource] = useState('Direct Walk-in');
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!applicantName.trim() || !parentPhone.trim()) return;
+    setErrorMsg(null);
+
+    if (!applicantName.trim()) {
+      setErrorMsg('Prospective student name is required.');
+      return;
+    }
+
+    if (!parentName.trim()) {
+      setErrorMsg('Parent / Guardian name is mandatory.');
+      return;
+    }
+
+    const cleanPhone = parentPhone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      setErrorMsg('Parent contact number must be exactly 10 digits (e.g. 9845012345).');
+      return;
+    }
 
     createAdmission({
       applicant_name: applicantName.trim(),
       level,
       target_class: level === 'PU College' ? `${targetClass} - ${stream}` : targetClass,
-      parent_name: parentName.trim() || 'Parent/Guardian',
-      parent_phone: parentPhone.trim(),
+      parent_name: parentName.trim(),
+      parent_phone: cleanPhone,
       parent_email: parentEmail.trim() || 'contact@parent.com',
       stream_or_comb: level === 'PU College' ? stream : 'Secondary',
       stage: 'ENQUIRY',
@@ -63,6 +81,13 @@ export const CreateAdmissionEnquiryModal: React.FC<CreateAdmissionEnquiryModalPr
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between">
+            <span>{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)} className="text-rose-500 hover:text-rose-700 font-bold ml-2">✕</button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           <div>
@@ -146,10 +171,11 @@ export const CreateAdmissionEnquiryModal: React.FC<CreateAdmissionEnquiryModalPr
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Parent / Guardian Name
+                Parent / Guardian Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
                 placeholder="e.g. K. R. Sharma"
@@ -158,16 +184,23 @@ export const CreateAdmissionEnquiryModal: React.FC<CreateAdmissionEnquiryModalPr
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Primary Contact Number <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-700">
+                  Primary Mobile (10 Digits) <span className="text-rose-500">*</span>
+                </label>
+                <span className={`text-[10px] font-mono font-bold ${parentPhone.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {parentPhone.length}/10 {parentPhone.length === 10 && '✓'}
+                </span>
+              </div>
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 required
                 value={parentPhone}
-                onChange={(e) => setParentPhone(e.target.value)}
-                placeholder="+91 98450 11223"
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                onChange={(e) => setParentPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="9845011223"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>

@@ -29,7 +29,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
 
   // Unified Clean & Neat Enterprise Token Classes
   const cardCls = "bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4 text-slate-800";
-  const headerCls = "bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white border border-slate-800 shadow-md";
+  const headerCls = "bg-white rounded-2xl p-6 text-slate-900 border border-slate-200/90 shadow-xs";
 
   switch (currentRole) {
     // =========================================================================
@@ -43,11 +43,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">
                   Executive Governance & Board Overview
                 </span>
-                <h1 className="text-2xl font-black mt-1">Chairman & Director Command Center</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Chairman & Director Command Center</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Institution-Wide Performance • Multi-Campus Financial Health • Executive Approvals
                 </p>
               </div>
@@ -62,7 +62,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Total Enrolled"
                 numericValue={enrolledCount}
@@ -335,31 +335,31 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-500/30 text-blue-300 border border-blue-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full">
                   Academic Command & Institutional Leadership
                 </span>
-                <h1 className="text-2xl font-black mt-1">Principal Executive Workspace</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Principal Executive Workspace</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Academics • Section Strengths • Faculty Roster • Examination Approvals
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onNavigateTab('academic-structure')}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   Manage Sections ({academicSections.length})
                 </button>
                 <button
                   onClick={() => onNavigateTab('staff-duties')}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   Assign Staff Duties
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Configured Sections"
                 numericValue={academicSections.length}
@@ -577,11 +577,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   Faculty Classroom Desk
                 </span>
-                <h1 className="text-2xl font-black mt-1">Faculty Academic Workspace</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Faculty Academic Workspace</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Welcome, Prof. S. Ramesh (Senior Lecturer - Physics) • Assigned Sections: I PUC PCMB-A & B
                 </p>
               </div>
@@ -596,7 +596,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Assigned Classes"
                 value="2 Sections"
@@ -814,11 +814,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-purple-500/30 text-purple-200 border border-purple-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-0.5 rounded-full">
                   Central Examination & Academic Data Entry Desk
                 </span>
-                <h1 className="text-2xl font-black mt-1">Computer Operator Workspace</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Computer Operator Workspace</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Data Entry Operator Desk • Fast Keyboard Navigation • Draft Auto-Save • No Approval Privileges
                 </p>
               </div>
@@ -833,7 +833,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Assigned Queues"
                 value="4 Registers"
@@ -1048,32 +1048,32 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   Institutional Cashier & Ledger Desk
                 </span>
-                <h1 className="text-2xl font-black mt-1">Senior Accountant Workspace</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Senior Accountant Workspace</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Daily Counter Collections • Fee Heads Breakdown • Consolidated Ledger Freeze
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onNavigateTab('fees')}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <DollarSign className="w-4 h-4" />
                   Collect Fees & Print Receipts
                 </button>
                 <button
                   onClick={() => onNavigateTab('fee-review')}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   Consolidated Ledger (200 Students)
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Counter Collections"
                 numericValue={184500}
@@ -1165,11 +1165,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   Parent Access Portal
                 </span>
-                <h1 className="text-2xl font-black mt-1">Parent Guardian Dashboard</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Parent Guardian Dashboard</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Linked Ward: <strong>Rahul Kumar</strong> • Class 6 - Section A • Roll #14 • Admission #AK-2026-1001
                 </p>
               </div>
@@ -1191,7 +1191,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="Attendance Rate"
                 numericValue={94.5}
@@ -1414,11 +1414,11 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-500/30 text-blue-300 border border-blue-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full">
                   Student Learning Desk
                 </span>
-                <h1 className="text-2xl font-black mt-1">Student Academic Portal</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">Student Academic Portal</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Welcome, Rahul Kumar • Class 6 - Section A • Room 101 • Class Teacher: Mrs. Sunita Sharma
                 </p>
               </div>
@@ -1440,7 +1440,7 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
               <VibrantStatCard
                 title="My Attendance"
                 numericValue={94.5}
@@ -1649,36 +1649,36 @@ export const RoleWorkspaceDispatcher: React.FC<RoleWorkspaceDispatcherProps> = (
           <div className={headerCls}>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-500/30 text-blue-300 border border-blue-500/40 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full">
                   Institutional Role Workspace
                 </span>
-                <h1 className="text-2xl font-black mt-1">{currentRole.replace(/_/g, ' ')} Portal</h1>
-                <p className="text-xs text-slate-300">
+                <h1 className="text-2xl font-black mt-1 text-slate-900">{currentRole.replace(/_/g, ' ')} Portal</h1>
+                <p className="text-xs text-slate-500 font-medium">
                   Role-specific workspace tailored for {currentRole.toLowerCase().replace(/_/g, ' ')} operational tasks.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-700/80">
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-200 font-bold uppercase">Security Tier</span>
-                <p className="text-lg font-black text-white">{currentRole}</p>
-                <span className="text-[10px] text-blue-300 font-medium">RBAC Enforced</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-500 font-bold uppercase">Security Tier</span>
+                <p className="text-lg font-black text-slate-900">{currentRole}</p>
+                <span className="text-[10px] text-blue-700 font-bold">RBAC Enforced</span>
               </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-200 font-bold uppercase">Assigned Scope</span>
-                <p className="text-lg font-black text-emerald-300">Active</p>
-                <span className="text-[10px] text-slate-300 font-medium">OUR SCHOOL Campus</span>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-500 font-bold uppercase">Assigned Scope</span>
+                <p className="text-lg font-black text-emerald-700">Active</p>
+                <span className="text-[10px] text-slate-600 font-medium">Campus Operations</span>
               </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-200 font-bold uppercase">Duty Status</span>
-                <p className="text-lg font-black text-white">On Duty</p>
-                <span className="text-[10px] text-emerald-300 font-medium">Authenticated</span>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-500 font-bold uppercase">Duty Status</span>
+                <p className="text-lg font-black text-slate-900">On Duty</p>
+                <span className="text-[10px] text-emerald-700 font-bold">Authenticated</span>
               </div>
-              <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                <span className="text-[10px] text-slate-200 font-bold uppercase">System Health</span>
-                <p className="text-lg font-black text-emerald-300">100%</p>
-                <span className="text-[10px] text-slate-300 font-medium">Zero errors</span>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-500 font-bold uppercase">System Health</span>
+                <p className="text-lg font-black text-emerald-700">100%</p>
+                <span className="text-[10px] text-slate-500 font-medium">Zero errors</span>
               </div>
             </div>
           </div>

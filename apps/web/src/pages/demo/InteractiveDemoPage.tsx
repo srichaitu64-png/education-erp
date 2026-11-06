@@ -1556,17 +1556,17 @@ export const InteractiveDemoPage: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleSyncOffline(exam.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-700 text-slate-300 font-bold cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold shadow-xs cursor-pointer"
                           >
-                            <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
+                            <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
                             Simulate Offline Local Sync
                           </button>
 
                           <button
                             onClick={() => alert(`Bulk Excel template generated for ${exam.title} with validation schema.`)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-700 text-slate-300 font-bold cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold shadow-xs cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5 text-emerald-400" />
+                            <Download className="w-3.5 h-3.5 text-emerald-600" />
                             Download Marks Excel Template
                           </button>
                         </div>
