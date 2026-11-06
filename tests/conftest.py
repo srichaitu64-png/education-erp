@@ -1,5 +1,6 @@
 import asyncio
 import os
+import uuid
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 # Set test environment
 os.environ["ENVIRONMENT"] = "testing"
+TEST_OTP_ADMIN_PASSWORD = f"Aa!{uuid.uuid4().hex}2026"
+os.environ["TEST_OTP_ADMIN_PASSWORD"] = TEST_OTP_ADMIN_PASSWORD
 from app.core.config import settings
 from app.database.base import Base
 from app.database.session import get_db, set_current_tenant_id
@@ -93,7 +96,7 @@ def pytest_sessionstart(session):
                 if not otp_admin:
                     otp_admin = User(
                         email=otp_admin_email,
-                        hashed_password=hash_password("OTPAdminSecurePassword2026!"),
+                        hashed_password=hash_password(TEST_OTP_ADMIN_PASSWORD),
                         full_name="Test OTP Recovery Administrator",
                         is_active=True,
                         is_superadmin=True,
