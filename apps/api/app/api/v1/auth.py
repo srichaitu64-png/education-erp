@@ -135,7 +135,9 @@ async def login(
             else:
                 sec_event = AccountSecurityEvent(
                     user_id=user.id,
-                    tenant_id=user.roles[0].tenant_id if user.roles else None,
+                    # Do not lazy-load tenant roles during an unauthenticated request.
+                    # The tenant is unknown until the institution code is validated.
+                    tenant_id=None,
                     event_type="LOGIN_FAILED",
                     ip_address=ip_addr,
                     user_agent=user_agent,
@@ -264,7 +266,7 @@ async def login(
             if not scoped_roles:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active role assignment exists for this institution.")
             tenant_id = str(tenant.id)
-            if tenant.status not in ("active", "trial", "trialing"):
+            if tenant.status not in ("active", "trial", "trialing", "trial_active"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Institution workspace status is '{tenant.status}'. An active institution or approved trial is required."
