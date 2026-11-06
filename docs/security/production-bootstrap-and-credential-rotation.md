@@ -35,3 +35,14 @@ Do not copy passwords from source code, commit secrets, or send credentials thro
 ## Demo data
 
 Automatic demonstration-tenant and demonstration-account seeding is restricted to non-production environments. Production institutions should be created through the authenticated institution-onboarding workflow. Existing production tenant records are not deleted by this change.
+
+
+## Database application role and existing volumes
+
+Fresh Docker Compose installations create a dedicated `erp_app` role with `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, and `NOBYPASSRLS`. The API connects as this role, not as the PostgreSQL cluster administrator. PostgreSQL and Redis remain private to the Compose network.
+
+The PostgreSQL `/docker-entrypoint-initdb.d` script runs only when the data directory is initialized for the first time. It does **not** run again for an existing named volume. Do not delete the volume to make it run.
+
+For an existing database, do not simply switch `DATABASE_URL` to `erp_app`. The existing tables are likely owned by the old database user, while application startup currently creates tables and enables/forces RLS. A database administrator must first back up the database, review the ownership change for this dedicated ERP database, create the `erp_app` role, and transfer ownership of the ERP schema tables and sequences. Schedule and approve that operation separately; this repository change does not connect to or modify any production database.
+
+The test suite now separates a privileged bootstrap connection from the application test connection so API tests can run as the non-superuser `erp_app` role and exercise forced RLS rather than silently bypassing it as PostgreSQL superuser.
