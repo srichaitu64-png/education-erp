@@ -73,6 +73,14 @@ async def download_migration_template(module: str):
     if not headers:
         raise HTTPException(status_code=400, detail=f"Unsupported template '{module}'.")
     csv_content = ",".join(headers) + "\n"
+    sample_rows = {
+        "STUDENTS": "ADM-2026-0101,Rohan,,Sharma,Class 10,A,2010-05-15,MALE,Ramesh Sharma,Sunita Sharma,Ramesh Sharma,9876500001,9876500002,9876500003,parent@example.com,42 MG Road,Bengaluru,Bengaluru,560001",
+        "FEES": "ADM-2026-0101,Rohan Sharma,Class 10,2026-2027,TERM_1,Term 1,TUITION,Tuition Fee,35000,0,2026-07-31",
+        "STAFF": "EMP-101,Dr Savita Rao,savita@example.edu.in,9876500000,Academics,Senior Lecturer,SUBJECT_TEACHER",
+        "ATTENDANCE": "2026-11-07,ADM-2026-0101,Class 10,A,PRESENT,",
+        "EXAMINATIONS": "EXAM-10-MATH,Mid-Term Assessment,unit_test,Class 10,MATH-10,Mathematics,2026-11-20,100",
+    }
+    csv_content += sample_rows[mod_key] + "\n"
     return Response(
         content=csv_content,
         media_type="text/csv",
@@ -85,6 +93,7 @@ async def _validate_records(
     records: list[dict],
     tenant_id: uuid.UUID,
     db: AsyncSession,
+    conflict_policy: str = "SKIP",
 ) -> tuple[list[dict], list[dict]]:
     errors: list[dict] = []
     duplicates: list[dict] = []
@@ -100,20 +109,7 @@ async def _validate_records(
                 row.get("admission_number") or row.get("admission_no") or row.get("adm_no") or ""
             ).strip()
 
-            if not first_name:
-                errors.append({"row": row_num, "field": "first_name", "message": "First name is mandatory."})
-            if not last_name:
-                errors.append({"row": row_num, "field": "last_name", "message": "Last name is mandatory."})
-            if not class_name:
-                errors.append({"row": row_num, "field": "class_name", "message": "Class is mandatory."})
-
-            dob = row.get("date_of_birth")
-            if dob:
-                try:
-                    date.fromisoformat(str(dob))
-                except ValueError:
-                    errors.append({"row": row_num, "field": "date_of_birth", "message": "Use YYYY-MM-DD."})
-
+            existing = None
             if admission_number:
                 if admission_number in seen_admission_numbers:
                     errors.append({"row": row_num, "field": "admission_number", "message": "Duplicate admission number within this file."})
@@ -134,6 +130,24 @@ async def _validate_records(
                         "match_type": "EXACT",
                         "existing_id": str(existing.id),
                     })
+
+            # MERGE accepts sparse rows because only empty fields on an existing
+            # student are filled. New students and overwrite rows need full identity.
+            needs_full_identity = not (existing and conflict_policy == "MERGE")
+            if needs_full_identity:
+                if not first_name:
+                    errors.append({"row": row_num, "field": "first_name", "message": "First name is mandatory."})
+                if not last_name:
+                    errors.append({"row": row_num, "field": "last_name", "message": "Last name is mandatory."})
+                if not class_name:
+                    errors.append({"row": row_num, "field": "class_name", "message": "Class is mandatory."})
+
+            dob = row.get("date_of_birth")
+            if dob:
+                try:
+                    date.fromisoformat(str(dob))
+                except ValueError:
+                    errors.append({"row": row_num, "field": "date_of_birth", "message": "Use YYYY-MM-DD."})
 
         elif module == "FEES":
             admission_number = str(row.get("admission_number") or "").strip()
@@ -238,7 +252,7 @@ async def execute_bulk_migration(
     if conflict_policy not in ALLOWED_CONFLICT_POLICIES:
         raise HTTPException(status_code=422, detail="conflict_policy must be SKIP, OVERWRITE, or MERGE.")
 
-    errors, duplicates = await _validate_records(module, payload.records, tenant_id, db)
+    errors, duplicates = await _validate_records(module, payload.records, tenant_id, db, conflict_policy)
     if errors:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
