@@ -106,10 +106,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       const detail = err.response?.data?.detail;
       if (detail && typeof detail === 'string') {
         setErrorMessage(detail);
+      } else if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+        setErrorMessage(err.response.data.message);
+      } else if (err.message) {
+        setErrorMessage(`Password reset request failed: ${err.message}`);
       } else {
-        // Fallback for static preview on Vercel
-        alert('Password reset successfully! You can now log in with your new password.');
-        onClose();
+        setErrorMessage('Password reset failed. Please ensure the OTP code is valid and try again.');
       }
     } finally {
       setLoading(false);

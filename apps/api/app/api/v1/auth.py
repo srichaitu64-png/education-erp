@@ -89,6 +89,9 @@ async def login(
     # Institutional alias / code resolution for student & staff IDs
     CODE_TO_EMAIL = {
             "superadmin": "admin@platform.erp.in",
+            "admin": "admin@platform.erp.in",
+            "siva": "admin@platform.erp.in",
+            "owner": "admin@platform.erp.in",
             "emp-chair-01": "chairman@akshara.edu.in",
             "emp-prin-01": "principal@akshara.edu.in",
             "emp-acc-01": "accountant@akshara.edu.in",
