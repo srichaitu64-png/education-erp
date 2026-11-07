@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db, get_current_tenant_id
-from app.security.deps import get_current_user
+from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User
 from app.modules.migration.models import MigrationBatchLog
 from app.modules.migration.schemas import (
@@ -204,6 +204,8 @@ async def validate_migration_dataset(
 ):
     tenant_id = require_migration_tenant_id()
     module = _normalise_module(payload.target_module)
+    permission_code = "students.create" if module == "STUDENTS" else "fees.reconcile"
+    await require_permission(permission_code)(user)
     errors, duplicates = await _validate_records(module, payload.records, tenant_id, db)
     clean_count = max(0, len(payload.records) - len(duplicates) - len(errors))
     return MigrationValidateResponse(
@@ -230,6 +232,8 @@ async def execute_bulk_migration(
     """Import validated student masters or fee opening balances in one DB transaction."""
     tenant_id = require_migration_tenant_id()
     module = _normalise_module(payload.target_module)
+    permission_code = "students.create" if module == "STUDENTS" else "fees.reconcile"
+    await require_permission(permission_code)(user)
     conflict_policy = (payload.conflict_policy or "SKIP").strip().upper()
     if conflict_policy not in ALLOWED_CONFLICT_POLICIES:
         raise HTTPException(status_code=422, detail="conflict_policy must be SKIP, OVERWRITE, or MERGE.")
