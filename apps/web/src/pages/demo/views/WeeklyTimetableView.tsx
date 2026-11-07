@@ -422,3 +422,4 @@ export const WeeklyTimetableView: React.FC = () => {
     </div>
   );
 };
+

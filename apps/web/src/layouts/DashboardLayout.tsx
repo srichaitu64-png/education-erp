@@ -47,6 +47,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const institutionNavItems: NavItem[] = [
     { label: 'Overview', path: '/app', icon: GraduationCap },
+    { label: 'Interactive ERP Demo', path: '/demo', icon: Sparkles },
     { label: 'Admissions & Students', path: '/app/students', icon: Users, featureId: 'students.management' },
     { label: 'Fees & Invoicing', path: '/app/fees', icon: CreditCard, featureId: 'fees.basic' },
     { label: 'Daily Attendance', path: '/app/attendance', icon: CalendarCheck, featureId: 'attendance.basic' },
@@ -59,6 +60,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const superAdminNavItems: NavItem[] = [
     { label: 'Platform Overview', path: '/platform', icon: Shield },
+    { label: 'School ERP Demo (26 Tabs)', path: '/demo', icon: Sparkles },
     { label: 'Institutions Directory', path: '/platform/institutions', icon: Building2 },
     { label: 'Subscription Plans', path: '/platform/plans', icon: CreditCard },
     { label: 'Feature Entitlements', path: '/platform/entitlements', icon: Lock },
@@ -154,6 +156,13 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              to="/demo"
+              className="text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-xs transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Open 26-Tab ERP Demo →
+            </Link>
             {tenant?.subdomain && (
               <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-mono">
                 {tenant.subdomain}.erp.local

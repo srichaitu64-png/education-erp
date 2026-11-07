@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Lock,
   User,
@@ -8,7 +8,8 @@ import {
   ArrowRight,
   AlertCircle,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -395,10 +396,70 @@ export const LoginPage: React.FC = () => {
         {/* Quick Demo Credentials Helper */}
         <div className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs space-y-2">
           <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>⚡ Quick Demo Credentials</span>
-            <span className="text-[10px] text-blue-400">1-Click Fill</span>
+            <span>⚡ 1-Click Role Login</span>
+            <span className="text-[10px] text-blue-400">Select Role to Fill</span>
           </div>
           <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('demo');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Demo School Principal: demo / demo123 (Opens Demo Workspace)"
+            >
+              🏫 Principal
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('chairman');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Institution Chairman: chairman / demo123"
+            >
+              👔 Chairman
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('teacher');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-cyan-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Faculty / Teacher: teacher / demo123"
+            >
+              👩‍🏫 Teacher
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('accountant');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-purple-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Fee Accountant: accountant / demo123"
+            >
+              💼 Accountant
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsernameOrId('student');
+                setPassword('demo123');
+                setErrorMessage(null);
+              }}
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-rose-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Student Portal: student / demo123"
+            >
+              🎓 Student
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -406,34 +467,10 @@ export const LoginPage: React.FC = () => {
                 setPassword('SuperAdmin@2026!');
                 setErrorMessage(null);
               }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white font-bold border border-slate-700 text-center transition-all truncate"
-              title="Super Admin: superadmin / SuperAdmin@2026!"
+              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-blue-400 font-bold border border-slate-700 text-center transition-all truncate"
+              title="Super Admin Cockpit: superadmin / SuperAdmin@2026!"
             >
               🌐 Super Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsernameOrId('admin');
-                setPassword('demo123');
-                setErrorMessage(null);
-              }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 font-bold border border-slate-700 text-center transition-all truncate"
-              title="OUR SCHOOL Demo: admin / demo123"
-            >
-              🏫 Demo School
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsernameOrId('chairman@pilot-trial.edu.in');
-                setPassword('Chairman@2026!');
-                setErrorMessage(null);
-              }}
-              className="py-1.5 px-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 text-center transition-all truncate"
-              title="30-Day Clean Pilot Project (Clean Canvas)"
-            >
-              🎓 Clean Pilot
             </button>
           </div>
         </div>
@@ -534,6 +571,17 @@ export const LoginPage: React.FC = () => {
               </>
             )}
           </button>
+
+          {/* Direct Demo Sandbox Access */}
+          <div className="pt-2">
+            <Link
+              to="/demo"
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Explore 26-Tab ERP Sandbox (Instant Access) →</span>
+            </Link>
+          </div>
         </form>
 
         {/* Security & Multi-Tenant Assurance */}
