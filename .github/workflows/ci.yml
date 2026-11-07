@@ -66,14 +66,41 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r apps/api/requirements.txt
 
+      # PostgreSQL service starts with only its bootstrap superuser. Create the
+      # two least-privilege test identities before pytest imports the app.
+      - name: Provision isolated PostgreSQL test roles
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql --host localhost --username postgres --dbname postgres --set ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'erp_test_admin') THEN
+              CREATE ROLE erp_test_admin LOGIN CREATEDB NOSUPERUSER NOCREATEROLE NOBYPASSRLS PASSWORD 'erp_test_admin_pass';
+            ELSE
+              ALTER ROLE erp_test_admin WITH LOGIN CREATEDB NOSUPERUSER NOCREATEROLE NOBYPASSRLS PASSWORD 'erp_test_admin_pass';
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'erp_app') THEN
+              CREATE ROLE erp_app LOGIN NOCREATEDB NOSUPERUSER NOCREATEROLE NOBYPASSRLS PASSWORD 'erp_app_pass';
+            ELSE
+              ALTER ROLE erp_app WITH LOGIN NOCREATEDB NOSUPERUSER NOCREATEROLE NOBYPASSRLS PASSWORD 'erp_app_pass';
+            END IF;
+          END
+          $$;
+
+          ALTER DATABASE education_erp_test OWNER TO erp_test_admin;
+          GRANT CONNECT ON DATABASE education_erp_test TO erp_app;
+          GRANT erp_app TO erp_test_admin;
+          SQL
+
       - name: Run Full Regression Test Suite
         env:
           ENVIRONMENT: testing
           DATABASE_URL: postgresql+asyncpg://erp_app:erp_app_pass@localhost:5432/education_erp_test
           TEST_DATABASE_URL: postgresql+asyncpg://erp_app:erp_app_pass@localhost:5432/education_erp_test
-          TEST_ADMIN_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/education_erp_test
+          TEST_ADMIN_DATABASE_URL: postgresql+asyncpg://erp_test_admin:erp_test_admin_pass@localhost:5432/education_erp_test
           INITIAL_SUPERADMIN_PASSWORD: AdminSecurePassword2026!
           SECRET_KEY: ci-test-secret-key-32-chars-long-minimum-jwt
         run: |
           pytest tests/ -v
-
