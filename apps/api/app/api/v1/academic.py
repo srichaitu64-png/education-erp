@@ -11,7 +11,8 @@ from app.database.session import get_db, get_current_tenant_id, set_current_tena
 from app.security.deps import get_current_user, require_permission
 from app.modules.identity.models import User, UserRole, Role
 from app.modules.tenants.models import Tenant
-from app.modules.finance.models import FeeInvoice
+from app.modules.finance.models import FeeInvoice, FeeStructure, StudentFeeFixation
+from app.api.v1.finance import _generate_invoices_for_fixation
 from app.modules.attendance.models import DailyAttendanceRecord
 from app.modules.examinations.models import Examination, ExamAttendanceAndMarks
 from app.modules.academic.models import (
@@ -695,6 +696,81 @@ async def approve_admission_application(
         )
         db.add(enrol)
         matching_sec.enrolled_count += 1
+
+    # 4. Fee Provisioning: Link custom fee fixation or generate standard fee invoices
+    fix_stmt = select(StudentFeeFixation).where(
+        StudentFeeFixation.tenant_id == tenant_id,
+        or_(
+            StudentFeeFixation.admission_id == app_entry.id,
+            and_(
+                StudentFeeFixation.student_name == app_entry.applicant_name,
+                StudentFeeFixation.academic_year == payload.academic_year,
+                StudentFeeFixation.class_or_stream == app_entry.target_class
+            )
+        )
+    ).order_by(StudentFeeFixation.created_at.desc())
+    fix_res = await db.execute(fix_stmt)
+    linked_fix = fix_res.scalars().first()
+
+    if linked_fix:
+        linked_fix.student_id = new_student.id
+        linked_fix.admission_number = adm_no
+        linked_fix.status = "APPROVED"
+        await _generate_invoices_for_fixation(db, linked_fix, new_student, tenant_id)
+    else:
+        # Standard fee structure provisioning
+        fee_struct_stmt = select(FeeStructure).where(
+            FeeStructure.tenant_id == tenant_id,
+            FeeStructure.academic_year == payload.academic_year,
+            FeeStructure.class_or_stream == app_entry.target_class
+        )
+        fee_struct_res = await db.execute(fee_struct_stmt)
+        std_struct = fee_struct_res.scalars().first()
+        annual_fee = std_struct.total_annual_fee if std_struct else (45000.0 if "PUC" in app_entry.target_class else 35000.0)
+        terms = std_struct.terms_config if (std_struct and std_struct.terms_config) else [
+            {"term_code": "TERM_1", "name": "Term 1 (June-Aug)", "due_date": "2026-06-30", "share_pct": 40.0},
+            {"term_code": "TERM_2", "name": "Term 2 (Sep-Nov)", "due_date": "2026-09-30", "share_pct": 35.0},
+            {"term_code": "TERM_3", "name": "Term 3 (Dec-Feb)", "due_date": "2026-12-15", "share_pct": 25.0},
+        ]
+        heads = std_struct.fee_heads if (std_struct and std_struct.fee_heads) else [
+            {"head_code": "TUITION", "title": "Tuition Fee", "amount": annual_fee * 0.70},
+            {"head_code": "LABORATORY", "title": "Laboratory & Tech Fee", "amount": annual_fee * 0.20},
+            {"head_code": "LIBRARY_DEV", "title": "Amenities & Library", "amount": annual_fee * 0.10},
+        ]
+
+        auto_fix = StudentFeeFixation(
+            tenant_id=tenant_id,
+            student_id=new_student.id,
+            admission_id=app_entry.id,
+            student_name=app_entry.applicant_name,
+            admission_number=adm_no,
+            academic_year=payload.academic_year,
+            class_or_stream=app_entry.target_class,
+            standard_annual_fee=annual_fee,
+            total_concession_amount=0.0,
+            concession_category="Standard Institutional Fee",
+            concession_method="OVERALL_ALLOCATION",
+            final_annual_payable=annual_fee,
+            head_allocations=heads,
+            additional_charges=[],
+            term_installments=[{
+                "term_code": t.get("term_code", f"TERM_{i+1}"),
+                "name": t.get("name", f"Term {i+1}"),
+                "due_date": t.get("due_date", "2026-06-30"),
+                "share_pct": float(t.get("share_pct", 33.33)),
+                "amount": round(annual_fee * (float(t.get("share_pct", 33.33)) / 100.0), 2)
+            } for i, t in enumerate(terms)],
+            status="APPROVED",
+            created_by_name=user.full_name,
+            created_by_id=user.id,
+            approved_by_name=user.full_name,
+            approved_by_id=user.id,
+            approved_at=datetime.now(timezone.utc),
+            audit_history=[{"action": "AUTO_PROVISIONED", "actor": "Admission Approval Flow", "timestamp": datetime.now(timezone.utc).isoformat()}]
+        )
+        db.add(auto_fix)
+        await db.flush()
+        await _generate_invoices_for_fixation(db, auto_fix, new_student, tenant_id)
 
     await db.commit()
     return {

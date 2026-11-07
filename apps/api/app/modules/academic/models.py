@@ -238,6 +238,11 @@ class Student(TenantBaseModel):
     institution_level: Mapped[str] = mapped_column(String(64), nullable=False, default="School") # School, PU College, Degree College
     class_name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     section_or_stream: Mapped[str] = mapped_column(String(64), nullable=False, default="A")
+
+    @property
+    def full_name(self) -> str:
+        parts = [self.first_name, self.middle_name, self.last_name]
+        return " ".join(p for p in parts if p).strip()
     roll_number: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     admission_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE", index=True) # ACTIVE, WITHDRAWN, TRANSFERRED, ALUMNI
@@ -278,6 +283,10 @@ class AdmissionApplication(TenantBaseModel):
     reviewed_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     enrolled_student_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    fee_fixation_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    negotiated_fee: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    is_transport_opted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_hostel_opted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "application_number", name="uq_tenant_admission_app_no"),

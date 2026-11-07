@@ -23,6 +23,7 @@ import { Student360Drawer } from '../../components/student/Student360Drawer';
 import { CreateStudentModal } from '../../components/student/CreateStudentModal';
 import { CreateFacultyModal } from '../../components/staff/CreateFacultyModal';
 import { CollectFeeModal } from '../../components/finance/CollectFeeModal';
+import { StudentFeeFixationModal } from '../../components/finance/StudentFeeFixationModal';
 import { CreateClassModal } from '../../components/academic/CreateClassModal';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -57,6 +58,7 @@ import {
   EyeOff,
   UserCheck,
   Search,
+  Calculator,
   Key,
   Lock,
   Unlock,
@@ -114,6 +116,10 @@ export const InteractiveDemoPage: React.FC = () => {
     receipts,
     receiptAudits,
     feeStructures,
+    studentFeeFixations,
+    approveStudentFeeFixation,
+    rejectStudentFeeFixation,
+    saveStudentFeeFixation,
     activeFeeInstitutionFilter,
     attendance,
     marks,
@@ -380,9 +386,13 @@ export const InteractiveDemoPage: React.FC = () => {
   const [reqJustification, setReqJustification] = useState('Authorize Exam Controller to publish formative unit test marks directly without bottleneck.');
 
   // Fee Management & Receipt Generation State
-  const [feeSubTab, setFeeSubTab] = useState<'statement' | 'collection' | 'register' | 'consolidated' | 'dues' | 'structures'>('statement');
+  const [feeSubTab, setFeeSubTab] = useState<'statement' | 'collection' | 'register' | 'consolidated' | 'dues' | 'structures' | 'fixations'>('statement');
   const [selectedStatementStudentId, setSelectedStatementStudentId] = useState<string>('st-rahul');
   const [acceptanceTestFeedback, setAcceptanceTestFeedback] = useState<string | null>(null);
+  const [showFeeFixationModal, setShowFeeFixationModal] = useState(false);
+  const [selectedFixationStudent, setSelectedFixationStudent] = useState<any>(null);
+  const [feeFixationSearch, setFeeFixationSearch] = useState('');
+  const [feeFixationStatusFilter, setFeeFixationStatusFilter] = useState<'ALL' | 'APPROVED' | 'PENDING_APPROVAL' | 'REJECTED'>('ALL');
 
   // Student Progress Cards State
   const [progressCardSubTab, setProgressCardSubTab] = useState<'individual' | 'consolidated' | 'competitive'>('individual');
@@ -2197,6 +2207,17 @@ export const InteractiveDemoPage: React.FC = () => {
                     <Building2 className="w-3.5 h-3.5" />
                     Fee Structures
                   </button>
+                  <button
+                    onClick={() => setFeeSubTab('fixations')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      feeSubTab === 'fixations'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <Calculator className="w-3.5 h-3.5" />
+                    Management Fixations ({studentFeeFixations.length})
+                  </button>
                 </div>
               </div>
 
@@ -3651,6 +3672,263 @@ export const InteractiveDemoPage: React.FC = () => {
               )}
 
               {/* ============================================================= */}
+              {/* SUB-TAB 6: MANAGEMENT-NEGOTIATED STUDENT FEE FIXATIONS */}
+              {/* ============================================================= */}
+              {feeSubTab === 'fixations' && (() => {
+                const totalStandard = studentFeeFixations.reduce((sum, f) => sum + (f.standard_annual_fee || 0), 0);
+                const totalConcession = studentFeeFixations.reduce((sum, f) => sum + (f.total_concession_amount || 0), 0);
+                const totalPayable = studentFeeFixations.reduce((sum, f) => sum + (f.final_annual_payable || 0), 0);
+                const approvedCount = studentFeeFixations.filter(f => f.status === 'APPROVED').length;
+                const pendingCount = studentFeeFixations.filter(f => f.status === 'PENDING_APPROVAL').length;
+
+                const filteredFixations = studentFeeFixations.filter((f) => {
+                  const matchesSearch =
+                    f.student_name.toLowerCase().includes(feeFixationSearch.toLowerCase()) ||
+                    (f.admission_number || '').toLowerCase().includes(feeFixationSearch.toLowerCase()) ||
+                    f.class_or_stream.toLowerCase().includes(feeFixationSearch.toLowerCase());
+                  const matchesStatus = feeFixationStatusFilter === 'ALL' || f.status === feeFixationStatusFilter;
+                  return matchesSearch && matchesStatus;
+                });
+
+                return (
+                  <div className="space-y-6">
+                    {/* Header & Primary Action */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-2xl text-white shadow-xl">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                            Enterprise Finance Architecture
+                          </span>
+                          <span className="text-xs text-blue-200">ERP Phase 3 Specification</span>
+                        </div>
+                        <h2 className="text-xl font-black">Management-Negotiated Student Fee Fixation</h2>
+                        <p className="text-xs text-blue-100/80 mt-1 max-w-2xl">
+                          Records institutional standard fee (e.g. ₹50,000) vs negotiated concession (e.g. ₹14,000) to yield final agreed payable (₹36,000), allocating discounts across eligible fee heads without altering institutional base fee structures.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedFixationStudent(null);
+                          setShowFeeFixationModal(true);
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs shadow-lg shadow-blue-500/30 flex items-center gap-2 cursor-pointer transition-all shrink-0"
+                      >
+                        <Plus className="w-4 h-4" />
+                        + Fix / Negotiate Student Fee
+                      </button>
+                    </div>
+
+                    {/* KPI Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Fixations</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1">{studentFeeFixations.length}</p>
+                        <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{approvedCount} Approved • {pendingCount} Pending</p>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Standard Institutional Value</p>
+                        <p className="text-2xl font-black text-slate-900 mt-1 font-mono">₹{totalStandard.toLocaleString()}</p>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">Catalog fee before concessions</p>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Concessions Granted</p>
+                        <p className="text-2xl font-black text-rose-600 mt-1 font-mono">₹{totalConcession.toLocaleString()}</p>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          {totalStandard > 0 ? ((totalConcession / totalStandard) * 100).toFixed(1) : '0'}% overall discount
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Net Agreed Annual Payable</p>
+                        <p className="text-2xl font-black text-blue-600 mt-1 font-mono">₹{totalPayable.toLocaleString()}</p>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">Audited installment commitment</p>
+                      </div>
+                    </div>
+
+                    {/* Search and Filters */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-xs">
+                      <div className="relative flex-1 max-w-md">
+                        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Search student name, admission #, class..."
+                          value={feeFixationSearch}
+                          onChange={(e) => setFeeFixationSearch(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase mr-1">Status:</span>
+                        {(['ALL', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED'] as const).map((st) => (
+                          <button
+                            key={st}
+                            onClick={() => setFeeFixationStatusFilter(st)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              feeFixationStatusFilter === st
+                                ? 'bg-slate-900 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {st === 'ALL' ? 'All Records' : st.replace('_', ' ')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Table of Student Fee Fixations */}
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-600">
+                          <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
+                            <tr>
+                              <th className="p-3.5">Student & Admission</th>
+                              <th className="p-3.5">Class / Stream</th>
+                              <th className="p-3.5 text-right">Standard Fee</th>
+                              <th className="p-3.5">Concession Category</th>
+                              <th className="p-3.5 text-right">Concession</th>
+                              <th className="p-3.5 text-right">Final Payable</th>
+                              <th className="p-3.5">Installment Schedule (3-Term)</th>
+                              <th className="p-3.5">Status & Approval</th>
+                              <th className="p-3.5 text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium">
+                            {filteredFixations.length === 0 ? (
+                              <tr>
+                                <td colSpan={9} className="p-8 text-center text-slate-400">
+                                  No student fee fixations found matching current filters.
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredFixations.map((fix) => {
+                                const discPct = fix.standard_annual_fee > 0
+                                  ? Math.round((fix.total_concession_amount / fix.standard_annual_fee) * 100)
+                                  : 0;
+
+                                return (
+                                  <tr key={fix.id} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="p-3.5">
+                                      <div className="font-bold text-slate-900">{fix.student_name}</div>
+                                      <div className="text-[10px] text-slate-400 font-mono">
+                                        {fix.admission_number || 'Enquiry Lead / Pending Adm'}
+                                      </div>
+                                    </td>
+                                    <td className="p-3.5">
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                        {fix.class_or_stream}
+                                      </span>
+                                      <div className="text-[10px] text-slate-400 mt-0.5 font-mono">{fix.academic_year}</div>
+                                    </td>
+                                    <td className="p-3.5 text-right font-mono font-semibold text-slate-500">
+                                      ₹{fix.standard_annual_fee.toLocaleString()}
+                                    </td>
+                                    <td className="p-3.5">
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                        {fix.concession_category}
+                                      </span>
+                                      <div className="text-[10px] text-slate-400 mt-0.5">
+                                        {fix.concession_method === 'OVERALL_ALLOCATION' ? 'Method A: Proportional' : 'Method B: Head-wise'}
+                                      </div>
+                                    </td>
+                                    <td className="p-3.5 text-right font-mono font-bold text-rose-600">
+                                      -₹{fix.total_concession_amount.toLocaleString()}
+                                      <span className="text-[10px] text-rose-400 block">({discPct}% off)</span>
+                                    </td>
+                                    <td className="p-3.5 text-right font-mono font-black text-slate-900 text-sm">
+                                      ₹{fix.final_annual_payable.toLocaleString()}
+                                    </td>
+                                    <td className="p-3.5">
+                                      <div className="space-y-1 font-mono text-[11px]">
+                                        {fix.term_installments.map((term, idx) => (
+                                          <div key={idx} className="flex items-center justify-between text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                                            <span className="text-slate-600 font-semibold">{term.name || (term as any).term_name}:</span>
+                                            <span className="font-bold text-slate-900">₹{term.amount.toLocaleString()}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </td>
+                                    <td className="p-3.5">
+                                      {fix.status === 'APPROVED' ? (
+                                        <div>
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                            Approved
+                                          </span>
+                                          <div className="text-[10px] text-slate-400 mt-0.5">
+                                            By {fix.approved_by_name || 'Management'}
+                                          </div>
+                                        </div>
+                                      ) : fix.status === 'PENDING_APPROVAL' ? (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                          <AlertCircle className="w-3 h-3 text-amber-500" />
+                                          Pending Approval
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                          {fix.status}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="p-3.5 text-center">
+                                      {fix.status === 'PENDING_APPROVAL' ? (
+                                        <div className="flex items-center justify-center gap-1.5">
+                                          <button
+                                            onClick={() => {
+                                              approveStudentFeeFixation(fix.id, 'Dr. Ramesh Kumar (Principal)', 'Authorized negotiated concession');
+                                              alert(`Approved fee fixation for ${fix.student_name}. Invoices automatically provisioned.`);
+                                            }}
+                                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition-all cursor-pointer shadow-xs"
+                                          >
+                                            Approve
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              rejectStudentFeeFixation(fix.id, 'Dr. Ramesh Kumar (Principal)', 'Concession percentage exceeds allowed limit');
+                                              alert(`Rejected fee fixation for ${fix.student_name}.`);
+                                            }}
+                                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[10px] transition-all cursor-pointer"
+                                          >
+                                            Reject
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            const matchAdm = admissions.find(a => a.applicant_name.toLowerCase() === fix.student_name.toLowerCase());
+                                            setSelectedFixationStudent(matchAdm || null);
+                                            setShowFeeFixationModal(true);
+                                          }}
+                                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition-all cursor-pointer"
+                                        >
+                                          Re-negotiate
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Student Fee Fixation Modal */}
+                    <StudentFeeFixationModal
+                      isOpen={showFeeFixationModal}
+                      onClose={() => {
+                        setShowFeeFixationModal(false);
+                        setSelectedFixationStudent(null);
+                      }}
+                      targetAdmission={selectedFixationStudent}
+                      onSuccess={(newFix) => {
+                        alert(`Successfully recorded fee agreement for ${newFix.student_name} with final payable ₹${newFix.final_annual_payable.toLocaleString()}`);
+                      }}
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* ============================================================= */}
               {/* MULTI-FORMAT OFFICIAL RECEIPT PREVIEW & PRINT MODAL */}
               {/* ============================================================= */}
               {showReceiptModal && activeReceiptForModal && (
@@ -4498,7 +4776,10 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* TAB 12: ACADEMIC STRUCTURE & SECTION CAPACITY (CLASS 6 & I PUC) */}
           {/* ================================================================= */}
           {activeTab === 'academic-structure' && (
-            <AcademicStructureView />
+            <AcademicStructureView
+              onOpenStudent360={handleOpenStudent360}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
           )}
 
           {/* ================================================================= */}

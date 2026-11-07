@@ -1,13 +1,13 @@
 import uuid
+from datetime import date, datetime, timedelta, timezone
 import pytest
 from httpx import AsyncClient
-from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.core.security import create_access_token
 from app.modules.tenants.models import Tenant
-from app.modules.identity.models import User
+from app.modules.identity.models import User, PlatformSupportAccessSession
 from app.modules.academic.models import (
     AcademicSection,
     StudentSectionEnrolment,
@@ -25,6 +25,17 @@ async def get_test_auth_headers(db_session: AsyncSession):
     super_admin = (await db_session.execute(stmt_user)).scalars().first()
     assert super_admin is not None
 
+    db_session.add(PlatformSupportAccessSession(
+        ticket_number=f"TEST-SUPPORT-{uuid.uuid4().hex[:12]}",
+        tenant_id=pilot_tenant.id,
+        requested_by_platform_user_id=super_admin.id,
+        reason="Automated integration test with explicit tenant support approval",
+        scope="FULL_ACCESS",
+        status="APPROVED",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    await db_session.commit()
+
     token = create_access_token(
         subject=str(super_admin.id), tenant_id=str(pilot_tenant.id), is_superadmin=True
     )
@@ -40,6 +51,27 @@ async def test_academic_sections_creation_and_capacity(client: AsyncClient, db_s
     - Validate duplicate section prevention and capacity limits
     """
     auth_headers = await get_test_auth_headers(db_session)
+
+    # Clean up any leftover sections from previous test runs to ensure test isolation
+    stmt_tenant = select(Tenant).where(Tenant.code.in_(["our-school-demo", "akshara"]))
+    pilot_tenant = (await db_session.execute(stmt_tenant)).scalars().first()
+    sec_ids_stmt = select(AcademicSection.id).where(
+        AcademicSection.tenant_id == pilot_tenant.id,
+        AcademicSection.academic_year == "2026-2027",
+        AcademicSection.class_name.in_(["Class 6", "I PUC", "I PUC PCMB", "Class 7", "II PUC"]),
+    )
+    target_sec_ids = (await db_session.execute(sec_ids_stmt)).scalars().all()
+    if target_sec_ids:
+        await db_session.execute(
+            delete(StaffDutyAssignment).where(StaffDutyAssignment.section_id.in_(target_sec_ids))
+        )
+        await db_session.execute(
+            delete(StudentSectionEnrolment).where(StudentSectionEnrolment.section_id.in_(target_sec_ids))
+        )
+        await db_session.execute(
+            delete(AcademicSection).where(AcademicSection.id.in_(target_sec_ids))
+        )
+        await db_session.commit()
 
     # 1. Create Class 6 Section A
     res = await client.post(

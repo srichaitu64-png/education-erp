@@ -170,3 +170,174 @@ class PaymentWebhookPayload(BaseModel):
     signature: Optional[str] = None
 
 
+# ==============================================================================
+# FEE HEAD MASTER & CONCESSION FIXATION SCHEMAS
+# ==============================================================================
+
+class FeeHeadCreate(BaseModel):
+    head_code: str = Field(..., min_length=2, max_length=64)
+    title: str = Field(..., min_length=2, max_length=128)
+    category: str = Field(default="ACADEMIC")  # ACADEMIC, FACILITY, TRANSPORT, HOSTEL, SECURITY_DEPOSIT, OPTIONAL_SERVICE
+    charge_type: str = Field(default="PER_TERM")  # ONE_TIME, PER_TERM, MONTHLY, ANNUAL
+    is_compulsory: bool = True
+    is_recurring: bool = True
+    default_amount: float = Field(default=0.0, ge=0.0)
+    tax_rate: float = Field(default=0.0, ge=0.0, le=100.0)
+    description: Optional[str] = None
+
+
+class FeeHeadUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    charge_type: Optional[str] = None
+    is_compulsory: Optional[bool] = None
+    is_recurring: Optional[bool] = None
+    default_amount: Optional[float] = None
+    tax_rate: Optional[float] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class FeeHeadOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    head_code: str
+    title: str
+    category: str
+    charge_type: str
+    is_compulsory: bool
+    is_recurring: bool
+    default_amount: float
+    tax_rate: float
+    description: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class HeadConcessionAllocation(BaseModel):
+    head_code: str
+    title: str
+    standard_amount: float
+    concession_amount: float
+    final_payable: float
+
+
+class AdditionalCharge(BaseModel):
+    charge_code: str
+    title: str
+    category: str
+    amount: float
+
+
+class TermInstallmentSchedule(BaseModel):
+    term_code: str
+    name: str
+    due_date: str
+    share_pct: float
+    amount: float
+
+
+class StudentFeeFixationCalculateRequest(BaseModel):
+    class_or_stream: str
+    academic_year: str = "2026-2027"
+    standard_annual_fee: float = Field(..., gt=0)
+    negotiated_annual_fee: Optional[float] = None
+    total_concession_amount: Optional[float] = None
+    concession_category: str = "Management Negotiation"
+    concession_method: str = "OVERALL_ALLOCATION"  # OVERALL_ALLOCATION or HEAD_WISE_ADJUSTMENTS
+    head_adjustments: Optional[List[Dict[str, Any]]] = None  # [{head_code: "TUITION", concession_amount: 10000}]
+    additional_charges: Optional[List[Dict[str, Any]]] = None  # [{charge_code: "TRANSPORT", amount: 12000}]
+    terms_config: Optional[List[Dict[str, Any]]] = None
+
+
+class StudentFeeFixationCalculateResponse(BaseModel):
+    standard_annual_fee: float
+    total_concession_amount: float
+    additional_charges_total: float
+    final_annual_payable: float
+    concession_category: str
+    concession_method: str
+    head_allocations: List[HeadConcessionAllocation]
+    additional_charges: List[AdditionalCharge]
+    term_installments: List[TermInstallmentSchedule]
+
+
+class StudentFeeFixationCreate(BaseModel):
+    student_id: Optional[uuid.UUID] = None
+    admission_id: Optional[uuid.UUID] = None
+    student_name: str
+    admission_number: Optional[str] = None
+    academic_year: str = "2026-2027"
+    class_or_stream: str
+    standard_annual_fee: float = Field(..., gt=0)
+    total_concession_amount: float = Field(default=0.0, ge=0)
+    concession_category: str = "Management Negotiation"
+    concession_method: str = "OVERALL_ALLOCATION"
+    final_annual_payable: float = Field(..., ge=0)
+    head_allocations: List[Dict[str, Any]] = Field(default_factory=list)
+    additional_charges: List[Dict[str, Any]] = Field(default_factory=list)
+    term_installments: List[Dict[str, Any]] = Field(default_factory=list)
+    reason_remarks: Optional[str] = None
+    auto_approve: bool = False
+
+
+class StudentFeeFixationOut(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    student_id: Optional[uuid.UUID] = None
+    admission_id: Optional[uuid.UUID] = None
+    student_name: str
+    admission_number: Optional[str] = None
+    academic_year: str
+    class_or_stream: str
+    standard_annual_fee: float
+    total_concession_amount: float
+    concession_category: str
+    concession_method: str
+    final_annual_payable: float
+    head_allocations: List[Dict[str, Any]]
+    additional_charges: List[Dict[str, Any]]
+    term_installments: List[Dict[str, Any]]
+    reason_remarks: Optional[str] = None
+    status: str
+    created_by_name: str
+    approved_by_name: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    version: int
+    audit_history: List[Dict[str, Any]]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StudentFeeFixationApproveRequest(BaseModel):
+    approval_notes: Optional[str] = None
+
+
+class StudentFeeFixationRejectRequest(BaseModel):
+    rejection_reason: str = Field(..., min_length=4)
+
+
+class StudentLedgerStatementOut(BaseModel):
+    student_id: uuid.UUID
+    student_name: str
+    admission_number: str
+    class_name: str
+    academic_year: str
+    has_custom_fixation: bool
+    fixation: Optional[StudentFeeFixationOut] = None
+    standard_fee: float
+    total_concessions: float
+    net_payable: float
+    total_paid: float
+    balance_due: float
+    invoices: List[Dict[str, Any]]
+    payments: List[Dict[str, Any]]
+    receipts: List[FeeReceiptOut]
+
+
+

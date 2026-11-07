@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useDemoStore, DemoAdmission, AdmissionStage } from '../../../store/demoStore';
 import { CreateAdmissionEnquiryModal } from '../../../components/academic/CreateAdmissionEnquiryModal';
+import { StudentFeeFixationModal } from '../../../components/finance/StudentFeeFixationModal';
 
 interface AdmissionsPipelineViewProps {
   onNavigateTab: (tabId: string) => void;
@@ -31,6 +32,7 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
     admissions,
     updateAdmissionStage,
     confirmAdmissionAndActivate,
+    studentFeeFixations,
     students,
     tenantScope,
   } = useDemoStore();
@@ -38,6 +40,8 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('ALL');
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+  const [showFixationModal, setShowFixationModal] = useState(false);
+  const [selectedAdmissionForFixation, setSelectedAdmissionForFixation] = useState<DemoAdmission | null>(null);
   const [celebrationToast, setCelebrationToast] = useState<string | null>(null);
 
   // Compute counts
@@ -263,6 +267,24 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
                         Source: {adm.source}
                       </span>
                     )}
+                    {(() => {
+                      const fix = studentFeeFixations.find(
+                        (f) => (f.admission_id === adm.id || f.student_name.toLowerCase() === adm.applicant_name.toLowerCase()) && f.status === 'APPROVED'
+                      );
+                      if (fix) {
+                        return (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-[10px] inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Agreed Fee: ₹{fix.final_annual_payable.toLocaleString()} (-₹{fix.total_concession_amount.toLocaleString()} {fix.concession_category})
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[10px]">
+                          Std Fee: {adm.target_class.includes('PUC') ? '₹65,000' : '₹50,000'}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   {/* 5-Step Stage Tracker Visualizer */}
@@ -301,6 +323,20 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {!isConfirmed && (
+                    <button
+                      onClick={() => {
+                        setSelectedAdmissionForFixation(adm);
+                        setShowFixationModal(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Negotiate student fee and record management approved concessions"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Negotiate / Fix Fee</span>
+                    </button>
+                  )}
+
                   {isEnquiry && (
                     <button
                       onClick={() => updateAdmissionStage(adm.id, 'DOCUMENT_VERIFICATION')}
@@ -390,10 +426,19 @@ export const AdmissionsPipelineView: React.FC<AdmissionsPipelineViewProps> = ({
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       <CreateAdmissionEnquiryModal
         isOpen={showEnquiryModal}
         onClose={() => setShowEnquiryModal(false)}
+      />
+
+      <StudentFeeFixationModal
+        isOpen={showFixationModal}
+        targetAdmission={selectedAdmissionForFixation}
+        onClose={() => {
+          setShowFixationModal(false);
+          setSelectedAdmissionForFixation(null);
+        }}
       />
     </div>
   );

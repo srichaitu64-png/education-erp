@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database.session import get_db, get_current_tenant_id
 from app.modules.identity.models import User
+from app.modules.academic.models import Student
 from app.modules.examinations.models import (
     Examination,
     ExamAttendanceAndMarks,
@@ -139,6 +140,88 @@ async def get_exam_marks(
         stmt = stmt.where(ExamAttendanceAndMarks.tenant_id == tenant_id)
     res = await db.execute(stmt)
     return res.scalars().all()
+
+
+@router.get("/{exam_id}/roster", response_model=List[ExamMarksOut])
+async def get_exam_roster(
+    exam_id: uuid.UUID,
+    section_code: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Get or initialize complete student roster for an exam.
+    If marks records do not exist yet, auto-populates draft roster rows from enrolled students
+    in the matching class/section so the marks register is never blank.
+    """
+    tenant_id = get_current_tenant_id()
+    stmt_exam = select(Examination).where(Examination.id == exam_id)
+    if not user.is_superadmin and tenant_id:
+        stmt_exam = stmt_exam.where(Examination.tenant_id == tenant_id)
+    res_exam = await db.execute(stmt_exam)
+    exam = res_exam.scalars().first()
+    if not exam:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Examination not found")
+
+    # Fetch existing marks
+    stmt_m = select(ExamAttendanceAndMarks).where(ExamAttendanceAndMarks.examination_id == exam_id)
+    if not user.is_superadmin and tenant_id:
+        stmt_m = stmt_m.where(ExamAttendanceAndMarks.tenant_id == tenant_id)
+    res_m = await db.execute(stmt_m)
+    existing_marks = list(res_m.scalars().all())
+
+    existing_student_ids = {m.student_id for m in existing_marks}
+
+    # Query active students in this class
+    stu_stmt = select(Student).where(
+        Student.tenant_id == exam.tenant_id,
+        Student.status == "ACTIVE"
+    )
+    # Match class name (e.g. Class 10 or Class 6 or PUC)
+    if exam.target_class:
+        # Extract base class if multi-target (e.g. "I PUC" from "I & II PUC (Science)")
+        base_target = exam.target_class.split("&")[0].strip()
+        stu_stmt = stu_stmt.where(or_(
+            Student.class_name.ilike(f"%{base_target}%"),
+            Student.class_name.ilike(f"%{exam.target_class}%")
+        ))
+    if section_code and section_code != "ALL":
+        stu_stmt = stu_stmt.where(Student.section_or_stream.ilike(f"%{section_code}%"))
+
+    stu_res = await db.execute(stu_stmt)
+    students = stu_res.scalars().all()
+
+    # Create draft marks records for missing students
+    new_records = []
+    for stu in students:
+        if stu.id not in existing_student_ids:
+            draft_rec = ExamAttendanceAndMarks(
+                tenant_id=exam.tenant_id,
+                examination_id=exam_id,
+                student_id=stu.id,
+                student_name=stu.full_name,
+                roll_number=getattr(stu, "roll_number", None) or stu.admission_number,
+                admission_number=stu.admission_number,
+                attendance_status="PRESENT",
+                theory_marks_obtained=0.0,
+                practical_marks_obtained=0.0,
+                total_marks_obtained=0.0,
+                percentage=0.0,
+                grade="F",
+                evaluator_teacher_id=user.id,
+                evaluator_name=user.full_name,
+                version=1,
+            )
+            db.add(draft_rec)
+            new_records.append(draft_rec)
+
+    if new_records:
+        await db.commit()
+        for r in new_records:
+            await db.refresh(r)
+        existing_marks.extend(new_records)
+
+    return existing_marks
 
 
 @router.post("/{exam_id}/marks", response_model=List[ExamMarksOut])

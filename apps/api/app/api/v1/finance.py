@@ -19,7 +19,11 @@ from app.modules.finance.models import (
     FeePayment,
     FeeReceipt,
     ReceiptAuditLog,
+    FeeHeadMaster,
+    StudentFeeFixation,
+    FeeAdjustmentLog,
 )
+from app.modules.academic.models import Student
 from app.modules.finance.schemas import (
     FeeStructureCreate,
     FeeStructureOut,
@@ -32,6 +36,16 @@ from app.modules.finance.schemas import (
     GSTCalculateRequest,
     GSTCalculateResponse,
     PaymentWebhookPayload,
+    FeeHeadCreate,
+    FeeHeadUpdate,
+    FeeHeadOut,
+    StudentFeeFixationCreate,
+    StudentFeeFixationOut,
+    StudentFeeFixationCalculateRequest,
+    StudentFeeFixationCalculateResponse,
+    StudentFeeFixationApproveRequest,
+    StudentFeeFixationRejectRequest,
+    StudentLedgerStatementOut,
 )
 from app.security.deps import get_current_user, require_permission
 
@@ -730,5 +744,579 @@ async def handle_payment_gateway_webhook(
         "valid_until": sub.ends_at.isoformat(),
         "transaction_id": payload.transaction_id
     }
+
+
+# ==============================================================================
+# 5. INSTITUTION-DEFINED FEE HEADS CATALOG
+# ==============================================================================
+
+def _resolve_tenant_id(user: User) -> Optional[uuid.UUID]:
+    tid = get_current_tenant_id()
+    if tid:
+        return tid
+    if getattr(user, "roles", None):
+        for r in user.roles:
+            if getattr(r, "tenant_id", None):
+                return r.tenant_id
+            if getattr(r, "role", None) and getattr(r.role, "tenant_id", None):
+                return r.role.tenant_id
+    return None
+
+
+@router.get("/heads", response_model=List[FeeHeadOut])
+async def list_fee_heads(
+    category: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.view")),
+):
+    """
+    List institution-defined fee heads catalog (Tuition, Lab, Transport, Hostel, etc.).
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institutional tenant scope required.")
+
+    query = select(FeeHeadMaster).where(FeeHeadMaster.tenant_id == tenant_id)
+    if category:
+        query = query.where(FeeHeadMaster.category == category)
+    if is_active is not None:
+        query = query.where(FeeHeadMaster.is_active == is_active)
+    query = query.order_by(FeeHeadMaster.category, FeeHeadMaster.head_code)
+
+    result = await db.execute(query)
+    heads = result.scalars().all()
+
+    # If no heads exist yet for this tenant, bootstrap standard institution defaults
+    if not heads and not category and is_active is None:
+        defaults = [
+            ("TUITION", "Tuition & Academic Classroom Instruction", "ACADEMIC", "PER_TERM", True, True, 30000.0, 0.0, "Core syllabus and teaching fees"),
+            ("LABORATORY", "Science & Computer Practical Laboratory", "FACILITY", "PER_TERM", True, True, 8000.0, 0.0, "Physics, Chemistry, Biology & IT lab access"),
+            ("LIBRARY_DEV", "Digital Library, Sports & Campus Amenities", "FACILITY", "ANNUAL", True, False, 5000.0, 0.0, "Physical and digital learning resources"),
+            ("TRANSPORT", "Campus Bus Transport Fleet Service", "TRANSPORT", "PER_TERM", False, True, 12000.0, 0.0, "Optional door-to-school transport service"),
+            ("HOSTEL", "Hostel Accommodation & Dining Mess Fee", "HOSTEL", "PER_TERM", False, True, 25000.0, 0.0, "Boarding and dining charges"),
+            ("EXAMINATION", "Term Assessments, CBT & Report Printing", "ACADEMIC", "PER_TERM", True, True, 3000.0, 0.0, "Evaluation and report card charges"),
+            ("ADMISSION", "One-Time Institutional Enrolment Fee", "ACADEMIC", "ONE_TIME", True, False, 5000.0, 0.0, "Administrative registration charge"),
+        ]
+        created_heads = []
+        for code, title, cat, ctype, comp, recur, amt, tax, desc in defaults:
+            h = FeeHeadMaster(
+                tenant_id=tenant_id,
+                head_code=code,
+                title=title,
+                category=cat,
+                charge_type=ctype,
+                is_compulsory=comp,
+                is_recurring=recur,
+                default_amount=amt,
+                tax_rate=tax,
+                description=desc,
+                is_active=True,
+            )
+            db.add(h)
+            created_heads.append(h)
+        await db.commit()
+        return created_heads
+
+    return heads
+
+
+@router.post("/heads", response_model=FeeHeadOut, status_code=status.HTTP_201_CREATED)
+async def create_fee_head(
+    payload: FeeHeadCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.configure")),
+):
+    """
+    Create a new institution-defined fee head.
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institutional tenant scope required.")
+
+    code_clean = payload.head_code.strip().upper()
+    existing = await db.execute(
+        select(FeeHeadMaster).where(
+            FeeHeadMaster.tenant_id == tenant_id,
+            FeeHeadMaster.head_code == code_clean,
+        )
+    )
+    if existing.scalars().first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Fee head with code '{code_clean}' already exists.")
+
+    head = FeeHeadMaster(
+        tenant_id=tenant_id,
+        head_code=code_clean,
+        title=payload.title.strip(),
+        category=payload.category,
+        charge_type=payload.charge_type,
+        is_compulsory=payload.is_compulsory,
+        is_recurring=payload.is_recurring,
+        default_amount=payload.default_amount,
+        tax_rate=payload.tax_rate,
+        description=payload.description,
+        is_active=True,
+    )
+    db.add(head)
+    await db.commit()
+    await db.refresh(head)
+    return head
+
+
+# ==============================================================================
+# 6. MANAGEMENT-NEGOTIATED STUDENT FEE FIXATION & CONCESSIONS ENGINE
+# ==============================================================================
+
+@router.post("/fixations/calculate", response_model=StudentFeeFixationCalculateResponse)
+async def calculate_fee_fixation(
+    payload: StudentFeeFixationCalculateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.view")),
+):
+    """
+    Real-time calculation engine for Management Negotiated Fee Fixations.
+    Supports:
+    Method A: Overall negotiated total (e.g. ₹50,000 standard -> ₹36,000 agreed)
+              allocated across heads with priority on Tuition.
+    Method B: Individual head-wise custom adjustments.
+    Includes additional charges (transport, hostel, amenities) and term installment breakdown.
+    """
+    standard_fee = float(payload.standard_annual_fee)
+    if standard_fee <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Standard annual fee must be greater than zero.")
+
+    # Determine total concession
+    if payload.negotiated_annual_fee is not None:
+        negotiated_fee = float(payload.negotiated_annual_fee)
+        concession_total = max(0.0, round(standard_fee - negotiated_fee, 2))
+    elif payload.total_concession_amount is not None:
+        concession_total = min(standard_fee, max(0.0, float(payload.total_concession_amount)))
+    else:
+        concession_total = 0.0
+
+    # Default head breakdown baseline (60% Tuition, 15% Lab, 10% Library/Dev, 15% Activities)
+    default_heads = [
+        {"head_code": "TUITION", "title": "Tuition & Academic Classroom Instruction", "pct": 0.60},
+        {"head_code": "LABORATORY", "title": "Science & Computer Practical Laboratory", "pct": 0.15},
+        {"head_code": "LIBRARY_DEV", "title": "Digital Library, Sports & Campus Amenities", "pct": 0.10},
+        {"head_code": "EXAMINATION", "title": "Assessments & Comprehensive Examination", "pct": 0.15},
+    ]
+
+    head_allocations: List[Dict[str, Any]] = []
+
+    if payload.concession_method == "HEAD_WISE_ADJUSTMENTS" and payload.head_adjustments:
+        # Method B: Direct adjustments per head
+        total_custom_concession = 0.0
+        for adj in payload.head_adjustments:
+            h_code = adj.get("head_code", "")
+            h_title = adj.get("title", h_code)
+            h_std = float(adj.get("standard_amount", 0.0))
+            h_conc = float(adj.get("concession_amount", 0.0))
+            h_final = max(0.0, round(h_std - h_conc, 2))
+            total_custom_concession += h_conc
+            head_allocations.append({
+                "head_code": h_code,
+                "title": h_title,
+                "standard_amount": h_std,
+                "concession_amount": h_conc,
+                "final_payable": h_final,
+            })
+        concession_total = total_custom_concession
+    else:
+        # Method A: Overall concession allocated across heads
+        # Step 1: Assign standard amounts
+        allocated_so_far = 0.0
+        for idx, dh in enumerate(default_heads):
+            if idx == len(default_heads) - 1:
+                h_amt = round(standard_fee - allocated_so_far, 2)
+            else:
+                h_amt = round(standard_fee * dh["pct"], 2)
+                allocated_so_far += h_amt
+            head_allocations.append({
+                "head_code": dh["head_code"],
+                "title": dh["title"],
+                "standard_amount": h_amt,
+                "concession_amount": 0.0,
+                "final_payable": h_amt,
+            })
+
+        # Step 2: Apply concession with priority on TUITION first, then others
+        remaining_discount = concession_total
+        for h in head_allocations:
+            if remaining_discount <= 0:
+                break
+            # Can discount up to 90% of this head
+            max_head_discount = round(h["standard_amount"] * 0.90, 2)
+            discount_to_apply = min(remaining_discount, max_head_discount)
+            h["concession_amount"] = discount_to_apply
+            h["final_payable"] = round(h["standard_amount"] - discount_to_apply, 2)
+            remaining_discount = round(remaining_discount - discount_to_apply, 2)
+
+        # If any remaining discount, apply to any head with remaining balance
+        if remaining_discount > 0:
+            for h in head_allocations:
+                if remaining_discount <= 0:
+                    break
+                extra = min(remaining_discount, h["final_payable"])
+                h["concession_amount"] = round(h["concession_amount"] + extra, 2)
+                h["final_payable"] = round(h["final_payable"] - extra, 2)
+                remaining_discount = round(remaining_discount - extra, 2)
+
+    # Process additional charges (e.g. transport, hostel)
+    additional_charges_list: List[Dict[str, Any]] = []
+    additional_charges_total = 0.0
+    if payload.additional_charges:
+        for ch in payload.additional_charges:
+            amt = float(ch.get("amount", 0.0))
+            if amt > 0:
+                additional_charges_total += amt
+                additional_charges_list.append({
+                    "charge_code": ch.get("charge_code", "MISC"),
+                    "title": ch.get("title", "Additional Charge"),
+                    "category": ch.get("category", "FACILITY"),
+                    "amount": amt,
+                })
+
+    final_net_payable = round((standard_fee - concession_total) + additional_charges_total, 2)
+
+    # Compute term installments
+    terms_def = payload.terms_config or [
+        {"term_code": "TERM_1", "name": "Term 1 (June-Aug)", "due_date": "2026-06-30", "share_pct": 40.0},
+        {"term_code": "TERM_2", "name": "Term 2 (Sep-Nov)", "due_date": "2026-09-30", "share_pct": 35.0},
+        {"term_code": "TERM_3", "name": "Term 3 (Dec-Feb)", "due_date": "2026-12-15", "share_pct": 25.0},
+    ]
+
+    term_installments: List[Dict[str, Any]] = []
+    running_term_total = 0.0
+    for idx, t in enumerate(terms_def):
+        pct = float(t.get("share_pct", 33.33))
+        if idx == len(terms_def) - 1:
+            term_amt = round(final_net_payable - running_term_total, 2)
+        else:
+            term_amt = round(final_net_payable * (pct / 100.0), 2)
+            running_term_total += term_amt
+
+        term_installments.append({
+            "term_code": t.get("term_code", f"TERM_{idx+1}"),
+            "name": t.get("name", f"Term {idx+1}"),
+            "due_date": t.get("due_date", "2026-06-30"),
+            "share_pct": pct,
+            "amount": term_amt,
+        })
+
+    return StudentFeeFixationCalculateResponse(
+        standard_annual_fee=standard_fee,
+        total_concession_amount=concession_total,
+        additional_charges_total=additional_charges_total,
+        final_annual_payable=final_net_payable,
+        concession_category=payload.concession_category,
+        concession_method=payload.concession_method,
+        head_allocations=head_allocations,
+        additional_charges=additional_charges_list,
+        term_installments=term_installments,
+    )
+
+
+@router.get("/fixations", response_model=List[StudentFeeFixationOut])
+async def list_student_fee_fixations(
+    academic_year: Optional[str] = None,
+    class_name: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.view")),
+):
+    """
+    List all agreed student fee fixations and concessions.
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institutional tenant scope required.")
+
+    query = select(StudentFeeFixation).where(StudentFeeFixation.tenant_id == tenant_id)
+    if academic_year:
+        query = query.where(StudentFeeFixation.academic_year == academic_year)
+    if class_name:
+        query = query.where(StudentFeeFixation.class_or_stream == class_name)
+    if status_filter:
+        query = query.where(StudentFeeFixation.status == status_filter)
+
+    query = query.order_by(StudentFeeFixation.created_at.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+@router.post("/fixations", response_model=StudentFeeFixationOut, status_code=status.HTTP_201_CREATED)
+async def create_student_fee_fixation(
+    payload: StudentFeeFixationCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.collect")),
+):
+    """
+    Record an authoritative agreed fee fixation for a student or prospective applicant.
+    Stores original fee, approved concession, category, reason remarks, and installments.
+    If student exists and status is APPROVED, automatically provisions invoices.
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    if not tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Institutional tenant scope required.")
+
+    status_val = "APPROVED" if payload.auto_approve else "PENDING_APPROVAL"
+    approved_by = current_user.full_name if status_val == "APPROVED" else None
+    approved_at = datetime.now(timezone.utc) if status_val == "APPROVED" else None
+
+    # Check for existing fixation for this student and academic year
+    if payload.student_id:
+        existing_stmt = select(StudentFeeFixation).where(
+            StudentFeeFixation.tenant_id == tenant_id,
+            StudentFeeFixation.student_id == payload.student_id,
+            StudentFeeFixation.academic_year == payload.academic_year,
+            StudentFeeFixation.status == "APPROVED",
+        )
+        existing_res = await db.execute(existing_stmt)
+        old_fix = existing_res.scalars().first()
+        if old_fix:
+            old_fix.status = "SUPERSEDED"
+
+    fixation = StudentFeeFixation(
+        tenant_id=tenant_id,
+        student_id=payload.student_id,
+        admission_id=payload.admission_id,
+        student_name=payload.student_name.strip(),
+        admission_number=payload.admission_number,
+        academic_year=payload.academic_year,
+        class_or_stream=payload.class_or_stream,
+        standard_annual_fee=payload.standard_annual_fee,
+        total_concession_amount=payload.total_concession_amount,
+        concession_category=payload.concession_category,
+        concession_method=payload.concession_method,
+        final_annual_payable=payload.final_annual_payable,
+        head_allocations=payload.head_allocations,
+        additional_charges=payload.additional_charges,
+        term_installments=payload.term_installments,
+        reason_remarks=payload.reason_remarks,
+        status=status_val,
+        created_by_name=current_user.full_name,
+        created_by_id=current_user.id,
+        approved_by_name=approved_by,
+        approved_by_id=current_user.id if approved_by else None,
+        approved_at=approved_at,
+        version=1,
+        audit_history=[{
+            "action": "CREATED",
+            "actor": current_user.full_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "notes": payload.reason_remarks or "Initial fee fixation recorded.",
+            "status": status_val,
+            "final_payable": payload.final_annual_payable,
+        }],
+    )
+    db.add(fixation)
+    await db.flush()
+
+    # If linked to an active student, generate/update fee invoices
+    if payload.student_id and status_val == "APPROVED":
+        student = await db.get(Student, payload.student_id)
+        if student and student.tenant_id == tenant_id:
+            await _generate_invoices_for_fixation(db, fixation, student, tenant_id)
+
+    await db.commit()
+    await db.refresh(fixation)
+    return fixation
+
+
+@router.post("/fixations/{fixation_id}/approve", response_model=StudentFeeFixationOut)
+async def approve_student_fee_fixation(
+    fixation_id: uuid.UUID,
+    payload: StudentFeeFixationApproveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.configure")),
+):
+    """
+    Authorize and approve a negotiated student fee fixation.
+    Creates or synchronizes authoritative fee invoices for each installment.
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    fixation = await db.get(StudentFeeFixation, fixation_id)
+    if not fixation or fixation.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fee fixation record not found.")
+
+    fixation.status = "APPROVED"
+    fixation.approved_by_name = current_user.full_name
+    fixation.approved_by_id = current_user.id
+    fixation.approved_at = datetime.now(timezone.utc)
+    new_audit = list(fixation.audit_history or [])
+    new_audit.append({
+        "action": "APPROVED",
+        "actor": current_user.full_name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "notes": payload.approval_notes or "Management negotiation authorized.",
+    })
+    fixation.audit_history = new_audit
+
+    if fixation.student_id:
+        student = await db.get(Student, fixation.student_id)
+        if student and student.tenant_id == tenant_id:
+            await _generate_invoices_for_fixation(db, fixation, student, tenant_id)
+
+    await db.commit()
+    await db.refresh(fixation)
+    return fixation
+
+
+@router.get("/students/{student_id}/statement", response_model=StudentLedgerStatementOut)
+async def get_student_ledger_statement(
+    student_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_permission("fees.view")),
+):
+    """
+    Authoritative student ledger statement.
+    Combines approved fee fixation, invoices, payments, and receipts into a reconciled ledger.
+    """
+    tenant_id = _resolve_tenant_id(current_user)
+    student = await db.get(Student, student_id)
+    if not student or student.tenant_id != tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
+
+    # 1. Fetch active fixation
+    fix_stmt = select(StudentFeeFixation).where(
+        StudentFeeFixation.tenant_id == tenant_id,
+        StudentFeeFixation.student_id == student_id,
+        StudentFeeFixation.status == "APPROVED",
+    ).order_by(StudentFeeFixation.created_at.desc())
+    fix_res = await db.execute(fix_stmt)
+    fixation = fix_res.scalars().first()
+
+    # 2. Fetch invoices
+    inv_stmt = select(FeeInvoice).where(
+        FeeInvoice.tenant_id == tenant_id,
+        FeeInvoice.student_id == student_id,
+    ).order_by(FeeInvoice.due_date.asc())
+    inv_res = await db.execute(inv_stmt)
+    invoices = inv_res.scalars().all()
+
+    # 3. Fetch receipts
+    rcpt_stmt = select(FeeReceipt).where(
+        FeeReceipt.tenant_id == tenant_id,
+        FeeReceipt.student_id == student_id,
+    ).order_by(FeeReceipt.payment_date.desc())
+    rcpt_res = await db.execute(rcpt_stmt)
+    receipts = rcpt_res.scalars().all()
+
+    # Totals
+    total_std = fixation.standard_annual_fee if fixation else sum(inv.total_amount for inv in invoices)
+    total_concessions = fixation.total_concession_amount if fixation else sum(inv.concession_amount for inv in invoices)
+    net_payable = fixation.final_annual_payable if fixation else sum(inv.net_payable for inv in invoices)
+    total_paid = sum(inv.paid_amount for inv in invoices)
+    balance_due = max(0.0, net_payable - total_paid)
+
+    inv_list = []
+    for inv in invoices:
+        inv_list.append({
+            "id": str(inv.id),
+            "invoice_number": inv.invoice_number,
+            "term_code": inv.term_code,
+            "term_name": inv.term_name,
+            "total_amount": inv.total_amount,
+            "concession_amount": inv.concession_amount,
+            "net_payable": inv.net_payable,
+            "paid_amount": inv.paid_amount,
+            "balance_amount": inv.balance_amount,
+            "due_date": inv.due_date.isoformat(),
+            "status": inv.status,
+            "breakdown": inv.breakdown,
+        })
+
+    return StudentLedgerStatementOut(
+        student_id=student.id,
+        student_name=student.full_name,
+        admission_number=student.admission_number,
+        class_name=student.class_name,
+        academic_year=student.academic_year,
+        has_custom_fixation=fixation is not None,
+        fixation=fixation,
+        standard_fee=total_std,
+        total_concessions=total_concessions,
+        net_payable=net_payable,
+        total_paid=total_paid,
+        balance_due=balance_due,
+        invoices=inv_list,
+        payments=[],
+        receipts=receipts,
+    )
+
+
+async def _generate_invoices_for_fixation(
+    db: AsyncSession,
+    fixation: StudentFeeFixation,
+    student: Student,
+    tenant_id: uuid.UUID,
+):
+    """
+    Helper to provision or synchronize FeeInvoice records for a student based on an approved fixation.
+    Guarantees idempotency and prevents duplicate invoice generation.
+    """
+    existing_stmt = select(FeeInvoice).where(
+        FeeInvoice.tenant_id == tenant_id,
+        FeeInvoice.student_id == student.id,
+        FeeInvoice.academic_year == fixation.academic_year,
+    )
+    existing_res = await db.execute(existing_stmt)
+    existing_invoices = existing_res.scalars().all()
+
+    if existing_invoices:
+        # Update existing unpaid invoices to match negotiated installments
+        for inv in existing_invoices:
+            if inv.paid_amount == 0:
+                matching_term = next(
+                    (t for t in fixation.term_installments if t.get("term_code") == inv.term_code), None
+                )
+                if matching_term:
+                    inv.net_payable = float(matching_term["amount"])
+                    inv.balance_amount = float(matching_term["amount"])
+                    inv.breakdown = fixation.head_allocations
+        return
+
+    # Count invoices to generate consecutive invoice numbers
+    count_stmt = select(func.count(FeeInvoice.id)).where(FeeInvoice.tenant_id == tenant_id)
+    inv_count = (await db.execute(count_stmt)).scalar_one() or 0
+
+    for idx, term in enumerate(fixation.term_installments):
+        inv_no = f"INV-{datetime.now().year}-{inv_count + idx + 1:05d}"
+        share_pct = float(term.get("share_pct", 33.33))
+        term_net = float(term.get("amount", round(fixation.final_annual_payable * (share_pct / 100.0), 2)))
+        term_std = round(fixation.standard_annual_fee * (share_pct / 100.0), 2)
+        term_conc = max(0.0, round(term_std - term_net, 2))
+
+        due_date_str = str(term.get("due_date", "2026-06-30"))
+        try:
+            parsed_due = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+        except Exception:
+            parsed_due = date.today() + timedelta(days=30 * (idx + 1))
+
+        invoice = FeeInvoice(
+            tenant_id=tenant_id,
+            invoice_number=inv_no,
+            student_id=student.id,
+            student_name=student.full_name,
+            admission_number=student.admission_number,
+            class_name=student.class_name,
+            section_or_stream=student.section_or_stream,
+            academic_year=fixation.academic_year,
+            term_code=term.get("term_code", f"TERM_{idx+1}"),
+            term_name=term.get("name", f"Term {idx+1}"),
+            fee_head="ACADEMIC_FEE",
+            fee_title=f"{term.get('name', f'Term {idx+1}')} - Negotiated Tuition & Facilities",
+            total_amount=term_std,
+            concession_amount=term_conc,
+            net_payable=term_net,
+            paid_amount=0.0,
+            balance_amount=term_net,
+            due_date=parsed_due,
+            status="UNPAID",
+            breakdown=fixation.head_allocations,
+        )
+        db.add(invoice)
+
 
 

@@ -1079,6 +1079,54 @@ export interface DemoFeeStructure {
   notes?: string;
 }
 
+export interface DemoStudentFeeFixation {
+  id: string;
+  student_id?: string;
+  admission_id?: string;
+  student_name: string;
+  admission_number?: string;
+  academic_year: string;
+  class_or_stream: string;
+  standard_annual_fee: number;
+  total_concession_amount: number;
+  concession_category: string;
+  concession_method: 'OVERALL_ALLOCATION' | 'HEAD_WISE_ADJUSTMENTS';
+  final_annual_payable: number;
+  head_allocations: {
+    head_code: string;
+    title: string;
+    standard_amount: number;
+    concession_amount: number;
+    final_payable: number;
+  }[];
+  additional_charges: {
+    charge_code: string;
+    title: string;
+    category: string;
+    amount: number;
+  }[];
+  term_installments: {
+    term_code: string;
+    name: string;
+    due_date: string;
+    share_pct: number;
+    amount: number;
+  }[];
+  reason_remarks?: string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+  created_by_name: string;
+  approved_by_name?: string;
+  approved_at?: string;
+  version: number;
+  audit_history: {
+    action: string;
+    actor: string;
+    timestamp: string;
+    notes?: string;
+  }[];
+  created_at: string;
+}
+
 export interface DemoAttendanceRecord {
   student_id: string;
   student_name: string;
@@ -1375,6 +1423,7 @@ interface DemoState {
   receipts: DemoFeeReceipt[];
   receiptAudits: ReceiptAuditLogItem[];
   feeStructures: DemoFeeStructure[];
+  studentFeeFixations: DemoStudentFeeFixation[];
   activeFeeInstitutionFilter: 'ALL' | 'School' | 'PU College' | 'Degree College';
   attendance: DemoAttendanceRecord[];
   marks: DemoExamMarks[];
@@ -1429,6 +1478,9 @@ interface DemoState {
     details?: Record<string, any>
   ) => void;
   saveFeeStructure: (structure: DemoFeeStructure) => { success: boolean; message: string };
+  saveStudentFeeFixation: (fixation: Omit<DemoStudentFeeFixation, 'id' | 'created_at' | 'version' | 'audit_history'>) => DemoStudentFeeFixation;
+  approveStudentFeeFixation: (id: string, approverName: string, notes?: string) => void;
+  rejectStudentFeeFixation: (id: string, approverName: string, reason: string) => void;
   setActiveFeeInstitutionFilter: (filter: 'ALL' | 'School' | 'PU College' | 'Degree College') => void;
   updateAttendance: (studentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => void;
   saveMark: (studentId: string, subject: string, obtained: number) => void;
@@ -1547,6 +1599,7 @@ interface DemoState {
   feeSnapshots: ConsolidatedFeeReportSnapshotModel[];
 
   addAcademicSection: (payload: Omit<AcademicSectionModel, 'id' | 'enrolled_count'>) => { success: boolean; section: AcademicSectionModel; message: string };
+  updateAcademicSection: (id: string, updates: Partial<AcademicSectionModel>) => void;
   transferStudentSection: (payload: { studentId: string; studentName: string; sourceSection: string; targetSection: string; reason: string }) => { success: boolean; message: string };
   assignStaffDuty: (payload: Omit<StaffDutyAssignmentModel, 'id' | 'assigned_by' | 'is_active'>) => { success: boolean; assignment: StaffDutyAssignmentModel };
   generateHallTicketsForClass: (payload: { examTitle: string; className: string; sectionCode?: string; enforceFeeClearance?: boolean }) => { count: number; tickets: HallTicketModel[] };
@@ -2557,6 +2610,30 @@ const initialReceiptAudits: ReceiptAuditLogItem[] = [
 
 const initialFeeStructures: DemoFeeStructure[] = [
   {
+    id: 'fs-school-6',
+    institution_type: 'School',
+    institution_name: 'OUR SCHOOL High School',
+    academic_year: '2026-2027',
+    class_or_stream: 'Class 6',
+    term_count: 3,
+    terms_config: [
+      { term_code: 'TERM_1', name: 'Term 1 (June - Aug)', due_date: '2026-06-30', share_pct: 40 },
+      { term_code: 'TERM_2', name: 'Term 2 (Sept - Nov)', due_date: '2026-11-15', share_pct: 35 },
+      { term_code: 'TERM_3', name: 'Term 3 (Dec - Feb)', due_date: '2027-01-31', share_pct: 25 }
+    ],
+    fee_heads: [
+      { head_code: 'TUITION', title: 'Tuition & Academic Classroom Instruction', amount: 30000 },
+      { head_code: 'LABORATORY', title: 'Science & Computer Practical Laboratory', amount: 7500 },
+      { head_code: 'LIBRARY', title: 'Digital Library, Sports & Campus Amenities', amount: 5000 },
+      { head_code: 'EXAMINATION', title: 'Assessments & Comprehensive Examination', amount: 7500 }
+    ],
+    total_annual_fee: 50000,
+    concessions_allowed: true,
+    version: 1,
+    is_active: true,
+    notes: 'Official Institutional Class 6 Standard Annual Fee (₹50,000).'
+  },
+  {
     id: 'fs-school-10',
     institution_type: 'School',
     institution_name: 'OUR SCHOOL High School',
@@ -2602,6 +2679,79 @@ const initialFeeStructures: DemoFeeStructure[] = [
     version: 1,
     is_active: true,
     notes: 'Configured by PU College Administrator for 2 Semesters Schedule.'
+  }
+];
+
+export const initialStudentFeeFixations: DemoStudentFeeFixation[] = [
+  {
+    id: 'fix-2026-001',
+    student_id: 'st-1',
+    student_name: 'Aarav Sharma',
+    admission_number: 'OUR-2026-0101',
+    academic_year: '2026-2027',
+    class_or_stream: 'Class 6',
+    standard_annual_fee: 50000,
+    total_concession_amount: 14000,
+    concession_category: 'Management Negotiation',
+    concession_method: 'OVERALL_ALLOCATION',
+    final_annual_payable: 36000,
+    head_allocations: [
+      { head_code: 'TUITION', title: 'Tuition & Academic Instruction', standard_amount: 30000, concession_amount: 14000, final_payable: 16000 },
+      { head_code: 'LABORATORY', title: 'Science & Computer Lab', standard_amount: 7500, concession_amount: 0, final_payable: 7500 },
+      { head_code: 'LIBRARY_DEV', title: 'Digital Library & Campus Amenities', standard_amount: 5000, concession_amount: 0, final_payable: 5000 },
+      { head_code: 'EXAMINATION', title: 'Assessments & Examinations', standard_amount: 7500, concession_amount: 0, final_payable: 7500 }
+    ],
+    additional_charges: [],
+    term_installments: [
+      { term_code: 'TERM_1', name: 'Term 1 (June-Aug)', due_date: '2026-06-30', share_pct: 40, amount: 14400 },
+      { term_code: 'TERM_2', name: 'Term 2 (Sep-Nov)', due_date: '2026-11-15', share_pct: 35, amount: 12600 },
+      { term_code: 'TERM_3', name: 'Term 3 (Dec-Feb)', due_date: '2027-01-31', share_pct: 25, amount: 9000 }
+    ],
+    reason_remarks: 'Approved ₹14,000 concession under Management Discretionary Quota by Chairman.',
+    status: 'APPROVED',
+    created_by_name: 'Dr. Ramesh Kumar (Principal)',
+    approved_by_name: 'Chairman & Managing Trustee',
+    approved_at: '2026-04-10 11:30:00',
+    version: 1,
+    audit_history: [
+      { action: 'CREATED', actor: 'Admissions Desk', timestamp: '2026-04-10 10:15:00', notes: 'Initial negotiation request' },
+      { action: 'APPROVED', actor: 'Chairman & Managing Trustee', timestamp: '2026-04-10 11:30:00', notes: 'Authorized ₹14,000 concession' }
+    ],
+    created_at: '2026-04-10'
+  },
+  {
+    id: 'fix-2026-002',
+    student_id: 'st-2',
+    student_name: 'Ananya Hegde',
+    admission_number: 'OUR-2026-0102',
+    academic_year: '2026-2027',
+    class_or_stream: 'I PUC - PCMB',
+    standard_annual_fee: 65000,
+    total_concession_amount: 15000,
+    concession_category: 'Merit Scholarship',
+    concession_method: 'HEAD_WISE_ADJUSTMENTS',
+    final_annual_payable: 50000,
+    head_allocations: [
+      { head_code: 'TUITION', title: 'PU Board Tuition Fee', standard_amount: 40000, concession_amount: 10000, final_payable: 30000 },
+      { head_code: 'LABORATORY', title: 'PCMB Practical Laboratory', standard_amount: 15000, concession_amount: 5000, final_payable: 10000 },
+      { head_code: 'LIBRARY_DEV', title: 'Digital Library & Materials', standard_amount: 10000, concession_amount: 0, final_payable: 10000 }
+    ],
+    additional_charges: [],
+    term_installments: [
+      { term_code: 'SEM_1', name: 'Semester 1 (June-Nov)', due_date: '2026-08-31', share_pct: 50, amount: 25000 },
+      { term_code: 'SEM_2', name: 'Semester 2 (Dec-April)', due_date: '2026-12-31', share_pct: 50, amount: 25000 }
+    ],
+    reason_remarks: 'State 10th Board 96.4% Distinction Merit Scholarship.',
+    status: 'APPROVED',
+    created_by_name: 'Admissions Officer',
+    approved_by_name: 'Academic Director',
+    approved_at: '2026-04-12 14:00:00',
+    version: 1,
+    audit_history: [
+      { action: 'CREATED', actor: 'Admissions Officer', timestamp: '2026-04-12 12:00:00', notes: 'Merit verification verified' },
+      { action: 'APPROVED', actor: 'Academic Director', timestamp: '2026-04-12 14:00:00', notes: 'Merit scholarship awarded' }
+    ],
+    created_at: '2026-04-12'
   }
 ];
 
@@ -3593,6 +3743,7 @@ export const useDemoStore = create<DemoState>()(
         receipts: [],
         receiptAudits: [],
         feeStructures: [],
+        studentFeeFixations: [],
         activeFeeInstitutionFilter: 'ALL',
         customFeeHeads: [],
         admissions: [],
@@ -3624,6 +3775,7 @@ export const useDemoStore = create<DemoState>()(
         receipts: initialReceipts,
         receiptAudits: initialReceiptAudits,
         feeStructures: initialFeeStructures,
+        studentFeeFixations: initialStudentFeeFixations,
         activeFeeInstitutionFilter: 'ALL',
         customFeeHeads: [],
         admissions: initialAdmissions,
@@ -3674,6 +3826,7 @@ export const useDemoStore = create<DemoState>()(
   receipts: [],
   receiptAudits: [],
   feeStructures: [],
+  studentFeeFixations: initialStudentFeeFixations,
   activeFeeInstitutionFilter: 'ALL',
   customFeeHeads: [],
   attendance: [],
@@ -4396,6 +4549,84 @@ export const useDemoStore = create<DemoState>()(
     set({ activeFeeInstitutionFilter: filter });
   },
 
+  saveStudentFeeFixation: (fixation) => {
+    const newFix: DemoStudentFeeFixation = {
+      ...fixation,
+      id: `fix-${Date.now()}`,
+      version: 1,
+      audit_history: [
+        {
+          action: 'CREATED',
+          actor: fixation.created_by_name,
+          timestamp: new Date().toISOString(),
+          notes: fixation.reason_remarks,
+        },
+      ],
+      created_at: new Date().toISOString().split('T')[0],
+    };
+
+    set((state) => {
+      const updated = state.studentFeeFixations.map((f) =>
+        f.student_name.toLowerCase() === fixation.student_name.toLowerCase() &&
+        f.academic_year === fixation.academic_year &&
+        f.status === 'APPROVED'
+          ? { ...f, status: 'SUPERSEDED' as const }
+          : f
+      );
+      return {
+        studentFeeFixations: [newFix, ...updated],
+      };
+    });
+
+    return newFix;
+  },
+
+  approveStudentFeeFixation: (id, approverName, notes) => {
+    set((state) => ({
+      studentFeeFixations: state.studentFeeFixations.map((f) =>
+        f.id === id
+          ? {
+              ...f,
+              status: 'APPROVED',
+              approved_by_name: approverName,
+              approved_at: new Date().toISOString(),
+              audit_history: [
+                ...f.audit_history,
+                {
+                  action: 'APPROVED',
+                  actor: approverName,
+                  timestamp: new Date().toISOString(),
+                  notes: notes || 'Management negotiation approved.',
+                },
+              ],
+            }
+          : f
+      ),
+    }));
+  },
+
+  rejectStudentFeeFixation: (id, approverName, reason) => {
+    set((state) => ({
+      studentFeeFixations: state.studentFeeFixations.map((f) =>
+        f.id === id
+          ? {
+              ...f,
+              status: 'REJECTED',
+              audit_history: [
+                ...f.audit_history,
+                {
+                  action: 'REJECTED',
+                  actor: approverName,
+                  timestamp: new Date().toISOString(),
+                  notes: reason,
+                },
+              ],
+            }
+          : f
+      ),
+    }));
+  },
+
   updateAttendance: (studentId, status) => {
     set((state) => ({
       attendance: state.attendance.map((rec) =>
@@ -4662,13 +4893,26 @@ export const useDemoStore = create<DemoState>()(
     const adm = state.admissions.find((a) => a.id === id);
     if (!adm) return { studentId: '', admissionNumber: '' };
 
-    const finalClass = targetClass || adm.target_class || 'Class 10';
+    const finalClass = targetClass || adm.target_class || 'Class 6';
     const finalSection = section || 'Section A';
     const isPu = adm.level === 'PU College' || finalClass.includes('PUC');
     const admPrefix = state.tenantScope === 'our-school-demo' ? 'OUR-2026' : 'AKSH-2026';
     const nextNum = Math.floor(100 + Math.random() * 900);
     const newAdmissionNo = `${admPrefix}-0${nextNum}`;
-    const feeAmount = isPu ? 45000 : 35000;
+
+    // 1. Look up any approved management fee fixation
+    const linkedFixation = state.studentFeeFixations.find(
+      (f) => (f.admission_id === id || f.student_name.toLowerCase() === adm.applicant_name.toLowerCase()) && f.status === 'APPROVED'
+    );
+
+    // 2. Look up institutional fee structure
+    const matchingStruct = state.feeStructures.find(
+      (fs) => fs.class_or_stream.toLowerCase().includes(finalClass.toLowerCase())
+    );
+
+    const standardFee = linkedFixation?.standard_annual_fee || matchingStruct?.total_annual_fee || (isPu ? 65000 : finalClass === 'Class 6' ? 50000 : 35000);
+    const feeAmount = linkedFixation?.final_annual_payable ?? standardFee;
+    const concessionAmount = linkedFixation?.total_concession_amount || 0;
 
     const newStudent: DemoStudent = {
       id: `stu-${Date.now()}`,
@@ -4687,31 +4931,50 @@ export const useDemoStore = create<DemoState>()(
       status: 'ACTIVE',
       aadhaar_number: 'XXXX-XXXX-' + Math.floor(1000 + Math.random() * 9000),
       academic_year: '2026-2027',
-      is_hostel_opted: false,
-      is_transport_opted: false,
+      is_hostel_opted: !!linkedFixation?.additional_charges?.some(c => c.charge_code === 'HOSTEL'),
+      is_transport_opted: !!linkedFixation?.additional_charges?.some(c => c.charge_code === 'TRANSPORT'),
     };
 
-    const newInvoice: DemoFeeInvoice = {
-      id: `inv-${Date.now()}`,
-      invoice_number: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    // 3. Generate Term Invoices based on installments
+    const installments = linkedFixation?.term_installments || (matchingStruct ? matchingStruct.terms_config.map(t => ({
+      term_code: t.term_code,
+      name: t.name,
+      due_date: t.due_date,
+      share_pct: t.share_pct,
+      amount: Math.round(feeAmount * (t.share_pct / 100))
+    })) : [
+      { term_code: 'TERM_1', name: 'Term 1 (June-Aug)', due_date: '2026-06-30', share_pct: 40, amount: Math.round(feeAmount * 0.40) },
+      { term_code: 'TERM_2', name: 'Term 2 (Sep-Nov)', due_date: '2026-11-15', share_pct: 35, amount: Math.round(feeAmount * 0.35) },
+      { term_code: 'TERM_3', name: 'Term 3 (Dec-Feb)', due_date: '2027-01-31', share_pct: 25, amount: feeAmount - Math.round(feeAmount * 0.40) - Math.round(feeAmount * 0.35) },
+    ]);
+
+    const generatedInvoices: DemoFeeInvoice[] = installments.map((inst, idx) => ({
+      id: `inv-${Date.now()}-${idx}`,
+      invoice_number: `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`,
       student_name: `${newStudent.first_name} ${newStudent.last_name}`,
       admission_number: newAdmissionNo,
       class_name: `${finalClass}-${finalSection}`,
       academic_year: '2026-2027',
-      term_code: isPu ? 'SEM_1' : 'TERM_1',
-      term_name: isPu ? 'Semester 1 (June-Nov)' : 'Term 1 (June-Aug)',
-      fee_head: isPu ? 'PU_BOARD_TUITION' : 'COLLEGE_FEE',
-      fee_title: isPu ? 'Karnataka Pre-University Tuition & Lab' : 'Annual Tuition & Instructional Learning',
-      total_amount: feeAmount,
+      term_code: inst.term_code,
+      term_name: inst.name,
+      fee_head: isPu ? 'PU_BOARD_TUITION' : 'ACADEMIC_FEE',
+      fee_title: `${inst.name} - ${linkedFixation ? 'Negotiated Institutional Fee' : 'Standard Tuition & Amenities'}`,
+      total_amount: Math.round(standardFee * (inst.share_pct / 100)),
+      concession_amount: Math.round(concessionAmount * (inst.share_pct / 100)),
       paid_amount: 0,
-      balance_amount: feeAmount,
-      due_date: '2026-07-31',
+      balance_amount: inst.amount,
+      due_date: inst.due_date,
       status: 'UNPAID',
-      breakdown: [
-        { head_code: 'TUITION', title: 'Tuition Fee', amount: feeAmount - 5000 },
-        { head_code: 'REGISTRATION', title: 'Registration & Verification', amount: 5000 },
+      breakdown: linkedFixation?.head_allocations ? linkedFixation.head_allocations.map(h => ({
+        head_code: h.head_code as FeeHeadType,
+        title: h.title,
+        amount: Math.round(h.final_payable * (inst.share_pct / 100))
+      })) : [
+        { head_code: 'TUITION', title: 'Tuition Fee', amount: Math.round(inst.amount * 0.70) },
+        { head_code: 'LABORATORY', title: 'Science & Computer Lab', amount: Math.round(inst.amount * 0.20) },
+        { head_code: 'LIBRARY_DEV', title: 'Library & Amenities', amount: Math.round(inst.amount * 0.10) },
       ]
-    };
+    }));
 
     set((s) => ({
       admissions: s.admissions.map((a) =>
@@ -4726,7 +4989,12 @@ export const useDemoStore = create<DemoState>()(
           : a
       ),
       students: [newStudent, ...s.students],
-      invoices: [newInvoice, ...s.invoices]
+      invoices: [...generatedInvoices, ...s.invoices],
+      studentFeeFixations: linkedFixation
+        ? s.studentFeeFixations.map((f) =>
+            f.id === linkedFixation.id ? { ...f, student_id: newStudent.id, admission_number: newAdmissionNo } : f
+          )
+        : s.studentFeeFixations
     }));
 
     return { studentId: newStudent.id, admissionNumber: newAdmissionNo };
@@ -5559,6 +5827,12 @@ export const useDemoStore = create<DemoState>()(
     };
     set(state => ({ academicSections: [newSec, ...state.academicSections] }));
     return { success: true, section: newSec, message: `Section ${newSec.section_code} created successfully with capacity ${newSec.max_capacity}.` };
+  },
+
+  updateAcademicSection: (id, updates) => {
+    set(state => ({
+      academicSections: state.academicSections.map(s => s.id === id ? { ...s, ...updates } : s)
+    }));
   },
 
   transferStudentSection: (payload) => {

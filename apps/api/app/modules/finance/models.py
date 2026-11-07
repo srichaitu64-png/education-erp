@@ -212,3 +212,104 @@ class ReceiptAuditLog(TenantBaseModel):
     details: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     receipt: Mapped["FeeReceipt"] = relationship("FeeReceipt", back_populates="audit_logs")
+
+
+class FeeHeadMaster(TenantBaseModel):
+    """
+    Institution-defined fee heads catalog.
+    Defines fee category, charge type, recurrence, and tax rules.
+    """
+    __tablename__ = "fee_heads"
+
+    head_code: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False, default="ACADEMIC")  # ACADEMIC, FACILITY, TRANSPORT, HOSTEL, SECURITY_DEPOSIT, OPTIONAL_SERVICE
+    charge_type: Mapped[str] = mapped_column(String(32), nullable=False, default="PER_TERM")  # ONE_TIME, PER_TERM, MONTHLY, ANNUAL
+    is_compulsory: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_recurring: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    default_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    tax_rate: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "head_code", name="uq_tenant_fee_head_code"),
+        Index("idx_fee_head_tenant_cat", "tenant_id", "category"),
+    )
+
+
+class StudentFeeFixation(TenantBaseModel):
+    """
+    Authoritative student-specific agreed fee fixation and concession record.
+    Supports management negotiations, scholarships, sibling discounts, and head-wise adjustments
+    without modifying institutional standard fee structures.
+    """
+    __tablename__ = "student_fee_fixations"
+
+    student_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("students.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    admission_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admission_applications.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    student_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    admission_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    academic_year: Mapped[str] = mapped_column(String(32), nullable=False, default="2026-2027", index=True)
+    class_or_stream: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+    standard_annual_fee: Mapped[float] = mapped_column(Float, nullable=False)
+    total_concession_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    concession_category: Mapped[str] = mapped_column(String(64), nullable=False, default="Management Negotiation")
+    concession_method: Mapped[str] = mapped_column(String(32), nullable=False, default="OVERALL_ALLOCATION")
+    final_annual_payable: Mapped[float] = mapped_column(Float, nullable=False)
+
+    head_allocations: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    additional_charges: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    term_installments: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+
+    reason_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="APPROVED", index=True)  # PENDING_APPROVAL, APPROVED, REJECTED, ACTIVE, SUPERSEDED
+    created_by_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Admissions Officer")
+    created_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    approved_by_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    approved_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    audit_history: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+
+    __table_args__ = (
+        Index("idx_fee_fix_tenant_student", "tenant_id", "student_id"),
+        Index("idx_fee_fix_tenant_year_class", "tenant_id", "academic_year", "class_or_stream"),
+        Index("idx_fee_fix_tenant_status", "tenant_id", "status"),
+    )
+
+
+class FeeAdjustmentLog(TenantBaseModel):
+    """
+    Immutable financial integrity log for changes made to fee structures, concessions,
+    or student invoices after payments have been processed.
+    """
+    __tablename__ = "fee_adjustment_logs"
+
+    fixation_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("student_fee_fixations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    invoice_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("fee_invoices.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    action_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    previous_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    new_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    approved_by_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Administrator")
+    details: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    __table_args__ = (
+        Index("idx_fee_adj_tenant_student", "tenant_id", "student_id"),
+        Index("idx_fee_adj_tenant_action", "tenant_id", "action_type"),
+    )
+
