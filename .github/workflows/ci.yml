@@ -91,6 +91,7 @@ jobs:
 
           ALTER DATABASE education_erp_test OWNER TO erp_test_admin;
           GRANT CONNECT ON DATABASE education_erp_test TO erp_app;
+          GRANT erp_app TO erp_test_admin;
           SQL
 
       - name: Run Full Regression Test Suite
