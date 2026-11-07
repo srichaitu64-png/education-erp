@@ -152,6 +152,28 @@ async def _validate_records(
                 errors.append({"row": row_num, "field": "admission_number", "message": "No student with this admission number exists in the active institution."})
                 continue
 
+            academic_year = str(row.get("academic_year") or "").strip()
+            term_code = str(row.get("term_code") or "").strip()
+            fee_head = str(row.get("fee_head") or "").strip()
+            if academic_year and term_code and fee_head:
+                invoice_result = await db.execute(
+                    select(FeeInvoice).where(
+                        FeeInvoice.tenant_id == tenant_id,
+                        FeeInvoice.student_id == student.id,
+                        FeeInvoice.academic_year == academic_year,
+                        FeeInvoice.term_code == term_code,
+                        FeeInvoice.fee_head == fee_head,
+                    )
+                )
+                existing_invoice = invoice_result.scalars().first()
+                if existing_invoice:
+                    duplicates.append({
+                        "row": row_num,
+                        "admission_number": admission_number,
+                        "existing_invoice_id": str(existing_invoice.id),
+                        "match_type": "FEE_LEDGER_KEY",
+                    })
+
             try:
                 total_amount = float(row.get("total_amount") or row.get("opening_balance") or 0)
                 paid_amount = float(row.get("paid_amount") or 0)
