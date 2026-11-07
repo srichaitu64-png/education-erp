@@ -21,6 +21,21 @@ from app.modules.finance.models import FeeInvoice
 
 router = APIRouter(prefix="/migration", tags=["Data Migration & Bulk Ingestion Engine"])
 
+def require_migration_tenant_id() -> uuid.UUID:
+    """
+    Require an explicitly authenticated tenant context for every migration
+    operation. Never infer a tenant from an arbitrary role or invent a UUID:
+    migration writes must fail closed when the request has no tenant scope.
+    """
+    tenant_id = get_current_tenant_id()
+    if tenant_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="An active institution context is required for data migration.",
+        )
+    return tenant_id
+
+
 TEMPLATE_HEADERS = {
     "STUDENTS": [
         "admission_number",
@@ -119,7 +134,7 @@ async def validate_migration_dataset(
     Dry-run ingestion parser and schema validator.
     Detects missing fields, validates types, and discovers exact and probable duplicate matches.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = require_migration_tenant_id()
     total_records = len(payload.records)
     duplicates = []
     errors = []
@@ -178,7 +193,7 @@ async def execute_bulk_migration(
     Execute high-speed chunked batch ingestion with conflict resolution policies (SKIP / OVERWRITE / MERGE).
     Persists audit log in migration_batch_logs.
     """
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = require_migration_tenant_id()
     batch_no = f"BATCH-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
     
     total = len(payload.records)
@@ -328,7 +343,7 @@ async def list_migration_batches(
     user: User = Depends(get_current_user)
 ):
     """List historical bulk migration batch logs for active tenant."""
-    tenant_id = get_current_tenant_id() or (user.roles[0].tenant_id if user.roles else uuid.uuid4())
+    tenant_id = require_migration_tenant_id()
     stmt = select(MigrationBatchLog).where(MigrationBatchLog.tenant_id == tenant_id)
     if target_module:
         stmt = stmt.where(MigrationBatchLog.target_module == target_module.upper())
