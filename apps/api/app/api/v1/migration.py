@@ -404,6 +404,18 @@ async def list_migration_batches(
     user: User = Depends(get_current_user),
 ):
     tenant_id = require_migration_tenant_id()
+    if target_module:
+        module = _normalise_module(target_module)
+        permission_code = "students.view" if module == "STUDENTS" else "fees.view"
+        await require_permission(permission_code)(user)
+    elif not user.is_superadmin and not any(
+        permission.code in {"students.view", "fees.view"}
+        for user_role in user.roles
+        for permission in user_role.role.permissions
+        if user_role.tenant_id == tenant_id
+    ):
+        raise HTTPException(status_code=403, detail="Missing required permission to view migration history.")
+
     stmt = select(MigrationBatchLog).where(MigrationBatchLog.tenant_id == tenant_id)
     if target_module:
         stmt = stmt.where(MigrationBatchLog.target_module == target_module.upper())
