@@ -305,6 +305,90 @@ export const InstitutionalStockCardsView: React.FC<InstitutionalStockCardsViewPr
         </div>
       </div>
 
+      {/* Today's Quick Operations Strip */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+              Today's Quick Operations & Shortcuts
+            </h3>
+          </div>
+          <span className="text-[11px] font-bold text-slate-400">1-Click Fast Navigation</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {[
+            {
+              label: 'Mark Attendance',
+              desc: 'Roll call & Biometric',
+              tab: 'attendance',
+              color: 'hover:border-blue-300 hover:bg-blue-50/50',
+              iconColor: 'text-blue-600 bg-blue-50',
+              icon: CalendarCheck,
+            },
+            {
+              label: 'Collect Fee',
+              desc: 'Thermal / A4 receipts',
+              tab: 'fees',
+              color: 'hover:border-emerald-300 hover:bg-emerald-50/50',
+              iconColor: 'text-emerald-600 bg-emerald-50',
+              icon: DollarSign,
+            },
+            {
+              label: 'Weekly Timetable',
+              desc: '6-Day schedule & labs',
+              tab: 'timetable',
+              color: 'hover:border-amber-300 hover:bg-amber-50/50',
+              iconColor: 'text-amber-600 bg-amber-50',
+              icon: Clock,
+            },
+            {
+              label: 'Marks Register',
+              desc: 'Theory + practical entry',
+              tab: 'marks-register',
+              color: 'hover:border-purple-300 hover:bg-purple-50/50',
+              iconColor: 'text-purple-600 bg-purple-50',
+              icon: FileSpreadsheet,
+            },
+            {
+              label: 'Hall Tickets',
+              desc: 'QR admit cards & verify',
+              tab: 'hall-tickets',
+              color: 'hover:border-indigo-300 hover:bg-indigo-50/50',
+              iconColor: 'text-indigo-600 bg-indigo-50',
+              icon: QrCode,
+            },
+            {
+              label: 'Result Board',
+              desc: 'Publish ranks & notices',
+              tab: 'notice-board',
+              color: 'hover:border-rose-300 hover:bg-rose-50/50',
+              iconColor: 'text-rose-600 bg-rose-50',
+              icon: Award,
+            },
+          ].map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <button
+                key={action.tab}
+                type="button"
+                onClick={() => onNavigateTab(action.tab)}
+                className={`p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 text-left transition-all duration-150 cursor-pointer group shadow-2xs ${action.color}`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${action.iconColor}`}>
+                  <ActionIcon className="w-4 h-4" />
+                </div>
+                <p className="text-xs font-black text-slate-900 group-hover:text-blue-700 transition-colors leading-tight">
+                  {action.label}
+                </p>
+                <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{action.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 5 Pillars of Stock Cards */}
       {pillars.map((pillar) => (
         <div key={pillar.pillarId} className="space-y-3">

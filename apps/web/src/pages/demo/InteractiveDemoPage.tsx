@@ -14,6 +14,9 @@ import { ConfigurableAttendanceView } from './views/ConfigurableAttendanceView';
 import { SharedImportWizardModal, MigrationTargetModule } from '../../components/migration/SharedImportWizardModal';
 import { MasterCurriculumManagementView } from './views/MasterCurriculumManagementView';
 import { AdmissionsPipelineView } from './views/AdmissionsPipelineView';
+import { StudentsDirectoryView } from './views/StudentsDirectoryView';
+import { FacultyStaffDirectoryView } from './views/FacultyStaffDirectoryView';
+import { WeeklyTimetableView } from './views/WeeklyTimetableView';
 import { InstitutionalStockCardsView } from '../../components/dashboard/InstitutionalStockCardsView';
 import { CommandPaletteModal } from '../../components/ui/CommandPaletteModal';
 import { Student360Drawer } from '../../components/student/Student360Drawer';
@@ -4443,202 +4446,30 @@ export const InteractiveDemoPage: React.FC = () => {
           {/* TAB 11: STUDENTS (SIS) */}
           {/* ================================================================= */}
           {activeTab === 'students' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-900">Student Information System (SIS)</h1>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Enrolled Directory across School, PU College & Degree College • Click any student to launch full 360° Profile
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateStudentModal(true)}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    + Add Student
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenImportModal('STUDENTS', 'Admissions / Student Roster')}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    Import CSV/Excel
-                  </button>
-                  <span className="text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 px-3.5 py-2 rounded-xl">
-                    {students.length} Enrolled Students
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
-                      <th className="p-3.5">Admission #</th>
-                      <th className="p-3.5">Student Name</th>
-                      <th className="p-3.5">Level & Class</th>
-                      <th className="p-3.5">Section / Stream</th>
-                      <th className="p-3.5">Guardian Contact</th>
-                      <th className="p-3.5">Attendance</th>
-                      <th className="p-3.5">Fee Dues</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5 text-right">360° Drilldown</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {students.map((st) => (
-                      <tr
-                        key={st.id}
-                        onClick={() => {
-                          setSelected360Student(st);
-                          setIs360DrawerOpen(true);
-                        }}
-                        className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
-                      >
-                        <td className="p-3.5 font-mono text-blue-600 font-bold group-hover:underline">
-                          {st.admission_number}
-                        </td>
-                        <td className="p-3.5 font-bold text-slate-900 group-hover:text-blue-600">
-                          {st.first_name} {st.last_name}
-                          {(st.is_hostel_opted || st.is_transport_opted) && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {st.is_hostel_opted && (
-                                <span className="text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded">
-                                  Hostel
-                                </span>
-                              )}
-                              {st.is_transport_opted && (
-                                <span className="text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded">
-                                  Transport
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-slate-700">{st.class_name}</td>
-                        <td className="p-3.5 text-slate-600">{st.section_or_stream}</td>
-                        <td className="p-3.5 text-slate-600">
-                          <div className="font-medium text-slate-900">{st.guardian_name}</div>
-                          <div className="text-[11px] text-slate-600">{st.guardian_phone}</div>
-                        </td>
-                        <td className="p-3.5 font-bold text-emerald-600">{st.attendance_pct || 95}%</td>
-                        <td className={`p-3.5 font-mono font-bold ${(st.fee_balance || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                          ₹{(st.fee_balance || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {st.status}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            type="button"
-                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 text-xs font-bold border border-slate-200 transition-colors"
-                          >
-                            Inspect 360° →
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StudentsDirectoryView
+              onOpenStudent360={handleOpenStudent360}
+              onOpenCreateStudent={() => setShowCreateStudentModal(true)}
+              onOpenImportModal={(mod, type) => handleOpenImportModal(mod as any, type)}
+              onOpenCollectFee={() => setShowCollectFeeModal(true)}
+            />
           )}
 
           {/* ================================================================= */}
           {/* TAB 12: STAFF (HR) */}
           {/* ================================================================= */}
           {activeTab === 'staff' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-900">Faculty & Staff Directory</h1>
-                  <p className="text-xs text-slate-600 mt-1">Teaching and Operational Staff Profiles</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowCreateFacultyModal(true)}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Faculty / Staff
-                  </button>
-                  <button
-                    onClick={() => handleOpenImportModal('STAFF', 'Faculty & Staff Directory')}
-                    className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    Import Staff
-                  </button>
-                  <span className="text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 px-3 py-1.5 rounded-xl">
-                    {staffMembers.length} Staff Members
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {staffMembers.map((st) => (
-                  <div key={st.id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between text-xs">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{st.name}</h4>
-                      <p className="text-blue-400 mt-0.5">{st.designation || st.role}</p>
-                      <p className="text-[11px] text-slate-600 mt-1">Dept: {st.dept} • {st.email}</p>
-                    </div>
-                    <span className="text-[10px] bg-slate-50 border border-slate-200 text-slate-300 font-mono px-2 py-1 rounded">
-                      {st.employee_id}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <FacultyStaffDirectoryView
+              onOpenCreateFaculty={() => setShowCreateFacultyModal(true)}
+              onOpenImportModal={(mod, type) => handleOpenImportModal(mod as any, type)}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
           )}
 
           {/* ================================================================= */}
           {/* TAB 13: WEEKLY TIMETABLE */}
           {/* ================================================================= */}
           {activeTab === 'timetable' && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-900">Weekly Academic Timetable</h1>
-                  <p className="text-xs text-slate-600 mt-1">Period Allocations • Lab Sessions • Classroom Schedules</p>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
-                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">I PUC - Science (PCMB Batch A) Schedule:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-                    <div key={day} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                      <p className="font-bold text-slate-900 text-sm border-b border-slate-200 pb-1">{day}</p>
-                      <div className="space-y-1.5 text-[11px]">
-                        <div className="p-1.5 rounded bg-slate-850 text-slate-200">
-                          <p className="font-bold text-blue-300">09:00 - 10:00 AM</p>
-                          <p>Physics (Dr. V. Murthy)</p>
-                        </div>
-                        <div className="p-1.5 rounded bg-slate-850 text-slate-200">
-                          <p className="font-bold text-blue-300">10:00 - 11:00 AM</p>
-                          <p>Chemistry (Prof. S. Joshi)</p>
-                        </div>
-                        <div className="p-1.5 rounded bg-slate-850 text-slate-200">
-                          <p className="font-bold text-amber-300">11:15 - 01:15 PM</p>
-                          <p>Biology Lab Practical</p>
-                        </div>
-                        <div className="p-1.5 rounded bg-slate-850 text-slate-200">
-                          <p className="font-bold text-blue-300">02:00 - 03:00 PM</p>
-                          <p>Mathematics (Mrs. K. Swamy)</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <WeeklyTimetableView />
           )}
 
         
